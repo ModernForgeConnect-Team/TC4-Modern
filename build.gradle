@@ -13,19 +13,6 @@ ext.devProperty = { String key ->
     providers.gradleProperty(key).orElse(providers.provider { developerProperties.getProperty(key) })
 }
 
-ext.mfclApiFile = file(devProperty('mfclApiJar')
-        .getOrElse("libs/mfcl-${mfcl_version}-api.jar"))
-
-tasks.register('verifyMfclApi') {
-    group = 'verification'
-    description = 'Check that the standalone MFCL compile API is available.'
-    doLast {
-        if (!mfclApiFile.isFile()) {
-            throw new GradleException('Missing MFCL API: run python tools/prepare_mfcl_api.py with JDK 17, or pass -PmfclApiJar=/path/to/mfcl-api.jar. See README.md.')
-        }
-    }
-}
-
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'idea'
@@ -38,14 +25,20 @@ subprojects {
         toolchain.languageVersion = JavaLanguageVersion.of(17)
         withSourcesJar()
     }
-    repositories { mavenCentral() }
+    repositories {
+        mavenCentral()
+        maven {
+            name = 'MFCL'
+            url = 'https://raw.githubusercontent.com/gengyoubo/ModernForgeConnectLoader/master/mcmodsrepo/'
+            content { includeGroup 'github.com.gengyoubo.mfcl' }
+        }
+    }
     minecraft { mappings channel: 'official', version: rootProject.minecraft_version }
     dependencies {
         minecraft "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
-        compileOnly files(rootProject.mfclApiFile)
+        compileOnly "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
     }
     tasks.withType(JavaCompile).configureEach {
-        dependsOn rootProject.tasks.named('verifyMfclApi')
         options.encoding = 'UTF-8'
     }
     tasks.withType(AbstractArchiveTask).configureEach {

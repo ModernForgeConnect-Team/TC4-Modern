@@ -6,10 +6,10 @@ sourceSets { api }
 // Export API classes there as well as in the final mod JAR.
 sourceSets.main.output.classesDirs.from(sourceSets.api.output.classesDirs)
 dependencies {
-    apiCompileOnly files(rootProject.mfclApiFile)
+    apiCompileOnly "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
     implementation sourceSets.api.output
     testImplementation sourceSets.api.output
-    testImplementation files(rootProject.mfclApiFile)
+    testImplementation "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
