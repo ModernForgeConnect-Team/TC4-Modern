@@ -7,5 +7,14 @@
   "jei.tc4modern.instability": "Instability: %s",
   "jei.tc4modern.vis": "Vis cost (before wand discounts)",
   "jei.tc4modern.essentia": "Required essentia",
-  "jei.tc4modern.view_only": "Recipe display only; original research and crafting rules still apply."
+  "jei.tc4modern.view_only": "Recipe display only; original research and crafting rules still apply.",
+  "block.tc4modern.deepslate_cinnabar_ore": "Deepslate Cinnabar Ore",
+  "block.tc4modern.deepslate_air_infused_stone": "Deepslate Air Infused Stone",
+  "block.tc4modern.deepslate_fire_infused_stone": "Deepslate Fire Infused Stone",
+  "block.tc4modern.deepslate_water_infused_stone": "Deepslate Water Infused Stone",
+  "block.tc4modern.deepslate_earth_infused_stone": "Deepslate Earth Infused Stone",
+  "block.tc4modern.deepslate_order_infused_stone": "Deepslate Order Infused Stone",
+  "block.tc4modern.deepslate_entropy_infused_stone": "Deepslate Entropy Infused Stone",
+  "block.tc4modern.deepslate_amber_bearing_stone": "Deepslate Amber Bearing Stone",
+  "itemGroup.tc4modern": "TC4: Modern"
 }

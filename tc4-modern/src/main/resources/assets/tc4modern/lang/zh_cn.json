@@ -7,5 +7,14 @@
   "jei.tc4modern.instability": "不稳定性：%s",
   "jei.tc4modern.vis": "魔力消耗（未计法杖减免）",
   "jei.tc4modern.essentia": "所需源质",
-  "jei.tc4modern.view_only": "仅展示配方；实际合成仍遵循原版研究及合成规则。"
+  "jei.tc4modern.view_only": "仅展示配方；实际合成仍遵循原版研究及合成规则。",
+  "block.tc4modern.deepslate_cinnabar_ore": "深板岩朱砂矿石",
+  "block.tc4modern.deepslate_air_infused_stone": "深板岩风之蕴魔石",
+  "block.tc4modern.deepslate_fire_infused_stone": "深板岩火之蕴魔石",
+  "block.tc4modern.deepslate_water_infused_stone": "深板岩水之蕴魔石",
+  "block.tc4modern.deepslate_earth_infused_stone": "深板岩地之蕴魔石",
+  "block.tc4modern.deepslate_order_infused_stone": "深板岩秩序蕴魔石",
+  "block.tc4modern.deepslate_entropy_infused_stone": "深板岩混沌蕴魔石",
+  "block.tc4modern.deepslate_amber_bearing_stone": "深板岩琥珀矿石",
+  "itemGroup.tc4modern": "TC4: 现代"
 }
