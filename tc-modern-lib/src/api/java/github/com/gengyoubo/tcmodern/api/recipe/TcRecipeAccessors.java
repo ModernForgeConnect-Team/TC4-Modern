@@ -76,5 +76,12 @@ public final class TcRecipeAccessors {
     public interface Aspect {
         @LegacyMethod(name = "getTag", descriptor = "()Ljava/lang/String;") String tag();
         @LegacyMethod(name = "getColor", descriptor = "()I") int color();
+        @LegacyMethod(name = "getImage", descriptor = "()Lnet/minecraft/util/ResourceLocation;") LegacyObject image();
+    }
+
+    @LegacyType("net.minecraft.util.ResourceLocation")
+    public interface Resource {
+        @LegacyMethod(name = "func_110624_b", descriptor = "()Ljava/lang/String;") String namespace();
+        @LegacyMethod(name = "func_110623_a", descriptor = "()Ljava/lang/String;") String path();
     }
 }

@@ -13,9 +13,11 @@ public record TcRecipe(Kind kind, String research, int width, int height,
                        List<List<LegacyStack>> inputs, LegacyStack output,
                        List<AspectCost> aspects, int instability) {
     public enum Kind { ARCANE_SHAPED, ARCANE_SHAPELESS, CRUCIBLE, INFUSION }
-    public record AspectCost(String tag, int color, int amount) {
+    public record AspectCost(String tag, int color, int amount, String texture) {
+        public AspectCost(String tag, int color, int amount) { this(tag, color, amount, ""); }
         public AspectCost {
             Objects.requireNonNull(tag);
+            texture = Objects.requireNonNullElse(texture, "");
             if (tag.isBlank() || amount <= 0) throw new IllegalArgumentException("Invalid aspect cost");
         }
     }

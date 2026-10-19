@@ -1,0 +1,11 @@
+{
+  "jei.tc4modern.arcane": "奥术合成",
+  "jei.tc4modern.crucible": "坩埚炼金",
+  "jei.tc4modern.infusion": "注魔",
+  "jei.tc4modern.research": "研究条件：%s",
+  "jei.tc4modern.no_research": "无研究条件",
+  "jei.tc4modern.instability": "不稳定性：%s",
+  "jei.tc4modern.vis": "魔力消耗（未计法杖减免）",
+  "jei.tc4modern.essentia": "所需源质",
+  "jei.tc4modern.view_only": "仅展示配方；实际合成仍遵循原版研究及合成规则。"
+}

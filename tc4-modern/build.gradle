@@ -12,7 +12,7 @@ dependencies {
     compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge-api:${rootProject.jei_version}")
     // Optional in production. Disable in development with -PwithJei=false.
-    if (providers.gradleProperty('withJei').getOrElse('true').toBoolean()) {
+    if (rootProject.devProperty('withJei').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge:${rootProject.jei_version}")
     }
     testImplementation files(rootProject.mfclApiFile)
@@ -23,15 +23,30 @@ dependencies {
 
 tasks.named('test') { useJUnitPlatform() }
 
-def mfclRuntime = providers.gradleProperty('mfclRuntimeJar')
+def mfclRuntime = rootProject.devProperty('mfclRuntimeJar').orElse(providers.provider {
+    def bundled = rootProject.file("libs/mfcl-${rootProject.mfcl_version}.jar")
+    bundled.isFile() ? bundled.absolutePath : null
+})
 if (mfclRuntime.isPresent()) {
-    dependencies { runtimeOnly fg.deobf(files(rootProject.file(mfclRuntime.get()))) }
+    def runtimeJar = rootProject.file(mfclRuntime.get())
+    repositories { flatDir { dirs runtimeJar.parentFile } }
+    // ForgeGradle cannot remap files(...) dependencies in a development client.
+    def artifactName = runtimeJar.name.replaceFirst(/\.jar$/, '')
+    dependencies { runtimeOnly fg.deobf("local.mfcl:${artifactName}:local") }
 }
 
 tasks.register('verifyMfclRuntime') {
     doLast {
         if (!mfclRuntime.isPresent() || !rootProject.file(mfclRuntime.get()).isFile()) {
-            throw new GradleException('runClient/runServer requires -PmfclRuntimeJar=/path/to/full/mfcl-0.1.0.jar. Prepare the legacy game directory as described in README.md.')
+            throw new GradleException('Missing full MFCL runtime. Place mfcl-0.1.0.jar with Developer API support in root libs/, set mfclRuntimeJar in gradle-local.properties, or pass -PmfclRuntimeJar=/path/to/full/mfcl-0.1.0.jar. See README.md.')
+        }
+        new java.util.zip.ZipFile(rootProject.file(mfclRuntime.get())).withCloseable { archive ->
+            for (entry in ['META-INF/mods.toml', 'github/com/gengyoubo/mfcl/api/LegacyRuntime.class',
+                           'META-INF/services/github.com.gengyoubo.mfcl.api.spi.RuntimeProvider']) {
+                if (archive.getEntry(entry) == null) {
+                    throw new GradleException("MFCL runtime lacks ${entry}; supply a full MFCL build with Developer API support, not an API-only or older runtime JAR.")
+                }
+            }
         }
     }
 }
@@ -40,10 +55,16 @@ minecraft {
     copyIdeResources = true
     runs {
         configureEach {
-            workingDirectory rootProject.file(providers.gradleProperty('gameDir').getOrElse('run'))
+            workingDirectory rootProject.file(rootProject.devProperty('gameDir').getOrElse('run'))
             property 'forge.logging.console.level', 'info'
-            if (providers.gradleProperty('legacyRuntimeDir').isPresent()) {
-                property 'mfcl.legacyRuntimeDir', rootProject.file(providers.gradleProperty('legacyRuntimeDir').get()).absolutePath
+            if (providers.gradleProperty('jeiSmokeTest').isPresent()) {
+                property 'tc4modern.jeiSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('mfclApiSmokeTest').isPresent()) {
+                property 'mfcl.test.api', 'true'
+            }
+            if (rootProject.devProperty('legacyRuntimeDir').isPresent()) {
+                property 'mfcl.legacyRuntimeDir', rootProject.file(rootProject.devProperty('legacyRuntimeDir').get()).absolutePath
             }
             mods {
                 tcmodernlib {

@@ -1,0 +1,11 @@
+{
+  "jei.tc4modern.arcane": "Arcane Crafting",
+  "jei.tc4modern.crucible": "Crucible Alchemy",
+  "jei.tc4modern.infusion": "Infusion",
+  "jei.tc4modern.research": "Research: %s",
+  "jei.tc4modern.no_research": "No research requirement",
+  "jei.tc4modern.instability": "Instability: %s",
+  "jei.tc4modern.vis": "Vis cost (before wand discounts)",
+  "jei.tc4modern.essentia": "Required essentia",
+  "jei.tc4modern.view_only": "Recipe display only; original research and crafting rules still apply."
+}

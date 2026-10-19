@@ -9,7 +9,7 @@ TC4: Modern 是原版 Thaumcraft 4 的非官方附属模组，旨在通过 Moder
 **开发目标：** 在不修改、不重新编译、不重新发布原始 TC4 的前提下，为运行于 Minecraft 1.20.1 的原版 TC4 开发真正的现代附属模组。
 
 TC Modern Lib/API 与 TC4: Modern 共用一个仓库，以两个独立 Gradle 子模块开发。
-当前是可构建的工程起点，已接通 MFCL 的公开生命周期 API；尚未迁移研究、扫描、配方或渲染玩法。
+当前已接通 MFCL 的公开生命周期 API，并提供 JEI 静态配方展示。JEI 展示不改变原版研究与合成判定，具体玩法扩展尚未实现。
 
 | 模块 | 职责 | Forge mod ID |
 | --- | --- | --- |
@@ -109,6 +109,10 @@ bash gradlew build
 
 ## 联调与独立发布
 
+IDE 直接运行时，可将带 Developer API 的完整 MFCL JAR 放入根目录 `libs/mfcl-0.1.0.jar`，工程会自动识别，无须每次传入 `-PmfclRuntimeJar`。
+如需指定其他路径，复制 `gradle-local.properties.example` 为 `gradle-local.properties`，填写 `mfclRuntimeJar`、`legacyRuntimeDir` 和 `gameDir`。该本地配置及 `libs/` 下的 JAR 均不提交 Git。
+配置优先级为：命令行／Gradle 属性 → 本地配置 → `libs/` 默认 JAR。刷新 Gradle 后，即可直接执行 `:tc4-modern:runClient`。
+
 ```powershell
 .\gradlew.bat :tc4-modern:runClient '-PmfclRuntimeJar=C:/path/to/mfcl-0.1.0.jar' '-PgameDir=C:/path/to/prepared-game'
 .\gradlew.bat :tc4-modern:runServer '-PmfclRuntimeJar=C:/path/to/mfcl-0.1.0.jar' '-PgameDir=C:/path/to/prepared-server'
@@ -130,6 +134,33 @@ bash gradlew build
 分别构建：`:tc-modern-lib:build`、`:tc4-modern:build`。根 `build` 构建并检查两个模块。
 `publishToMavenLocal` 可发布本地开发产物；独立 API 坐标为 `github.com.gengyoubo.tcmodern:tc-modern-api:0.1.0-SNAPSHOT`，使用者还需显式添加 MFCL API 的 `compileOnly` 依赖。
 目前没有配置公共 Maven 发布服务。
+
+## JEI 兼容 / JEI integration
+
+JEI 是可选的客户端集成，当前固定开发版本为 `15.20.0.106`（Minecraft 1.20.1 / Forge）。完整 JEI 不打入项目 JAR；未安装 JEI 时，公共模组入口不加载 JEI 插件类。
+
+- 显示原版 TC4 的有序／无序奥术合成、坩埚炼金与静态注魔配方，支持 JEI 的配方／用途查询。
+- 材料保留数量、metadata、原始 NBT 与矿物词典候选；通配 metadata 从 JEI 已知物品变体展开，无法映射的必需材料或产物会使该配方跳过。
+- 页面显示基础魔力／源质消耗、研究 key，以及注魔不稳定性。基础魔力消耗未计算法杖减免。
+- 注册实际旧工作台、坩埚和注魔矩阵的工作站入口，并为 TC4 物品注册 metadata／原始 NBT 子类型身份。
+- 仅展示配方，不提供自动填充，不绕过研究，不注册可执行的现代 TC4 特殊配方。普通工作台配方继续由 MFCL 提供，避免重复添加。
+
+当前仅支持 TC4 `4.2.3.5` 的标准静态配方类。动态注魔附魔、修改输入 NBT 的配方、自定义配方子类及无法无损映射的内容不推断为静态配方。
+单页支持至多 16 种要素和 16 个注魔周边材料。跳过数量会写入 `TC4 JEI` 日志摘要，具体原因在 debug 日志中。
+NBT 子类型目前保留完整的原始 NBT；充能等状态也可能区分为不同的 JEI 身份，尚未实现所有物品的语义化 NBT 匹配。
+
+JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafting, crucible alchemy, and static infusion recipes through public MFCL accessors. Ingredients retain metadata, original NBT, counts, and ore alternatives. Pages show base aspect costs, research keys, and infusion instability. Recipe viewing does not unlock research or implement crafting/recipe transfer. Dynamic recipes, custom subclasses, and unrepresentable required ingredients/outputs are omitted with diagnostics. Full original NBT currently participates in subtype identity, including state such as stored charge.
+
+默认开发客户端包含 JEI。可通过 `-PwithJei=false` 关闭开发运行时依赖；实际安装时自行放入 JEI 模组 JAR。
+
+开发验收（须先准备完整 MFCL 和原版 TC4/Baubles 环境）：
+
+```powershell
+.\gradlew.bat :tc4-modern:runClient '-PmfclRuntimeJar=C:/path/to/mfcl-0.1.0.jar' '-PgameDir=C:/path/to/test-game' -PjeiSmokeTest
+```
+
+该选项会新建独立测试世界，检查三类配方的 JEI 注册与全部布局，保存各页面截图到测试游戏目录 `screenshots/`，生成 `logs/tc4modern/jei-smoke.json`，然后退出测试客户端。仅在专用测试游戏目录使用。
+Lib 的 `TcRecipes.snapshot(runtime)` 返回不持有旧对象引用的独立配方数据及诊断，第三方现代附属可复用，不依赖 JEI 或任一版本的 Minecraft 编译类。
 
 ## API 起点与边界
 

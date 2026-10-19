@@ -110,7 +110,13 @@ public final class TcRecipes {
                 int amount = list.amount(aspect);
                 if (amount == 0) continue;
                 var detail = runtime.accessor(Aspect.class, aspect);
-                result.add(new TcRecipe.AspectCost(detail.tag(), detail.color(), amount));
+                var image = detail.image();
+                String texture = "";
+                if (image != null) {
+                    var resource = runtime.accessor(Resource.class, image);
+                    texture = resource.namespace() + ":" + resource.path();
+                }
+                result.add(new TcRecipe.AspectCost(detail.tag(), detail.color(), amount, texture));
             }
             return result;
         }

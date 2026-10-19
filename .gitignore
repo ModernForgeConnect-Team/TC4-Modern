@@ -6,5 +6,6 @@ run/
 run-*/
 logs/
 libs/*.jar
+gradle-local.properties
 __pycache__/
 *.pyc

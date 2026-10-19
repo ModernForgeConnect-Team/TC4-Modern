@@ -3,7 +3,17 @@ plugins {
     id 'net.minecraftforge.gradle' version '6.0.54' apply false
 }
 
-ext.mfclApiFile = file(providers.gradleProperty('mfclApiJar')
+// Machine-specific paths stay out of the shared Gradle properties and Git.
+def developerProperties = new Properties()
+def developerFile = file('gradle-local.properties')
+if (developerFile.isFile()) {
+    developerFile.withReader('UTF-8') { developerProperties.load(it) }
+}
+ext.devProperty = { String key ->
+    providers.gradleProperty(key).orElse(providers.provider { developerProperties.getProperty(key) })
+}
+
+ext.mfclApiFile = file(devProperty('mfclApiJar')
         .getOrElse("libs/mfcl-${mfcl_version}-api.jar"))
 
 tasks.register('verifyMfclApi') {

@@ -1,0 +1,7 @@
+# Copy to gradle-local.properties. Use forward slashes in Windows paths.
+# Command-line -P options override these local values.
+# A full MFCL JAR in root libs/ is discovered automatically without mfclRuntimeJar.
+mfclRuntimeJar=libs/mfcl-0.1.0.jar
+gameDir=run
+# legacyRuntimeDir=C:/path/to/prepared/mfcl/runtime/1.7.10
+# withJei=false

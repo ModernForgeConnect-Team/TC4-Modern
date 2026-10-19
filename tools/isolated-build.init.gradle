@@ -1,0 +1,9 @@
+// Use a separate build directory while a development client holds normal outputs open.
+// Example: gradlew -I tools/isolated-build.init.gradle -PvalidationBuildDir=build/validation build
+allprojects {
+    def outputRoot = providers.gradleProperty('validationBuildDir')
+    if (outputRoot.isPresent()) {
+        def moduleName = project == rootProject ? 'root' : project.name
+        layout.buildDirectory.set(new File(rootProject.file(outputRoot.get()), moduleName))
+    }
+}
