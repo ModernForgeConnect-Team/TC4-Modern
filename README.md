@@ -109,22 +109,28 @@ bash gradlew build
 
 ## 联调与独立发布
 
-IDE 直接运行时，可将带 Developer API 的完整 MFCL JAR 放入根目录 `libs/mfcl-0.1.0.jar`，工程会自动识别，无须每次传入 `-PmfclRuntimeJar`。
-如需指定其他路径，复制 `gradle-local.properties.example` 为 `gradle-local.properties`，填写 `mfclRuntimeJar`、`legacyRuntimeDir` 和 `gameDir`。该本地配置及 `libs/` 下的 JAR 均不提交 Git。
-配置优先级为：命令行／Gradle 属性 → 本地配置 → `libs/` 默认 JAR。刷新 Gradle 后，即可直接执行 `:tc4-modern:runClient`。
+完整 MFCL 运行时（含内嵌旧运行时与 Developer API）由 Gradle 从 MFCL Maven 仓库解析：`github.com.gengyoubo.mfcl:ModernForgeConnectLoader:0.1.1`（见 `gradle.properties` 的 `mfcl_version`），无需手动放入 `libs/`。
+复制 `gradle-local.properties.example` 为 `gradle-local.properties`，按需填写 `gameDir`、`legacyRuntimeDir`；该本地配置不提交 Git。刷新 Gradle 后即可执行 `:tc4-modern:runClient`。
 
 ```powershell
-.\gradlew.bat :tc4-modern:runClient '-PmfclRuntimeJar=C:/path/to/mfcl-0.1.0.jar' '-PgameDir=C:/path/to/prepared-game'
-.\gradlew.bat :tc4-modern:runServer '-PmfclRuntimeJar=C:/path/to/mfcl-0.1.0.jar' '-PgameDir=C:/path/to/prepared-server'
+.\gradlew.bat :tc4-modern:runClient '-PgameDir=C:/path/to/prepared-game'
+.\gradlew.bat :tc4-modern:runServer '-PgameDir=C:/path/to/prepared-server'
 ```
 
-开发运行会加载两个模块的源码。`mfclRuntimeJar` 必须是完整 MFCL JAR，不能用 API JAR 代替。
+开发运行会加载两个模块的源码。
 游戏目录需按 [MFCL 文档](https://github.com/gengyoubo/ModernForgeConnectLoader) 准备旧运行时，并将原始 Thaumcraft 4.2.3.5、Baubles 1.0.1.10 放入 `mods/1.7.10/`；这些文件不由本项目下载或分发。
 现代侧 `mods/` 可选放入 Curios 5.9.1+1.20.1；未安装时保持旧版 Baubles。开发运行时默认包含 Curios，可用 `-PwithCurios=false` 关闭以验证 Baubles 路径。
 如需分离旧运行时目录，可额外指定 `-PlegacyRuntimeDir=...`。服务端任务仅提供入口，专用服务器兼容性尚未验证。
 
 正式安装时在现代 `mods/` 中放入完整 MFCL、`tc-modern-lib` 和 `tc4-modern` 模组 JAR；Curios 为可选，安装后优先于旧版 Baubles。
 `implementation project(':tc-modern-lib')` 仅建立工程依赖，不将 Lib 合并进 TC4 JAR。
+
+### 前置 / Prerequisites
+
+- 现代侧：Minecraft 1.20.1、Forge 47.4.28、完整 MFCL（必需）、Curios 5.9.1+（可选，安装后优先于旧版 Baubles）。
+- 旧运行时（`mods/1.7.10/`）：原版 Thaumcraft 4.2.3.5（必需）及其强制前置 Baubles 1.0.1.10。
+
+原版 TC4 与 Baubles 属于 MFCL 旧运行时中的旧模组，**不会进入现代 Forge 的模组列表**，因此无法写入现代 `mods.toml` 的 `[[dependencies]]`。本模组在 `FMLLoadCompleteEvent` 校验 MFCL 旧运行时确实加载了 `Thaumcraft`，缺失时以明确错误终止加载。
 
 | 产物 | 路径 |
 | --- | --- |

@@ -25,6 +25,8 @@ dependencies {
     if (rootProject.devProperty('withCurios').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}")
     }
+    // Full MFCL runtime (embedded legacy runtime + Developer API) from the MFCL Maven repository.
+    runtimeOnly fg.deobf("github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${rootProject.mfcl_version}")
     testImplementation "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -33,43 +35,16 @@ dependencies {
 
 tasks.named('test') { useJUnitPlatform() }
 
-def mfclRuntime = rootProject.devProperty('mfclRuntimeJar').orElse(providers.provider {
-    def bundled = rootProject.file("libs/mfcl-${rootProject.mfcl_version}.jar")
-    bundled.isFile() ? bundled.absolutePath : null
-})
-if (mfclRuntime.isPresent()) {
-    def runtimeJar = rootProject.file(mfclRuntime.get())
-    repositories { flatDir { dirs runtimeJar.parentFile } }
-    // ForgeGradle cannot remap files(...) dependencies in a development client.
-    def artifactName = runtimeJar.name.replaceFirst(/\.jar$/, '')
-    dependencies { runtimeOnly fg.deobf("local.mfcl:${artifactName}:local") }
-}
-
-tasks.register('verifyMfclRuntime') {
-    doLast {
-        if (!mfclRuntime.isPresent() || !rootProject.file(mfclRuntime.get()).isFile()) {
-            throw new GradleException('Missing full MFCL runtime. Place mfcl-0.1.0.jar with Developer API support in root libs/, set mfclRuntimeJar in gradle-local.properties, or pass -PmfclRuntimeJar=/path/to/full/mfcl-0.1.0.jar. See README.md.')
-        }
-        new java.util.zip.ZipFile(rootProject.file(mfclRuntime.get())).withCloseable { archive ->
-            for (entry in ['META-INF/mods.toml', 'github/com/gengyoubo/mfcl/api/LegacyRuntime.class',
-                           'META-INF/services/github.com.gengyoubo.mfcl.api.spi.RuntimeProvider']) {
-                if (archive.getEntry(entry) == null) {
-                    throw new GradleException("MFCL runtime lacks ${entry}; supply a full MFCL build with Developer API support, not an API-only or older runtime JAR.")
-                }
-            }
-        }
-    }
-}
-
+// The full MFCL runtime is resolved from the MFCL Maven repository (see dependencies above).
 minecraft {
     copyIdeResources = true
     runs {
         configureEach {
             workingDirectory rootProject.file(rootProject.devProperty('gameDir').getOrElse('run'))
             property 'forge.logging.console.level', 'info'
-            // Curios uses Mixin and needs its refmap remapped in development runs.
+            // Dependencies that use Mixin (Curios) ship SRG refmaps; remap them in development runs.
             property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.remapRefMapFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             if (providers.gradleProperty('jeiSmokeTest').isPresent()) {
                 property 'tc4modern.jeiSmokeTest', 'true'
             }
@@ -91,7 +66,6 @@ minecraft {
     }
 }
 tasks.matching { it.name in ['runClient', 'runServer'] }.configureEach {
-    dependsOn 'verifyMfclRuntime'
     dependsOn project(':tc-modern-lib').tasks.named('classes')
 }
 // ForgeGradle resolves source-set task names in the launching project. Lib's
