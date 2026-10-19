@@ -1,5 +1,13 @@
 # TC4: Modern
 
+TC4: Modern is an unofficial addon for the original Thaumcraft 4, designed to run alongside it through Modern Forge Connect Loader (MFCL) on Minecraft 1.20.1. It is not a port, fork, or replacement of Thaumcraft 4. The original mod remains a required dependency.
+
+TC4: Modern 是原版 Thaumcraft 4 的非官方附属模组，旨在通过 Modern Forge Connect Loader（MFCL）与原版模组一同运行于 Minecraft 1.20.1。它不是 Thaumcraft 4 的移植版、分支或替代品。原版模组始终是必需依赖。
+
+**Development goal:** Enable genuine modern addons for the original TC4 on Minecraft 1.20.1 without modifying, recompiling, or redistributing the original TC4.
+
+**开发目标：** 在不修改、不重新编译、不重新发布原始 TC4 的前提下，为运行于 Minecraft 1.20.1 的原版 TC4 开发真正的现代附属模组。
+
 TC Modern Lib/API 与 TC4: Modern 共用一个仓库，以两个独立 Gradle 子模块开发。
 当前是可构建的工程起点，已接通 MFCL 的公开生命周期 API；尚未迁移研究、扫描、配方或渲染玩法。
 
