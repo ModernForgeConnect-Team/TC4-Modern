@@ -5,6 +5,10 @@ repositories {
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
     }
+    maven {
+        url = 'https://maven.theillusivec4.top/'
+        content { includeGroup 'top.theillusivec4.curios' }
+    }
 }
 
 dependencies {
@@ -15,6 +19,9 @@ dependencies {
     if (rootProject.devProperty('withJei').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge:${rootProject.jei_version}")
     }
+    // Curios is a required dependency: original TC4 baubles are equipped through modern Curios slots.
+    compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}:api")
+    runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}")
     testImplementation "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -57,6 +64,9 @@ minecraft {
         configureEach {
             workingDirectory rootProject.file(rootProject.devProperty('gameDir').getOrElse('run'))
             property 'forge.logging.console.level', 'info'
+            // Curios uses Mixin and needs its refmap remapped in development runs.
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.remapRefMapFile', "${projectDir}/build/createSrgToMcp/output.srg"
             if (providers.gradleProperty('jeiSmokeTest').isPresent()) {
                 property 'tc4modern.jeiSmokeTest', 'true'
             }

@@ -1,0 +1,6 @@
+{
+  "order": 180,
+  "size": 1,
+  "icon": "curios:slot/empty_belt_slot",
+  "validators": ["tc4modern:thaumcraft_bauble"]
+}
