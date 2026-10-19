@@ -1,6 +1,12 @@
 base { archivesName = 'tc4-modern' }
 
 repositories {
+    if (rootProject.devProperty('mfclRuntimeJar').isPresent()) {
+        flatDir {
+            dirs rootProject.file(rootProject.devProperty('mfclRuntimeJar').get()).parentFile
+            content { includeGroup 'local.mfcl' }
+        }
+    }
     maven {
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
@@ -41,8 +47,14 @@ dependencies {
         runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}")
     }
     // Full MFCL runtime (embedded legacy runtime + Developer API) from the MFCL Maven repository.
-    runtimeOnly fg.deobf("github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${rootProject.mfcl_version}")
-    testImplementation "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
+    if (rootProject.devProperty('mfclRuntimeJar').isPresent()) {
+        def runtimeJar = rootProject.file(rootProject.devProperty('mfclRuntimeJar').get())
+        if (!runtimeJar.isFile() || !runtimeJar.name.endsWith('.jar')) throw new GradleException("Invalid mfclRuntimeJar: ${runtimeJar}")
+        runtimeOnly fg.deobf("local.mfcl:${runtimeJar.name[0..-5]}:local")
+    } else {
+        runtimeOnly fg.deobf("github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${rootProject.mfcl_version}")
+    }
+    testImplementation rootProject.mfclApiDependency
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -68,6 +80,9 @@ minecraft {
             }
             if (providers.gradleProperty('cinnabarSmokeTest').isPresent()) {
                 property 'tc4modern.cinnabarSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('modernScannerSmokeTest').isPresent()) {
+                property 'tc4modern.modernScannerSmokeTest', 'true'
             }
             if (rootProject.devProperty('legacyRuntimeDir').isPresent()) {
                 property 'mfcl.legacyRuntimeDir', rootProject.file(rootProject.devProperty('legacyRuntimeDir').get()).absolutePath

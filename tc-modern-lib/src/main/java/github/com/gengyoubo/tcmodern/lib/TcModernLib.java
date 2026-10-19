@@ -6,4 +6,5 @@ import net.minecraftforge.fml.common.Mod;
 @Mod(TcModernLib.MOD_ID)
 public final class TcModernLib {
     public static final String MOD_ID = "tcmodernlib";
+    public TcModernLib() { github.com.gengyoubo.tcmodern.lib.scan.ModernScanning.install(); }
 }

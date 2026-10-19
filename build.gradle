@@ -12,6 +12,10 @@ if (developerFile.isFile()) {
 ext.devProperty = { String key ->
     providers.gradleProperty(key).orElse(providers.provider { developerProperties.getProperty(key) })
 }
+// Local MFCL builds are useful while developing a public API before its Maven release.
+ext.mfclApiDependency = devProperty('mfclApiJar').isPresent()
+        ? files(file(devProperty('mfclApiJar').get()))
+        : "github.com.gengyoubo.mfcl:mfcl-api:${mfcl_api_version}"
 
 subprojects {
     apply plugin: 'java-library'
@@ -36,7 +40,7 @@ subprojects {
     minecraft { mappings channel: 'official', version: rootProject.minecraft_version }
     dependencies {
         minecraft "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
-        compileOnly "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
+        compileOnly rootProject.mfclApiDependency
     }
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'

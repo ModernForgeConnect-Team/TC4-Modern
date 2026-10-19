@@ -1,0 +1,9 @@
+{
+  "tcmodern.scan.ready": "按住右键扫描",
+  "tcmodern.scan.scanning": "正在扫描…",
+  "tcmodern.scan.success": "扫描完成",
+  "tcmodern.scan.already": "已经扫描过此目标",
+  "tcmodern.scan.prerequisites": "尚未认识组成此目标的基础要素",
+  "tcmodern.scan.cancelled": "扫描已中断",
+  "tcmodern.scan.error": "扫描失败，请查看日志"
+}

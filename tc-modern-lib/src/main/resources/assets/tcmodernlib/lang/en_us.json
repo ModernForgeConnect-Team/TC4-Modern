@@ -1,0 +1,9 @@
+{
+  "tcmodern.scan.ready": "Hold right click to scan",
+  "tcmodern.scan.scanning": "Scanning…",
+  "tcmodern.scan.success": "Scan complete",
+  "tcmodern.scan.already": "Already scanned",
+  "tcmodern.scan.prerequisites": "Discover the component aspects first",
+  "tcmodern.scan.cancelled": "Scan interrupted",
+  "tcmodern.scan.error": "Scan failed; see the log"
+}
