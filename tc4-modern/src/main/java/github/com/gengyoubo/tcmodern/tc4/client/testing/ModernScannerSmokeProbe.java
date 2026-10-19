@@ -40,6 +40,7 @@ public final class ModernScannerSmokeProbe {
     private final long deadline = System.nanoTime()+TimeUnit.MINUTES.toNanos(6);
     private final Map<String,Object> proof = new LinkedHashMap<>();
     private int stage, frames, firstPool;
+    private int loggedStage = -1;
     private String world;
     private CompletableFuture<?> pending;
     @LegacyType("thaumcraft.common.CommonProxy") public interface Proxy {
@@ -57,7 +58,15 @@ public final class ModernScannerSmokeProbe {
         if (event.phase != TickEvent.Phase.END || stage==99) return;
         var mc=Minecraft.getInstance();
         try {
-            require(System.nanoTime()<deadline,"Timed out at stage "+stage);
+            if (stage != loggedStage) {
+                loggedStage = stage;
+                LogUtils.getLogger().info("TC4_MODERN_SCANNER_SMOKE_STAGE: {}", stage);
+            }
+            require(!(mc.screen instanceof net.minecraft.client.gui.screens.DisconnectedScreen),
+                    "Disconnected at stage " + stage);
+            require(System.nanoTime()<deadline,"Timed out at stage "+stage+", screen="
+                    +(mc.screen==null?"none":mc.screen.getClass().getSimpleName()));
+            if (pending != null && pending.isCompletedExceptionally()) pending.join();
             if (stage==0 && mc.screen instanceof TitleScreen && mc.getOverlay()==null) {
                 org.lwjgl.glfw.GLFW.glfwHideWindow(mc.getWindow().getWindow());
                 mc.options.pauseOnLostFocus=false;mc.options.renderDistance().set(2);
@@ -67,6 +76,7 @@ public final class ModernScannerSmokeProbe {
                         new WorldOptions(42,false,false),access -> access.registryOrThrow(Registries.WORLD_PRESET)
                                 .getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions());stage=1;
             } else if (stage==1 && ready(mc)) {
+                proof.put("initialWorldLogin", true);
                 pending=server(mc,() -> {initialize(player(mc));return true;});stage=2;
             } else if (stage==2 && pending.isDone() && ready(mc) && mc.player.getY()>79 && target(mc,BLOCK)) {
                 pending.join();hold(mc);frames=0;stage=3;
@@ -116,11 +126,11 @@ public final class ModernScannerSmokeProbe {
         require(rules.get(ScanKey.block("minecraft:deepslate_iron_ore")).equals(rules.get(ScanKey.block("minecraft:iron_ore"))),"Deepslate ore inheritance differs");
         require(rules.get(ScanKey.block("minecraft:cut_copper_stairs")).equals(rules.get(ScanKey.block("minecraft:copper_block"))),"Copper stair inheritance differs");
         proof.put("mainBlockAndOreInheritance",true);
-        var blocked=ScanKey.item("test:unknown_prerequisites");
-        require(ScanResearch.complete(player,blocked,AspectValues.of("alienis",1))==ScanResearch.Outcome.MISSING_PREREQUISITES,"Original prerequisite bypassed");
+        var blocked=ScanKey.block("minecraft:sculk");
+        require(!api.withPlayer(player,old -> api.accessor(ScanAccessors.Manager.class).complete(old,result(api,blocked),"@")),"Original prerequisite bypassed");
         require(!ScanResearch.scanned(player,blocked),"Rejected scan recorded");proof.put("originalPrerequisitesEnforced",true);
         int before=pool(player,"terra");
-        try { api.withPlayer(player,old -> {api.accessor(ScanAccessors.Manager.class).award(old,api.accessor(ScanAccessors.Aspect.class).find("terra"),8);throw new IllegalStateException("expected rollback");}); }
+        try { api.withPlayer(player,old -> {api.accessor(ScanAccessors.Manager.class).complete(old,result(api,BLOCK),"@");throw new IllegalStateException("expected rollback");}); }
         catch(LegacyAccessException expected) { }
         require(pool(player,"terra")==before,"Failed player transaction leaked points");proof.put("failedPlayerTransactionRollsBack",true);
         var borrowed=new AtomicReference<LegacyObject>();api.withPlayer(player,old -> {borrowed.set(old);return true;});
@@ -130,17 +140,18 @@ public final class ModernScannerSmokeProbe {
         for(BlockPos pos:BlockPos.betweenClosed(-2,80,1,2,84,8))player.serverLevel().setBlockAndUpdate(pos,Blocks.AIR.defaultBlockState());
         var scanner=api.mappings().toHost(LegacyMappings.ITEM_STACK,api.stack(new LegacyStack("Thaumcraft:ItemThaumometer",0,1,"")),ItemStack.class).orElseThrow();
         player.setItemInHand(InteractionHand.MAIN_HAND,scanner);
-        player.serverLevel().setBlockAndUpdate(TARGET,Blocks.STONE.defaultBlockState());require(ModernScanTargets.find(player).isEmpty(),"Original block path intercepted");
+        player.serverLevel().setBlockAndUpdate(TARGET,Blocks.STONE.defaultBlockState());
+        require(originalTarget(player,ScanKey.block("minecraft:stone")),"Original TC4 did not recognize stone");
         player.serverLevel().setBlockAndUpdate(TARGET,Blocks.DEEPSLATE.defaultBlockState());
-        require(ModernScanTargets.find(player).orElseThrow().key().equals(BLOCK),"Server did not resolve modern block");
+        require(originalTarget(player,BLOCK),"Original TC4 did not recognize modern block");
         player.serverLevel().setBlockAndUpdate(new BlockPos(0,81,2),Blocks.STONE.defaultBlockState());
-        require(ModernScanTargets.find(player).isEmpty(),"Target behind wall accepted");
+        require(!originalTarget(player,BLOCK),"Original target search accepted a block behind a wall");
         player.serverLevel().setBlockAndUpdate(new BlockPos(0,81,2),Blocks.AIR.defaultBlockState());proof.put("occlusionAndOriginalPath",true);
     }
     private void prepareItem(ServerPlayer player) {
         var api=TcModernApi.runtime().orElseThrow();
         api.withPlayer(player,old -> {
-            var knowledge=knowledge(api);var types=api.accessor(ScanAccessors.Aspect.class);
+            var knowledge=knowledge(api);var types=api.accessor(ScanAccessors.AspectLookup.class);
             var tags=new HashSet<String>();ScanRules.server().values().forEach(values -> tags.addAll(values.amounts().keySet()));
             tags.addAll(List.of("vacuos","vitreus","victus","mortuus","spiritus","potentia","motus","tenebrae"));
             for(String tag:tags) {var aspect=types.find(tag);if(aspect!=null)knowledge.discover(player.getGameProfile().getName(),aspect);}return true;
@@ -157,11 +168,30 @@ public final class ModernScannerSmokeProbe {
         return api.accessor(Knowledge.class,api.accessor(Proxy.class,api.accessor(ScanAccessors.Thaumcraft.class).proxy()).knowledge());
     }
     private static int pool(ServerPlayer player,String tag) {
-        var api=TcModernApi.runtime().orElseThrow();return api.withPlayer(player,old -> (int)knowledge(api).pool(player.getGameProfile().getName(),api.accessor(ScanAccessors.Aspect.class).find(tag)));
+        var api=TcModernApi.runtime().orElseThrow();return api.withPlayer(player,old -> (int)knowledge(api).pool(player.getGameProfile().getName(),api.accessor(ScanAccessors.AspectLookup.class).find(tag)));
     }
     private static boolean ready(Minecraft mc){return mc.player!=null&&mc.level!=null&&mc.screen==null;}
     private static ServerPlayer player(Minecraft mc){return mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());}
-    private static boolean target(Minecraft mc,ScanKey key){mc.player.setYRot(0);mc.player.setXRot(0);return ModernScanTargets.find(mc.player).map(value -> value.key().equals(key)).orElse(false);}
+    private static boolean target(Minecraft mc,ScanKey key){
+        mc.player.setYRot(0);mc.player.setXRot(0);
+        if(key.kind()==ScanKey.Kind.BLOCK)return net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(mc.level.getBlockState(TARGET).getBlock()).toString().equals(key.id());
+        var box=new net.minecraft.world.phys.AABB(TARGET).inflate(2);
+        if(key.kind()==ScanKey.Kind.ITEM)return mc.level.getEntitiesOfClass(ItemEntity.class,box).stream().anyMatch(item -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem().getItem()).toString().equals(key.id()));
+        return mc.level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class,box).stream().anyMatch(entity -> net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString().equals(key.id()));
+    }
+    private static LegacyObject result(LegacyRuntime api,ScanKey key) {
+        var source=OriginalScanBridge.stack(key);var item=api.accessor(ScanAccessors.Stack.class,api.stack(source)).item();
+        return api.accessor(ScanAccessors.ResultFactory.class).create((byte)1,api.accessor(ScanAccessors.Item.class).id(item),source.metadata(),null,"");
+    }
+    private static boolean originalTarget(ServerPlayer player,ScanKey key) {
+        var api=TcModernApi.runtime().orElseThrow();
+        return api.withPlayer(player,old -> {
+            var stack=api.stack(new LegacyStack("Thaumcraft:ItemThaumometer",0,1,""));
+            var item=api.accessor(ScanAccessors.Stack.class,stack).item();
+            var scan=api.accessor(ScanAccessors.Thaumometer.class,item).target(stack,api.accessor(ScanAccessors.Entity.class,old).world(),old,0);
+            return scan!=null&&api.accessor(ScanAccessors.Result.class,scan).id()==api.accessor(ScanAccessors.Result.class,result(api,key)).id();
+        });
+    }
     private static void hold(Minecraft mc){mc.options.keyUse.setDown(true);}
     private static void release(Minecraft mc){mc.options.keyUse.setDown(false);}
     private static <T>CompletableFuture<T>server(Minecraft mc,Callable<T> action){return mc.getSingleplayerServer().submit(() -> {try{return action.call();}catch(Exception failure){throw new IllegalStateException(failure);}});}
