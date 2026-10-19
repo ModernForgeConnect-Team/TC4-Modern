@@ -176,6 +176,18 @@ Curios `5.9.1`（Minecraft 1.20.1 / Forge）是与旧版 Baubles 二选一的**�
 
 Curios is an optional, mutually exclusive alternative to the original Baubles slots: when Curios is installed it takes precedence and this mod no longer drives the legacy Baubles slots; when Curios is absent the mod does not intervene at all and no Curios class is loaded. Original TC4 hard-depends on Baubles, so both always coexist on the legacy runtime; the choice is only about which system provides the modern slots. Legacy TC4 item ids are opaque (`mfcl:legacy/<hex>`), so a Curios predicate is used instead of static item tags. Only modern-side placement is bridged: the legacy Baubles inventory and worn-item effects are not synchronized.
 
+## 深板岩变体 / Deepslate variants
+
+在 `tc4modern` 命名空间下新增原版 TC4 矿石与元素蕴魔石的现代深板岩变体方块，共 8 种：朱砂矿、风/火/水/地/秩序/混沌蕴魔石、琥珀矿。每种方块含对应物品、方块状态、模型与材质。
+
+- 材质为程序生成的原创占位贴图，不使用或重新分发原版 TC4 材质；生成脚本见 `tools/generate_deepslate_assets.ps1`。
+- 采集掉落通过 MFCL 公开物品映射在运行时解析，产出与原版石头变体一致的 TC4 物品：朱砂矿石（`Thaumcraft:blockCustomOre` meta 0）、对应元素碎片（`Thaumcraft:ItemShard` meta 0–5，受幸运影响数量）、琥珀（`Thaumcraft:ItemResource` meta 6，受幸运影响数量）。
+- 精准采集保留深板岩方块本身；需要对应等级镐（朱砂、琥珀需要铁镐及以上），与原版一致。
+- 不复制原版 TC4 特殊工具（元素镐 / 原初粉碎者 / 探索焦点）触发的原生碎片簇特殊采集结果。
+- 暂不包含世界生成，方块仅在创造物品栏（`TC4: Modern`）提供。
+
+Modern deepslate variants of the original TC4 ores and elemental infused stones are registered under `tc4modern` (Cinnabar, the six elemental infused stones, and Amber) with matching items, block states, models, and procedurally generated placeholder textures. Drops are resolved at runtime through MFCL's public item mapping and match the original stone variants; Silk Touch preserves the deepslate block. World generation is not included.
+
 ## API 起点与边界
 
 ```java
