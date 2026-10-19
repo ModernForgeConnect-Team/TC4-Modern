@@ -25,15 +25,14 @@ import net.minecraft.world.level.material.MapColor;
 /**
  * A modern deepslate variant of an original Thaumcraft ore or infused stone.
  *
- * <p>Drops are resolved at runtime through MFCL's public item mapping so the original TC4 items
- * are produced, exactly like the original stone variants (Cinnabar Ore, the six elemental
- * shards, and Amber). Silk Touch preserves the deepslate block itself. No original TC4 behavior
+ * <p>Cinnabar drops the deepslate ore itself. Shard and amber drops are resolved at runtime
+ * through MFCL's public item mapping. Silk Touch preserves the deepslate block itself. No original TC4 behavior
  * such as the special cluster mining result of special TC4 tools is reproduced here.</p>
  */
 public final class DeepslateLegacyOreBlock extends Block {
-    /** The original TC4 resource dropped by this block. */
+    /** Cinnabar drops itself; infused stone and amber use original TC4 resources. */
     public enum Drop {
-        CINNABAR("Thaumcraft:blockCustomOre"),
+        CINNABAR(null),
         INFUSED("Thaumcraft:ItemShard"),
         AMBER("Thaumcraft:ItemResource");
 
@@ -79,7 +78,7 @@ public final class DeepslateLegacyOreBlock extends Block {
 
     private ItemStack resolveDrop(BlockState state, ItemStack tool, RandomSource random) {
         if (!tool.isCorrectToolForDrops(state)) return ItemStack.EMPTY;
-        if (tool.getEnchantmentLevel(Enchantments.SILK_TOUCH) > 0) {
+        if (drop == Drop.CINNABAR || tool.getEnchantmentLevel(Enchantments.SILK_TOUCH) > 0) {
             return new ItemStack(this);
         }
         int fortune = tool.getEnchantmentLevel(Enchantments.BLOCK_FORTUNE);

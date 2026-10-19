@@ -9,6 +9,21 @@ repositories {
         url = 'https://maven.theillusivec4.top/'
         content { includeGroup 'top.theillusivec4.curios' }
     }
+    maven {
+        // location of the maven that hosts JEI files before January 2023
+        name = "Progwml6's maven"
+        url = "https://dvs1.progwml6.com/files/maven/"
+    }
+    maven {
+        // location of the maven that hosts JEI files since January 2023
+        name = "Jared's maven"
+        url = "https://maven.blamejared.com/"
+    }
+    maven {
+        // location of a maven mirror for JEI files, as a fallback
+        name = "ModMaven"
+        url = "https://modmaven.dev"
+    }
 }
 
 dependencies {
@@ -50,6 +65,9 @@ minecraft {
             }
             if (providers.gradleProperty('mfclApiSmokeTest').isPresent()) {
                 property 'mfcl.test.api', 'true'
+            }
+            if (providers.gradleProperty('cinnabarSmokeTest').isPresent()) {
+                property 'tc4modern.cinnabarSmokeTest', 'true'
             }
             if (rootProject.devProperty('legacyRuntimeDir').isPresent()) {
                 property 'mfcl.legacyRuntimeDir', rootProject.file(rootProject.devProperty('legacyRuntimeDir').get()).absolutePath

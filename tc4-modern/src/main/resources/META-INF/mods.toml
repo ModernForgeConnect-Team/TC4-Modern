@@ -47,6 +47,19 @@ side="BOTH"
 [[dependencies.tc4modern]]
 modId="mfcl"
 mandatory=true
-versionRange="[0.1.0,0.2.0)"
+versionRange="[0.1.3,0.2.0)"
 ordering="AFTER"
+side="BOTH"
+
+# MFCL validates original mods after successful legacy FML initialization.
+[[mfclDependencies.tc4modern]]
+modId="Thaumcraft"
+mandatory=true
+versionRange="[4.2.3.5]"
+side="BOTH"
+
+[[mfclDependencies.tc4modern]]
+modId="Baubles"
+mandatory=true
+versionRange="[1.0.1.10]"
 side="BOTH"

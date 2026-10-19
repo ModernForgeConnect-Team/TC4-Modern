@@ -1,0 +1,14 @@
+{
+  "type": "tc4modern:legacy_result_smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "tc4modern:deepslate_cinnabar_ore"
+  },
+  "result": {
+    "legacy_item": "Thaumcraft:ItemResource",
+    "metadata": 3,
+    "count": 1
+  },
+  "experience": 1.0,
+  "cookingtime": 200
+}

@@ -109,7 +109,7 @@ bash gradlew build
 
 ## 联调与独立发布
 
-完整 MFCL 运行时（含内嵌旧运行时与 Developer API）由 Gradle 从 MFCL Maven 仓库解析：`github.com.gengyoubo.mfcl:ModernForgeConnectLoader:0.1.1`（见 `gradle.properties` 的 `mfcl_version`），无需手动放入 `libs/`。
+完整 MFCL 模组（含旧运行时加载器与 Developer API）由 Gradle 从 MFCL Maven 仓库解析（版本见 `gradle.properties` 的 `mfcl_version`），无需手动放入 `libs/`。MFCL 模组不包含原版 TC4、Baubles 或私有 Minecraft/Forge 1.7.10 运行时；这些输入仍须单独准备。
 复制 `gradle-local.properties.example` 为 `gradle-local.properties`，按需填写 `gameDir`、`legacyRuntimeDir`；该本地配置不提交 Git。刷新 Gradle 后即可执行 `:tc4-modern:runClient`。
 
 ```powershell
@@ -122,15 +122,19 @@ bash gradlew build
 现代侧 `mods/` 可选放入 Curios 5.9.1+1.20.1；未安装时保持旧版 Baubles。开发运行时默认包含 Curios，可用 `-PwithCurios=false` 关闭以验证 Baubles 路径。
 如需分离旧运行时目录，可额外指定 `-PlegacyRuntimeDir=...`。服务端任务仅提供入口，专用服务器兼容性尚未验证。
 
+默认 `gameDir=run` 时，原始 TC4/Baubles JAR 必须直接位于本仓库的 `run/mods/1.7.10/`，私有运行时位于 `run/mfcl/runtime/1.7.10/`（含 `runtime-manifest.json`、`minecraft-forge-1.7.10-srg.jar` 和清单中的依赖）。`legacyRuntimeDir` 只改变私有运行时位置，不改变旧模组扫描目录。已有 MFCL 联调环境时，可将其原始旧模组复制到本项目 `run/mods/1.7.10/`，并通过本地配置的 `legacyRuntimeDir` 指向已准备的运行时。
+
+若 MFCL 报旧前置未成功加载，先检查当前游戏目录的 `logs/mfcl/legacy-1.7.10.json`：`NO_LEGACY_MODS` / `0 legacy archives` 表示旧模组扫描目录为空，并非未安装 MFCL。存在旧模组但未启动时，再查看该报告的 `diagnostics` 和 `logs/mfcl/runtime-1.7.10.json` 中的运行时启动错误。
+
 正式安装时在现代 `mods/` 中放入完整 MFCL、`tc-modern-lib` 和 `tc4-modern` 模组 JAR；Curios 为可选，安装后优先于旧版 Baubles。
 `implementation project(':tc-modern-lib')` 仅建立工程依赖，不将 Lib 合并进 TC4 JAR。
 
 ### 前置 / Prerequisites
 
-- 现代侧：Minecraft 1.20.1、Forge 47.4.28、完整 MFCL（必需）、Curios 5.9.1+（可选，安装后优先于旧版 Baubles）。
+- 现代侧：Minecraft 1.20.1、Forge 47.4.28、完整 MFCL 0.1.4+（低于 0.2.0，必需）、Curios 5.9.1+（可选，安装后优先于旧版 Baubles）。
 - 旧运行时（`mods/1.7.10/`）：原版 Thaumcraft 4.2.3.5（必需）及其强制前置 Baubles 1.0.1.10。
 
-原版 TC4 与 Baubles 属于 MFCL 旧运行时中的旧模组，**不会进入现代 Forge 的模组列表**，因此无法写入现代 `mods.toml` 的 `[[dependencies]]`。本模组在 `FMLLoadCompleteEvent` 校验 MFCL 旧运行时确实加载了 `Thaumcraft`，缺失时以明确错误终止加载。
+原版 TC4 与 Baubles 属于 MFCL 旧运行时中的旧模组，**不会进入现代 Forge 的模组列表**，因此不能写入普通 `[[dependencies.tc4modern]]`。本模组通过 `mods.toml` 的 `[[mfclDependencies.tc4modern]]` 声明原版 Thaumcraft `4.2.3.5` 和 Baubles `1.0.1.10`，由 MFCL 0.1.4+ 在自身构造阶段校验实际加载结果及版本；缺失、版本不符或旧运行时启动失败均会阻止启动。附属端不再重复执行 `FMLLoadCompleteEvent` 检查。当前使用的公共 API 接口未改变，编译用 `mfcl_api_version` 保持 0.1.3。
 
 | 产物 | 路径 |
 | --- | --- |
@@ -187,12 +191,15 @@ Curios is an optional, mutually exclusive alternative to the original Baubles sl
 在 `tc4modern` 命名空间下新增原版 TC4 矿石与元素蕴魔石的现代深板岩变体方块，共 8 种：朱砂矿、风/火/水/地/秩序/混沌蕴魔石、琥珀矿。每种方块含对应物品、方块状态、模型与材质。
 
 - 材质为程序生成的原创占位贴图，不使用或重新分发原版 TC4 材质；生成脚本见 `tools/generate_deepslate_assets.ps1`。
-- 采集掉落通过 MFCL 公开物品映射在运行时解析，产出与原版石头变体一致的 TC4 物品：朱砂矿石（`Thaumcraft:blockCustomOre` meta 0）、对应元素碎片（`Thaumcraft:ItemShard` meta 0–5，受幸运影响数量）、琥珀（`Thaumcraft:ItemResource` meta 6，受幸运影响数量）。
+- 深板岩朱砂矿石普通挖掘直接掉落自身（时运不增加数量），可在普通熔炉烧炼为 1 个原版水银（`Thaumcraft:ItemResource` meta 3），耗时 200 tick、经验 1.0，与原版 TC4 朱砂烧炼一致。水银产物通过 MFCL 公开映射解析，保留原始 metadata/NBT，并使用标准熔炉配方同步。
+- 蕴魔石与琥珀的采集掉落通过 MFCL 公开物品映射在运行时解析：对应元素碎片（`Thaumcraft:ItemShard` meta 0–5，受幸运影响数量）、琥珀（`Thaumcraft:ItemResource` meta 6，受幸运影响数量）。
 - 精准采集保留深板岩方块本身；需要对应等级镐（朱砂、琥珀需要铁镐及以上），与原版一致。
 - 不复制原版 TC4 特殊工具（元素镐 / 原初粉碎者 / 探索焦点）触发的原生碎片簇特殊采集结果。
 - 暂不包含世界生成，方块仅在创造物品栏（`TC4: Modern`）提供。
 
-Modern deepslate variants of the original TC4 ores and elemental infused stones are registered under `tc4modern` (Cinnabar, the six elemental infused stones, and Amber) with matching items, block states, models, and procedurally generated placeholder textures. Drops are resolved at runtime through MFCL's public item mapping and match the original stone variants; Silk Touch preserves the deepslate block. World generation is not included.
+Modern deepslate variants of the original TC4 ores and elemental infused stones are registered under `tc4modern` (Cinnabar, the six elemental infused stones, and Amber) with matching items, block states, models, and procedurally generated placeholder textures. Deepslate cinnabar drops itself and smelts into one original Quicksilver (200 ticks, 1.0 XP). Shard/amber drops and the smelting output use MFCL's public item mapping; Silk Touch preserves the deepslate block. World generation is not included.
+
+资料参考：[MC 百科 TC4 水银](https://www.mcmod.cn/item/5329.html)（朱砂矿石与水银 1:1 熔炉配方）。
 
 ## API 起点与边界
 
