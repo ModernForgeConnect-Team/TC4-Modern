@@ -1,6 +1,27 @@
 base { archivesName = 'tc4-modern' }
 
-dependencies { implementation project(':tc-modern-lib') }
+repositories {
+    maven {
+        url = 'https://maven.blamejared.com'
+        content { includeGroup 'mezz.jei' }
+    }
+}
+
+dependencies {
+    implementation project(':tc-modern-lib')
+    compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge-api:${rootProject.jei_version}")
+    // Optional in production. Disable in development with -PwithJei=false.
+    if (providers.gradleProperty('withJei').getOrElse('true').toBoolean()) {
+        runtimeOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge:${rootProject.jei_version}")
+    }
+    testImplementation files(rootProject.mfclApiFile)
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') { useJUnitPlatform() }
 
 def mfclRuntime = providers.gradleProperty('mfclRuntimeJar')
 if (mfclRuntime.isPresent()) {

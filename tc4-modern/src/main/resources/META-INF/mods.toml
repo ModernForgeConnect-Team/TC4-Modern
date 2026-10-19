@@ -10,6 +10,13 @@ authors="gengyoubo"
 description='''Modern gameplay integration for original Thaumcraft 4 through TC Modern Lib and MFCL.'''
 
 [[dependencies.tc4modern]]
+modId="jei"
+mandatory=false
+versionRange="[15.20,16)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.tc4modern]]
 modId="forge"
 mandatory=true
 versionRange="[47.4.28,48)"
