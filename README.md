@@ -199,7 +199,9 @@ Curios is an optional, mutually exclusive alternative to the original Baubles sl
 
 Modern deepslate variants of the original TC4 ores and elemental infused stones are registered under `tc4modern` (Cinnabar, the six elemental infused stones, and Amber) with matching items, block states, models, and procedurally generated placeholder textures. Deepslate cinnabar drops itself and smelts into one original Quicksilver (200 ticks, 1.0 XP). Shard/amber drops and the smelting output use MFCL's public item mapping; Silk Touch preserves the deepslate block. World generation is not included.
 
-资料参考：[MC 百科 TC4 水银](https://www.mcmod.cn/item/5329.html)（朱砂矿石与水银 1:1 熔炉配方）。
+资料参考：[MC 百科 TC4 朱砂矿石](https://www.mcmod.cn/item/5223.html)、[水银](https://www.mcmod.cn/item/5329.html)（朱砂矿石与水银 1:1 熔炉配方）。
+
+在准备好旧运行时和 TC4/Baubles 的专用测试游戏目录中，执行 `:tc4-modern:runClient -PgameDir=run-cinnabar-smoke -PcinnabarSmokeTest` 可验证普通挖掘、时运、精准采集、低等级工具、实际熔炉烧炼和客户端配方同步。该选项会创建测试世界，输出 `logs/tc4modern/cinnabar-smoke.json`，然后退出客户端。
 
 ## API 起点与边界
 

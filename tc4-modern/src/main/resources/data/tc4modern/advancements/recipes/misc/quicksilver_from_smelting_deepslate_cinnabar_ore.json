@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_ore": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{"items": ["tc4modern:deepslate_cinnabar_ore"]}]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "tc4modern:quicksilver_from_smelting_deepslate_cinnabar_ore"
+      }
+    }
+  },
+  "requirements": [["has_ore", "has_the_recipe"]],
+  "rewards": {
+    "recipes": ["tc4modern:quicksilver_from_smelting_deepslate_cinnabar_ore"]
+  }
+}
