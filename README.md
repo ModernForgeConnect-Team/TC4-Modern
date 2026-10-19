@@ -11,6 +11,64 @@ TC Modern Lib/API 与 TC4: Modern 共用一个仓库，以两个独立 Gradle �
 依赖方向：`TC4: Modern → TC Modern Lib/API → MFCL public API`。
 MFCL 仍是独立项目，不引用其 `internal`、`bridge` 或 `compat` 实现，不将旧 Minecraft / Forge / TC4 类加入现代编译类路径。
 
+## Disclaimer / 免责声明
+
+### English
+
+**TC4: Modern is an unofficial, independent, community-developed project.**
+
+This project aims to extend the functionality of the original Thaumcraft 4 for Minecraft 1.7.10 through Modern Forge Connect Loader (MFCL), providing modern APIs, compatibility features, and additional gameplay content.
+
+**TC4: Modern is not an official port of Thaumcraft 4 and is not affiliated with, endorsed by, or authorized by the original Thaumcraft developers.**
+
+#### Copyright and Third-Party Content
+
+- Thaumcraft and its original code, textures, models, sounds, and other assets remain the property of their respective copyright holders.
+- This repository is intended to contain independently developed code and original project assets.
+- Original Thaumcraft 4 source code and copyrighted assets will not be redistributed without appropriate permission.
+- Users must obtain the original Thaumcraft 4 mod and its required dependencies separately.
+- The project's license, when provided, applies only to content that its contributors have the right to license.
+
+#### Relationship with MFCL
+
+This project uses Modern Forge Connect Loader (MFCL) to interact with the original Thaumcraft 4 runtime.
+
+TC Modern Lib/API provides interfaces for modern addons, while TC4: Modern develops additional functionality based on those interfaces.
+
+Neither module is intended to replace or redistribute the original Thaumcraft 4 mod.
+
+#### Rights Holder Contact
+
+If you are a rights holder and have concerns about any content in this repository, please open a GitHub issue or contact the maintainers through the repository's published contact channels so the concern can be reviewed.
+
+### 中文
+
+**TC4: Modern 是一个非官方、独立、由社区开发的项目。**
+
+本项目旨在通过 Modern Forge Connect Loader（MFCL）扩展 Minecraft 1.7.10 原版 Thaumcraft 4 的功能，提供现代 API、兼容性功能和额外的玩法内容。
+
+**TC4: Modern 并非 Thaumcraft 4 的官方移植项目，与 Thaumcraft 原开发者不存在隶属关系，也未获得其认可或授权。**
+
+#### 版权与第三方内容
+
+- Thaumcraft 及其原始代码、纹理、模型、音效和其他资源仍归各自的版权持有人所有。
+- 本仓库旨在收录独立开发的代码和本项目原创资源。
+- 未经适当授权，本项目不会重新分发 Thaumcraft 4 的原始源代码及受版权保护的资源。
+- 用户必须自行另行获取原版 Thaumcraft 4 模组及其所需的依赖。
+- 本项目的许可证（如有）仅适用于贡献者有权授予许可的内容。
+
+#### 与 MFCL 的关系
+
+本项目使用 Modern Forge Connect Loader（MFCL）与原版 Thaumcraft 4 运行时进行交互。
+
+TC Modern Lib/API 为现代附属模组提供接口，TC4: Modern 则基于这些接口开发额外功能。
+
+这两个模块均不旨在替代或重新分发原版 Thaumcraft 4 模组。
+
+#### 权利人联系渠道
+
+如果您是相关权利人，并对本仓库中的任何内容存在疑虑，请提交 GitHub issue，或通过本仓库公布的联系渠道联系维护者，以便对相关问题进行审查。
+
 ## 环境与首次构建
 
 - JDK 17，Minecraft 1.20.1，Forge 47.4.28，Gradle Wrapper 8.8。
