@@ -17,11 +17,13 @@ import top.theillusivec4.curios.api.SlotResult;
 /**
  * Assigns original Thaumcraft baubles to modern Curios slots.
  *
- * <p>Original TC4 items are registered by MFCL under opaque {@code mfcl:legacy/<hex>} keys, so
- * static {@code curios:} item tags cannot reference them. Slot assignment therefore uses a
- * Curios predicate that inspects the legacy identity through the public MLA API. Only the modern
- * side placement is bridged: the original Baubles inventory and its worn-item effects still run
- * in the isolated legacy runtime and are not synchronized with Curios.</p>
+ * <p>Curios takes precedence over the original Baubles slots: this mod only drives the legacy
+ * slot system when Curios is absent, in which case none of these classes are loaded. Original
+ * TC4 items are registered by MFCL under opaque {@code mfcl:legacy/<hex>} keys, so static
+ * {@code curios:} item tags cannot reference them. Slot assignment therefore uses a Curios
+ * predicate that inspects the legacy identity through the public MLA API. Only the modern side
+ * placement is bridged: the original Baubles inventory and its worn-item effects still run in the
+ * isolated legacy runtime and are not synchronized with Curios.</p>
  */
 public final class Tc4CuriosCompat {
     private static final ResourceLocation VALIDATOR = ResourceLocation.fromNamespaceAndPath("tc4modern", "thaumcraft_bauble");
@@ -34,6 +36,7 @@ public final class Tc4CuriosCompat {
 
     /** Registers the shared slot validator and scans the legacy runtime once it is ready. */
     public static void install() {
+        LogUtils.getLogger().info("TC4 Curios: Curios detected; using modern Curios slots instead of the legacy Baubles slots.");
         CuriosApi.registerCurioPredicate(VALIDATOR, Tc4CuriosCompat::matchesAssignedSlot);
         TcModernApi.whenReady(Tc4CuriosCompat::collect);
     }

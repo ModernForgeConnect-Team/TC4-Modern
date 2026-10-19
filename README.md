@@ -120,9 +120,10 @@ IDE 直接运行时，可将带 Developer API 的完整 MFCL JAR 放入根目录
 
 开发运行会加载两个模块的源码。`mfclRuntimeJar` 必须是完整 MFCL JAR，不能用 API JAR 代替。
 游戏目录需按 [MFCL 文档](https://github.com/gengyoubo/ModernForgeConnectLoader) 准备旧运行时，并将原始 Thaumcraft 4.2.3.5、Baubles 1.0.1.10 放入 `mods/1.7.10/`；这些文件不由本项目下载或分发。
+现代侧 `mods/` 可选放入 Curios 5.9.1+1.20.1；未安装时保持旧版 Baubles。开发运行时默认包含 Curios，可用 `-PwithCurios=false` 关闭以验证 Baubles 路径。
 如需分离旧运行时目录，可额外指定 `-PlegacyRuntimeDir=...`。服务端任务仅提供入口，专用服务器兼容性尚未验证。
 
-正式安装时在现代 `mods/` 中分别放入完整 MFCL、`tc-modern-lib` 和 `tc4-modern` 三个模组 JAR。
+正式安装时在现代 `mods/` 中放入完整 MFCL、`tc-modern-lib` 和 `tc4-modern` 模组 JAR；Curios 为可选，安装后优先于旧版 Baubles。
 `implementation project(':tc-modern-lib')` 仅建立工程依赖，不将 Lib 合并进 TC4 JAR。
 
 | 产物 | 路径 |
@@ -161,6 +162,19 @@ JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafti
 
 该选项会新建独立测试世界，检查三类配方的 JEI 注册与全部布局，保存各页面截图到测试游戏目录 `screenshots/`，生成 `logs/tc4modern/jei-smoke.json`，然后退出测试客户端。仅在专用测试游戏目录使用。
 Lib 的 `TcRecipes.snapshot(runtime)` 返回不持有旧对象引用的独立配方数据及诊断，第三方现代附属可复用，不依赖 JEI 或任一版本的 Minecraft 编译类。
+
+## Curios 兼容 / Curios integration
+
+Curios `5.9.1`（Minecraft 1.20.1 / Forge）是与旧版 Baubles 二选一的**可选**前置，`mods.toml` 中声明为 `mandatory=false`。**安装了 Curios 时优先使用 Curios，本模块不再驱动旧版 Baubles 饰品槽；未安装 Curios 时本模块完全不介入，保持旧版 Baubles 原样**（此时不加载任何 Curios 类）。
+
+> 原版 TC4 硬依赖 Baubles（`required-after:Baubles`），因此只要运行 TC4，旧版 Baubles 必然存在于旧运行时；“二选一”指由哪一套系统提供现代侧的饰品槽位。
+
+- 注册与旧版 Baubles 对应的现代 Curios 槽位：`amulet`（1 格）、`ring`（2 格）、`belt`（1 格），并授予玩家。
+- 通过 MFCL 公开 MLA API 读取旧版 `baubles.api.IBauble#getBaubleType`，把原版 TC4 饰品按类型归入上述槽位。
+- 原版 TC4 物品在 MFCL 现代注册表中使用非透明 ID（大写 `Thaumcraft:` 会编码为 `mfcl:legacy/<hex>`），无法用静态 `curios:` 物品标签引用，因此改用 Curios 谓词校验（`tc4modern:thaumcraft_bauble`）。
+- 仅桥接现代侧的装备归属：旧运行时中的 Baubles 饰品背包与佩戴效果仍由原版逻辑处理，当前不与其同步，也不复制或替换原版 Baubles 逻辑。
+
+Curios is an optional, mutually exclusive alternative to the original Baubles slots: when Curios is installed it takes precedence and this mod no longer drives the legacy Baubles slots; when Curios is absent the mod does not intervene at all and no Curios class is loaded. Original TC4 hard-depends on Baubles, so both always coexist on the legacy runtime; the choice is only about which system provides the modern slots. Legacy TC4 item ids are opaque (`mfcl:legacy/<hex>`), so a Curios predicate is used instead of static item tags. Only modern-side placement is bridged: the legacy Baubles inventory and worn-item effects are not synchronized.
 
 ## API 起点与边界
 

@@ -3,6 +3,7 @@ package github.com.gengyoubo.tcmodern.tc4;
 import com.mojang.logging.LogUtils;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.tc4.compat.curios.Tc4CuriosCompat;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -20,6 +21,12 @@ public final class Tc4Modern {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
+        // Curios takes precedence over the original Baubles slots. Without Curios this mod does
+        // not touch the legacy slot system at all; Curios classes are never loaded.
+        if (!ModList.get().isLoaded("curios")) {
+            LogUtils.getLogger().info("TC4: Modern did not detect Curios; leaving the original Baubles slot system unchanged.");
+            return;
+        }
         event.enqueueWork(Tc4CuriosCompat::install);
     }
 }

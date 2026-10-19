@@ -19,9 +19,12 @@ dependencies {
     if (rootProject.devProperty('withJei').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge:${rootProject.jei_version}")
     }
-    // Curios is a required dependency: original TC4 baubles are equipped through modern Curios slots.
+    // Curios is optional and takes precedence over the original Baubles slots when present.
+    // Disable in development with -PwithCurios=false to test the Baubles-only path.
     compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}:api")
-    runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}")
+    if (rootProject.devProperty('withCurios').getOrElse('true').toBoolean()) {
+        runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}")
+    }
     testImplementation "github.com.gengyoubo.mfcl:mfcl-api:${rootProject.mfcl_api_version}"
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

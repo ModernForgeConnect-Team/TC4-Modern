@@ -39,7 +39,7 @@ side="BOTH"
 
 [[dependencies.tc4modern]]
 modId="curios"
-mandatory=true
+mandatory=false
 versionRange="[5.9,)"
 ordering="AFTER"
 side="BOTH"

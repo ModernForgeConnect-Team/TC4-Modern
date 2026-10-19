@@ -5,3 +5,4 @@ mfclRuntimeJar=libs/mfcl-0.1.0.jar
 gameDir=run
 # legacyRuntimeDir=C:/path/to/prepared/mfcl/runtime/1.7.10
 # withJei=false
+# withCurios=false
