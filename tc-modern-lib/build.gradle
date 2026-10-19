@@ -1,0 +1,34 @@
+base { archivesName = 'tc-modern-lib' }
+
+// The API artifact has no Minecraft/Forge classes. The full mod also contains it.
+sourceSets { api }
+// Gradle's project dependency uses the classes variant during compilation.
+// Export API classes there as well as in the final mod JAR.
+sourceSets.main.output.classesDirs.from(sourceSets.api.output.classesDirs)
+dependencies {
+    apiCompileOnly files(rootProject.mfclApiFile)
+    implementation sourceSets.api.output
+    testImplementation sourceSets.api.output
+    testImplementation files(rootProject.mfclApiFile)
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.named('test') { useJUnitPlatform() }
+tasks.named('sourcesJar') { from sourceSets.api.allSource }
+tasks.register('apiJar', Jar) {
+    archiveClassifier = 'api'
+    from sourceSets.api.output
+}
+tasks.register('apiSourcesJar', Jar) {
+    archiveClassifier = 'api-sources'
+    from sourceSets.api.allSource
+}
+tasks.named('assemble') { dependsOn 'apiJar', 'apiSourcesJar' }
+publishing.publications {
+    developerApi(MavenPublication) {
+        artifactId = 'tc-modern-api'
+        artifact(tasks.named('apiJar')) { classifier = null }
+        artifact(tasks.named('apiSourcesJar')) { classifier = 'sources' }
+    }
+}

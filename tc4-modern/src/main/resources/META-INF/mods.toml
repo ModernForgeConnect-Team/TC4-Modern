@@ -1,0 +1,38 @@
+modLoader="javafml"
+loaderVersion="[47,48)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="tc4modern"
+version="${version}"
+displayName="TC4: Modern"
+authors="gengyoubo"
+description='''Modern gameplay integration for original Thaumcraft 4 through TC Modern Lib and MFCL.'''
+
+[[dependencies.tc4modern]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.28,48)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.tc4modern]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.tc4modern]]
+modId="tcmodernlib"
+mandatory=true
+versionRange="[${version}]"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.tc4modern]]
+modId="mfcl"
+mandatory=true
+versionRange="[0.1.0,0.2.0)"
+ordering="AFTER"
+side="BOTH"

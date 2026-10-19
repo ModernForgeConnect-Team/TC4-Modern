@@ -1,0 +1,41 @@
+base { archivesName = 'tc4-modern' }
+
+dependencies { implementation project(':tc-modern-lib') }
+
+def mfclRuntime = providers.gradleProperty('mfclRuntimeJar')
+if (mfclRuntime.isPresent()) {
+    dependencies { runtimeOnly fg.deobf(files(rootProject.file(mfclRuntime.get()))) }
+}
+
+tasks.register('verifyMfclRuntime') {
+    doLast {
+        if (!mfclRuntime.isPresent() || !rootProject.file(mfclRuntime.get()).isFile()) {
+            throw new GradleException('runClient/runServer requires -PmfclRuntimeJar=/path/to/full/mfcl-0.1.0.jar. Prepare the legacy game directory as described in README.md.')
+        }
+    }
+}
+
+minecraft {
+    copyIdeResources = true
+    runs {
+        configureEach {
+            workingDirectory rootProject.file(providers.gradleProperty('gameDir').getOrElse('run'))
+            property 'forge.logging.console.level', 'info'
+            if (providers.gradleProperty('legacyRuntimeDir').isPresent()) {
+                property 'mfcl.legacyRuntimeDir', rootProject.file(providers.gradleProperty('legacyRuntimeDir').get()).absolutePath
+            }
+            mods {
+                tcmodernlib {
+                    source project(':tc-modern-lib').sourceSets.main
+                    source project(':tc-modern-lib').sourceSets.api
+                }
+                tc4modern { source sourceSets.main }
+            }
+        }
+        client { }
+        server { args '--nogui' }
+    }
+}
+tasks.matching { it.name in ['runClient', 'runServer'] }.configureEach {
+    dependsOn 'verifyMfclRuntime'
+}

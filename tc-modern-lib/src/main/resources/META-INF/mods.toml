@@ -1,0 +1,31 @@
+modLoader="javafml"
+loaderVersion="[47,48)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="tcmodernlib"
+version="${version}"
+displayName="TC Modern Lib"
+authors="gengyoubo"
+description='''Shared public API and compatibility layer for TC4: Modern.'''
+
+[[dependencies.tcmodernlib]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.28,48)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.tcmodernlib]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.tcmodernlib]]
+modId="mfcl"
+mandatory=true
+versionRange="[0.1.0,0.2.0)"
+ordering="AFTER"
+side="BOTH"
