@@ -17,6 +17,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: python tools/prepare_mfcl_api.py
       - run: bash gradlew --no-daemon build
+      - run: bash gradlew --no-daemon :tc4-modern:runClient :tc4-modern:runServer --dry-run
       - uses: actions/upload-artifact@v4
         with:
           name: tc-modern-jars

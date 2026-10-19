@@ -27,7 +27,6 @@ minecraft {
             mods {
                 tcmodernlib {
                     source project(':tc-modern-lib').sourceSets.main
-                    source project(':tc-modern-lib').sourceSets.api
                 }
                 tc4modern { source sourceSets.main }
             }
@@ -38,4 +37,10 @@ minecraft {
 }
 tasks.matching { it.name in ['runClient', 'runServer'] }.configureEach {
     dependsOn 'verifyMfclRuntime'
+    dependsOn project(':tc-modern-lib').tasks.named('classes')
+}
+// ForgeGradle resolves source-set task names in the launching project. Lib's
+// main output already includes its API; build foreign resources explicitly too.
+tasks.matching { it.name in ['prepareRunClientCompile', 'prepareRunServerCompile'] }.configureEach {
+    dependsOn project(':tc-modern-lib').tasks.named('classes')
 }
