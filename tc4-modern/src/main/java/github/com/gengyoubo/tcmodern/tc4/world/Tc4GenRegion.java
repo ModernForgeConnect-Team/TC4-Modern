@@ -48,7 +48,7 @@ final class Tc4GenRegion {
     boolean log(BlockState state) { return state.is(BlockTags.LOGS) || blocks.isMagicalLog(state); }
 
     /** The original isAir || isLeaves || isReplaceable test trees used for the space they grow into. */
-    boolean treeReplaceable(BlockState state) { return state.isAir() || leaves(state) || state.canBeReplaced(); }
+    boolean treeReplaceable(BlockState state) { return state.isAir() || leaves(state) || state.canBeReplaced() && state.getFluidState().isEmpty(); }
 
     boolean touching(BlockPos pos, java.util.function.Predicate<BlockState> test) {
         for (Direction side : Direction.values()) if (test.test(get(pos.relative(side)))) return true;

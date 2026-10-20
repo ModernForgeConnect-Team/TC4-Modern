@@ -110,7 +110,13 @@ final class Tc4BranchedTree {
         if (branchesFirst) { branches(); trunk(); } else { trunk(); branches(); }
     }
 
-    private boolean open(BlockState state) { return state.isAir() || state.is(leaves.getBlock()); }
+    /**
+     * Air or this tree's leaves, as originally; replaceable plants too, because 1.20 decorates the ground before
+     * trees run and the original order (trees, then grass) no longer holds.
+     */
+    private boolean open(BlockState state) {
+        return state.isAir() || state.is(leaves.getBlock()) || state.canBeReplaced() && state.getFluidState().isEmpty();
+    }
 
     private boolean open(BlockPos pos) { return !logs.contains(pos) && (pendingLeaves.contains(pos) || open(region.get(pos))); }
 

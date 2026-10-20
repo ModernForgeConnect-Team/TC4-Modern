@@ -13,7 +13,8 @@ import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfigur
 
 /**
  * Single attempts of the original biome decorators that place TC4 blocks. The per-chunk counts live in
- * worldgen/placed_feature; the origin is a surface position (heightmap WORLD_SURFACE, the original getHeightValue).
+ * worldgen/placed_feature; the origin is a surface position (heightmap MOTION_BLOCKING, which like the original getHeightValue
+ * skips plants but stops at leaves and water).
  */
 public final class Tc4DecorationFeature extends Feature<Tc4DecorationFeature.Config> {
     public enum Decoration implements StringRepresentable {

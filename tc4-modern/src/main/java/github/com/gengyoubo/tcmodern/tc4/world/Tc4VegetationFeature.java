@@ -63,7 +63,7 @@ public final class Tc4VegetationFeature extends Feature<NoneFeatureConfiguration
     }
 
     private static BlockPos surface(FeaturePlaceContext<?> context, int x, int z) {
-        return new BlockPos(x, context.level().getHeight(Heightmap.Types.WORLD_SURFACE, x, z), z);
+        return new BlockPos(x, context.level().getHeight(Heightmap.Types.MOTION_BLOCKING, x, z), z);
     }
 
     private static float greatwoodChance(Holder<Biome> biome) {
