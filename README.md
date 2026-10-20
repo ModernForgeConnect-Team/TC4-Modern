@@ -190,14 +190,14 @@ Curios is an optional, mutually exclusive alternative to the original Baubles sl
 
 在 `tc4modern` 命名空间下新增原版 TC4 矿石与元素蕴魔石的现代深板岩变体方块，共 8 种：朱砂矿、风/火/水/地/秩序/混沌蕴魔石、琥珀矿。每种方块含对应物品、方块状态、模型与材质。
 
-- 材质为程序生成的原创占位贴图，不使用或重新分发原版 TC4 材质；生成脚本见 `tools/generate_deepslate_assets.ps1`。
+- 模型以原版深板岩材质为底，叠加矿石层。矿石层不随模组分发，而是在启动时从已安装的 TC4 中提取（朱砂、琥珀只保留 TC4 在 1.7.10 石头上绘制的像素；蕴魔石使用 TC4 原版动画矿脉层，按元素颜色着色并发光），因此不分发 TC4 材质。方块数据生成脚本见 `tools/generate_deepslate_assets.ps1`。
 - 深板岩朱砂矿石普通挖掘直接掉落自身（时运不增加数量），可在普通熔炉烧炼为 1 个原版水银（`Thaumcraft:ItemResource` meta 3），耗时 200 tick、经验 1.0，与原版 TC4 朱砂烧炼一致。水银产物通过 MFCL 公开映射解析，保留原始 metadata/NBT，并使用标准熔炉配方同步。
 - 蕴魔石与琥珀的采集掉落通过 MFCL 公开物品映射在运行时解析：对应元素碎片（`Thaumcraft:ItemShard` meta 0–5，受幸运影响数量）、琥珀（`Thaumcraft:ItemResource` meta 6，受幸运影响数量）。
 - 精准采集保留深板岩方块本身；需要对应等级镐（朱砂、琥珀需要铁镐及以上），与原版一致。
 - 不复制原版 TC4 特殊工具（元素镐 / 原初粉碎者 / 探索焦点）触发的原生碎片簇特殊采集结果。
 - 暂不包含世界生成，方块仅在创造物品栏（`TC4: Modern`）提供。
 
-Modern deepslate variants of the original TC4 ores and elemental infused stones are registered under `tc4modern` (Cinnabar, the six elemental infused stones, and Amber) with matching items, block states, models, and procedurally generated placeholder textures. Deepslate cinnabar drops itself and smelts into one original Quicksilver (200 ticks, 1.0 XP). Shard/amber drops and the smelting output use MFCL's public item mapping; Silk Touch preserves the deepslate block. World generation is not included.
+Modern deepslate variants of the original TC4 ores and elemental infused stones are registered under `tc4modern` (Cinnabar, the six elemental infused stones, and Amber) with matching items, block states and models. Models layer an ore overlay on vanilla deepslate; the overlays are derived at startup from the installed Thaumcraft (cinnabar/amber keep only the pixels TC4 painted over 1.7.10 stone; infused stones use TC4's animated vein layer, tinted and glowing), so no TC4 textures are redistributed. Deepslate cinnabar drops itself and smelts into one original Quicksilver (200 ticks, 1.0 XP). Shard/amber drops and the smelting output use MFCL's public item mapping; Silk Touch preserves the deepslate block. World generation is not included.
 
 资料参考：[MC 百科 TC4 朱砂矿石](https://www.mcmod.cn/item/5223.html)、[水银](https://www.mcmod.cn/item/5329.html)（朱砂矿石与水银 1:1 熔炉配方）。
 

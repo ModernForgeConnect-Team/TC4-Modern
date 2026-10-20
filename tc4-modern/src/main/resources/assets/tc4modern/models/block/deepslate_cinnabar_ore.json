@@ -1,1 +1,1 @@
-{"parent":"block/cube_all","textures":{"all":"tc4modern:block/deepslate_cinnabar_ore"}}
+{"parent":"tc4modern:block/deepslate_ore_overlay","textures":{"overlay":"tc4modern:block/deepslate_cinnabar_ore"}}

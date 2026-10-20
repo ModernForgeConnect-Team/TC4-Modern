@@ -4,6 +4,8 @@ import github.com.gengyoubo.mfcl.api.*;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.scan.*;
 import java.util.*;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Items;
 
 /** Registers data only. TC4 owns targeting, held use, completion, rewards and rendering. */
 public final class OriginalScanBridge {
@@ -18,12 +20,23 @@ public final class OriginalScanBridge {
         var registration = api.accessor(ScanAccessors.Registration.class);
         var types = api.accessor(ScanAccessors.AspectLookup.class);
         var factory = api.accessor(ScanAccessors.AspectsFactory.class);
-        var keys = new ArrayList<>(rules.keySet());
-        keys.sort(Comparator.comparing((ScanKey key) -> key.kind().name()).thenComparing(ScanKey::id));
+        // Representations are independent of aspects: without one, original targeting sees a host block as air and
+        // scans straight through it. Every vanilla block/item gets one, in the same sorted order on both sides.
+        var keys = new TreeSet<>(Comparator.comparing((ScanKey key) -> key.kind().name()).thenComparing(ScanKey::id));
+        keys.addAll(rules.keySet());
+        for (var block : BuiltInRegistries.BLOCK) {
+            var id = BuiltInRegistries.BLOCK.getKey(block);
+            if (id.getNamespace().equals("minecraft") && !block.defaultBlockState().isAir()) keys.add(ScanKey.block(id.toString()));
+        }
+        for (var item : BuiltInRegistries.ITEM) {
+            var id = BuiltInRegistries.ITEM.getKey(item);
+            if (id.getNamespace().equals("minecraft") && item != Items.AIR) keys.add(ScanKey.item(id.toString()));
+        }
         for (var key : keys) {
             LegacyStack stack = null; String entity = null;
             if (key.kind() == ScanKey.Kind.ENTITY) entity = representations.entity(key.id());
             else stack = key.kind() == ScanKey.Kind.BLOCK ? representations.block(key.id()) : representations.item(key.id());
+            if (!rules.containsKey(key)) continue; // Representation only: scans as "nothing found".
             boolean host = entity != null ? entity.startsWith("mfcl_host:") : stack != null && stack.key().startsWith("mfcl_host:");
             if ((!host && !explicit.contains(key)) || (stack == null && entity == null)) continue;
             if (api == runtime && rules.get(key).equals(installed.get(key)) && explicit.contains(key) == overrides.contains(key)) continue;

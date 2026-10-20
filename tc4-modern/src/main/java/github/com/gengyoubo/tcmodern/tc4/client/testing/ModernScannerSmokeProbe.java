@@ -36,7 +36,7 @@ public final class ModernScannerSmokeProbe {
     private static final BlockPos TARGET = new BlockPos(0,81,4);
     private static final ScanKey BLOCK = ScanKey.block("minecraft:deepslate");
     private static final ScanKey ITEM = ScanKey.item("minecraft:copper_ingot");
-    private static final ScanKey ENTITY = ScanKey.entity("minecraft:allay");
+    private static final ScanKey ENTITY = ScanKey.entity("minecraft:axolotl");
     private final long deadline = System.nanoTime()+TimeUnit.MINUTES.toNanos(6);
     private final Map<String,Object> proof = new LinkedHashMap<>();
     private int stage, frames, firstPool;
@@ -128,6 +128,8 @@ public final class ModernScannerSmokeProbe {
         require(rules.get(ScanKey.block("minecraft:deepslate_iron_ore")).equals(rules.get(ScanKey.block("minecraft:iron_ore"))),"Deepslate ore inheritance differs");
         require(rules.get(ScanKey.block("minecraft:cut_copper_stairs")).equals(rules.get(ScanKey.block("minecraft:copper_block"))),"Copper stair inheritance differs");
         proof.put("mainBlockAndOreInheritance",true);
+        require(!rules.containsKey(ScanKey.entity("minecraft:marker"))&&!rules.containsKey(ScanKey.item("minecraft:debug_stick")),"Unassigned content received fallback aspects");
+        proof.put("unassignedContentHasNoAspects",true);
         var blocked=ScanKey.block("minecraft:sculk");
         require(!api.withPlayer(player,old -> api.accessor(ScanAccessors.Manager.class).complete(old,result(api,blocked),"@")),"Original prerequisite bypassed");
         require(!ScanResearch.scanned(player,blocked),"Rejected scan recorded");proof.put("originalPrerequisitesEnforced",true);
@@ -165,7 +167,7 @@ public final class ModernScannerSmokeProbe {
     }
     private void prepareEntity(ServerPlayer player) {
         for(var entity:player.serverLevel().getEntitiesOfClass(ItemEntity.class,new net.minecraft.world.phys.AABB(TARGET).inflate(2)))entity.discard();
-        var allay=EntityType.ALLAY.create(player.serverLevel());allay.moveTo(0.5,81.3,4.5,0,0);allay.setNoAi(true);allay.setNoGravity(true);player.serverLevel().addFreshEntity(allay);
+        var axolotl=EntityType.AXOLOTL.create(player.serverLevel());axolotl.moveTo(0.5,81.3,4.5,0,0);axolotl.setNoAi(true);axolotl.setNoGravity(true);player.serverLevel().addFreshEntity(axolotl);
     }
     private static Knowledge knowledge(LegacyRuntime api) {
         return api.accessor(Knowledge.class,api.accessor(Proxy.class,api.accessor(ScanAccessors.Thaumcraft.class).proxy()).knowledge());

@@ -1,1 +1,1 @@
-{"parent":"block/cube_all","textures":{"all":"tc4modern:block/deepslate_earth_infused_stone"}}
+{"parent":"tc4modern:block/deepslate_infused_overlay","textures":{"overlay":"tc4modern:block/deepslate_earth_infused_stone"}}
