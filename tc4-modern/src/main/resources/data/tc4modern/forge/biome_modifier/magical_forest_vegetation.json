@@ -1,0 +1,15 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#tc4modern:magical_forest",
+  "features": [
+    "tc4modern:trees_magical_forest",
+    "tc4modern:huge_mushrooms_magical_forest",
+    "tc4modern:flowers_magical_forest",
+    "tc4modern:grass_magical_forest",
+    "tc4modern:waterlily_magical_forest",
+    "tc4modern:brown_mushroom_magical_forest",
+    "tc4modern:red_mushroom_magical_forest",
+    "tc4modern:vishrooms_magical_forest"
+  ],
+  "step": "vegetal_decoration"
+}

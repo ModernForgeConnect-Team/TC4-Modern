@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#tc4modern:magical_forest",
+  "features": "tc4modern:mossy_rocks_magical_forest",
+  "step": "local_modifications"
+}

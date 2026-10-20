@@ -1,0 +1,11 @@
+{
+  "type": "forge:remove_features",
+  "biomes": "#tc4modern:magical_forest",
+  "features": [
+    "minecraft:trees_birch_and_oak",
+    "minecraft:forest_flowers",
+    "minecraft:flower_default",
+    "minecraft:patch_grass_forest"
+  ],
+  "steps": "vegetal_decoration"
+}

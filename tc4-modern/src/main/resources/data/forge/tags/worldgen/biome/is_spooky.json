@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "thaumcraft:eerie",
+      "required": false
+    },
+    {
+      "id": "thaumcraft:eldritch",
+      "required": false
+    }
+  ]
+}

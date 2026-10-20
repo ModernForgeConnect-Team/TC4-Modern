@@ -1,0 +1,12 @@
+{
+  "type": "forge:remove_features",
+  "biomes": "#tc4modern:tainted_land",
+  "features": [
+    "minecraft:trees_plains",
+    "minecraft:flower_plains",
+    "minecraft:patch_grass_plain",
+    "minecraft:patch_tall_grass_2",
+    "minecraft:patch_sugar_cane"
+  ],
+  "steps": "vegetal_decoration"
+}

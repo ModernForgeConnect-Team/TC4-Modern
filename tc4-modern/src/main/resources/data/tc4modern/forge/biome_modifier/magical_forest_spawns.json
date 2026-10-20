@@ -1,0 +1,18 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#tc4modern:magical_forest",
+  "spawners": [
+    {
+      "type": "minecraft:horse",
+      "weight": 2,
+      "minCount": 1,
+      "maxCount": 3
+    },
+    {
+      "type": "minecraft:witch",
+      "weight": 3,
+      "minCount": 1,
+      "maxCount": 1
+    }
+  ]
+}

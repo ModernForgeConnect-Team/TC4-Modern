@@ -1,0 +1,11 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#tc4modern:tainted_land",
+  "features": [
+    "tc4modern:trees_tainted_land",
+    "tc4modern:grass_tainted_land",
+    "tc4modern:taint_fibres_tainted_land",
+    "tc4modern:clinging_taint_fibres_tainted_land"
+  ],
+  "step": "vegetal_decoration"
+}

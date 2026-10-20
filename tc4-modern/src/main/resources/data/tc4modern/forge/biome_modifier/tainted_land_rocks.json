@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#tc4modern:tainted_land",
+  "features": "tc4modern:crusted_taint_tainted_land",
+  "step": "local_modifications"
+}

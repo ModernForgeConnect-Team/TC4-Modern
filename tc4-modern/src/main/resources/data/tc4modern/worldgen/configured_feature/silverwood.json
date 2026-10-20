@@ -1,0 +1,8 @@
+{
+  "type": "tc4modern:tree",
+  "config": {
+    "tree": "silverwood",
+    "min_height": 8,
+    "random_height": 5
+  }
+}
