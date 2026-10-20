@@ -16,5 +16,20 @@
   "block.tc4modern.deepslate_order_infused_stone": "深板岩秩序蕴魔石",
   "block.tc4modern.deepslate_entropy_infused_stone": "深板岩混沌蕴魔石",
   "block.tc4modern.deepslate_amber_bearing_stone": "深板岩琥珀矿石",
-  "itemGroup.tc4modern": "TC4: 现代化"
+  "itemGroup.tc4modern": "TC4: 现代化",
+  "jei.tc4modern.aspect_composition": "要素组合",
+  "jei.tc4modern.aspect.primal": "原初要素",
+  "jei.tc4modern.aspect.components": "由 %s 组成",
+  "jei.tc4modern.aspect.lookup": "R：查看组成 · U：查看用途",
+  "jei.tc4modern.alchemy_furnace": "炼金炉",
+  "jei.tc4modern.wand_conversion": "法杖交互",
+  "jei.tc4modern.wand.click": "右键",
+  "jei.tc4modern.wand.any": "任意法杖皆可",
+  "jei.tc4modern.wand.worktable": "任意法杖皆可，法杖会进入工作台内",
+  "curios.identifier.amulet": "护身符",
+  "curios.modifiers.amulet": "佩戴护身符时：",
+  "config.jade.plugin_tc4modern.essentia": "TC4 源质内容",
+  "jade.tc4modern.essentia.total": "源质总量：%s",
+  "jade.tc4modern.essentia.empty": "空",
+  "jade.tc4modern.essentia.filter": "标签：%s"
 }

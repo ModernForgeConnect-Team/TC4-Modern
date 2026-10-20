@@ -16,5 +16,20 @@
   "block.tc4modern.deepslate_order_infused_stone": "Deepslate Order Infused Stone",
   "block.tc4modern.deepslate_entropy_infused_stone": "Deepslate Entropy Infused Stone",
   "block.tc4modern.deepslate_amber_bearing_stone": "Deepslate Amber Bearing Stone",
-  "itemGroup.tc4modern": "TC4: Modern"
+  "itemGroup.tc4modern": "TC4: Modern",
+  "jei.tc4modern.aspect_composition": "Aspect Combination",
+  "jei.tc4modern.aspect.primal": "Primal aspect",
+  "jei.tc4modern.aspect.components": "Made of %s",
+  "jei.tc4modern.aspect.lookup": "R: what makes it · U: what uses it",
+  "jei.tc4modern.alchemy_furnace": "Alchemical Furnace",
+  "jei.tc4modern.wand_conversion": "Wand Interaction",
+  "jei.tc4modern.wand.click": "Right-click",
+  "jei.tc4modern.wand.any": "Any wand works",
+  "jei.tc4modern.wand.worktable": "Any wand; it goes into the worktable",
+  "curios.identifier.amulet": "Amulet",
+  "curios.modifiers.amulet": "When worn as amulet:",
+  "config.jade.plugin_tc4modern.essentia": "TC4 Essentia Contents",
+  "jade.tc4modern.essentia.total": "Essentia: %s",
+  "jade.tc4modern.essentia.empty": "Empty",
+  "jade.tc4modern.essentia.filter": "Label: %s"
 }

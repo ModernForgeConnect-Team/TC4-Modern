@@ -2,7 +2,6 @@ package github.com.gengyoubo.tcmodern.tc4.compat.jei;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipe;
-import java.util.ArrayList;
 import java.util.List;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
@@ -69,19 +68,24 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
         }
         int[] output = output(recipe.source());
         builder.addSlot(RecipeIngredientRole.OUTPUT, output[0], output[1]).addItemStack(recipe.output());
+        var note = Component.translatable(isArcane(recipe.source()) ? "jei.tc4modern.vis" : "jei.tc4modern.essentia");
+        for (int i = 0; i < recipe.source().aspects().size(); i++) {
+            int[] at = aspect(recipe.source(), i);
+            builder.addSlot(RecipeIngredientRole.INPUT, at[0], at[1])
+                    .addIngredient(JeiAspect.TYPE, JeiAspect.of(recipe.source().aspects().get(i)))
+                    .addRichTooltipCallback((slot, tooltip) -> tooltip.add(note));
+        }
         if (recipe.source().kind() == TcRecipe.Kind.ARCANE_SHAPELESS) builder.setShapeless();
     }
 
     @Override
     public void draw(JeiTcRecipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         var source = recipe.source();
-        var font = Minecraft.getInstance().font;
-        boolean art = available(BOOK) && available(OVERLAY);
+        boolean art = hasBookArt();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         if (art) {
-            // The right-hand page of the open book, without the cover and spine.
-            graphics.blit(BOOK, 0, 0, WIDTH, HEIGHT, 258, 4, 234, 348, 512, 512);
+            parchment(graphics, WIDTH, HEIGHT);
             switch (source.kind()) {
                 case ARCANE_SHAPED, ARCANE_SHAPELESS -> {
                     overlay(graphics, 0, 0, 2, 27, 112, 15, 52, 52);
@@ -115,50 +119,21 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
             centered(graphics, text, INSTABILITY_Y);
         }
         centered(graphics, research(source).getString(), RESEARCH_Y);
-        var aspects = source.aspects();
-        for (int i = 0; i < aspects.size(); i++) {
-            var cost = aspects.get(i);
-            int[] at = aspect(source, i);
-            int x = at[0], y = at[1];
-            var texture = ResourceLocation.tryParse(cost.texture());
-            if (texture != null && available(texture)) {
-                graphics.setColor((cost.color() >> 16 & 255) / 255F, (cost.color() >> 8 & 255) / 255F,
-                        (cost.color() & 255) / 255F, 1);
-                graphics.blit(texture, x, y, 16, 16, 0F, 0F, 32, 32, 32, 32);
-                graphics.setColor(1, 1, 1, 1);
-            } else {
-                graphics.fill(x, y, x + 16, y + 16, 0xFF000000 | cost.color());
-                graphics.drawString(font, cost.tag().substring(0, 1), x + 4, y + 2, 0xFFFFFFFF, true);
-            }
-            String amount = Integer.toString(cost.amount());
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 200);
-            graphics.drawString(font, amount, x + 17 - font.width(amount), y + 9, 0xFFFFFFFF, true);
-            graphics.pose().popPose();
-        }
         RenderSystem.disableBlend();
     }
 
     @Override
     public void getTooltip(ITooltipBuilder tooltip, JeiTcRecipe recipe, IRecipeSlotsView slots, double x, double y) {
-        var source = recipe.source();
-        if (y >= RESEARCH_Y - 2 && y < RESEARCH_Y + 10) {
-            tooltip.addAll(List.of(research(source), Component.translatable("jei.tc4modern.view_only")));
-            return;
-        }
-        var result = new ArrayList<Component>();
-        for (int i = 0; i < source.aspects().size(); i++) {
-            int[] at = aspect(source, i);
-            if (x >= at[0] && x < at[0] + 16 && y >= at[1] && y < at[1] + 16) {
-                var cost = source.aspects().get(i);
-                String key = "tc.aspect." + cost.tag();
-                String name = I18n.exists(key) ? I18n.get(key) : cost.tag();
-                result.add(Component.literal(name + " (" + cost.tag() + ") × " + cost.amount()));
-                result.add(Component.translatable(isArcane(source) ? "jei.tc4modern.vis" : "jei.tc4modern.essentia"));
-            }
-        }
-        tooltip.addAll(result);
+        if (y >= RESEARCH_Y - 2 && y < RESEARCH_Y + 10)
+            tooltip.addAll(List.of(research(recipe.source()), Component.translatable("jei.tc4modern.view_only")));
     }
+
+    /** The right-hand page of the original open book, without the cover and spine, stretched to the given size. */
+    static void parchment(GuiGraphics graphics, int width, int height) {
+        graphics.blit(BOOK, 0, 0, width, height, 258, 4, 234, 348, 512, 512);
+    }
+
+    static boolean hasBookArt() { return available(BOOK) && available(OVERLAY); }
 
     /** The research's own name where Thaumcraft's language files have one, else its key. */
     private static Component research(TcRecipe recipe) {

@@ -1,11 +1,12 @@
 modLoader="javafml"
 loaderVersion="[47,48)"
-license="All Rights Reserved"
+license="Mozilla Public License 2.0"
 
 [[mods]]
 modId="tcmodernlib"
 version="${version}"
 displayName="TC Modern Lib"
+logoFile="tc-modern-lib-logo.png"
 authors="gengyoubo"
 description='''Shared public API and compatibility layer for TC4: Modern.'''
 

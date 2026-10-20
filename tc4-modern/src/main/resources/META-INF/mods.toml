@@ -1,6 +1,6 @@
 modLoader="javafml"
 loaderVersion="[47,48)"
-license="All Rights Reserved"
+license="Mozilla Public License 2.0"
 
 [[mods]]
 modId="tc4modern"
@@ -15,6 +15,13 @@ mandatory=false
 versionRange="[15.20,16)"
 ordering="AFTER"
 side="CLIENT"
+
+[[dependencies.tc4modern]]
+modId="jade"
+mandatory=false
+versionRange="[11.13,12)"
+ordering="AFTER"
+side="BOTH"
 
 [[dependencies.tc4modern]]
 modId="forge"

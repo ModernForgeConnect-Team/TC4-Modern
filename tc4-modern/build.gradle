@@ -16,6 +16,10 @@ repositories {
         content { includeGroup 'top.theillusivec4.curios' }
     }
     maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    maven {
         // location of the maven that hosts JEI files before January 2023
         name = "Progwml6's maven"
         url = "https://dvs1.progwml6.com/files/maven/"
@@ -45,6 +49,11 @@ dependencies {
     compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}:api")
     if (rootProject.devProperty('withCurios').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${rootProject.curios_version}")
+    }
+    // Jade is optional; it shows the essentia held by original TC4 containers. Disable with -PwithJade=false.
+    compileOnly fg.deobf("maven.modrinth:jade:${rootProject.jade_version}")
+    if (rootProject.devProperty('withJade').getOrElse('true').toBoolean()) {
+        runtimeOnly fg.deobf("maven.modrinth:jade:${rootProject.jade_version}")
     }
     // Full MFCL runtime (embedded legacy runtime + Developer API) from the MFCL Maven repository.
     if (rootProject.devProperty('mfclRuntimeJar').isPresent()) {
