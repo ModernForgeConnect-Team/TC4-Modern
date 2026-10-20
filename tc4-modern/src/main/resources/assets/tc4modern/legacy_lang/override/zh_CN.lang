@@ -1,0 +1,3 @@
+# Corrections for Thaumcraft 4.2.3.5 zh_CN.lang. These replace the original translations.
+# The icy rod carried the bone rod name; see item.WandRod.3 (寒霜杖柄) and mcmod.cn/item/5356.
+item.Wand.ice.rod=寒霜

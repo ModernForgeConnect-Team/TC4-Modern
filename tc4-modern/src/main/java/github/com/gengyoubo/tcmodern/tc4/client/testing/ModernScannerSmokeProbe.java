@@ -67,6 +67,8 @@ public final class ModernScannerSmokeProbe {
             require(System.nanoTime()<deadline,"Timed out at stage "+stage+", screen="
                     +(mc.screen==null?"none":mc.screen.getClass().getSimpleName()));
             if (pending != null && pending.isCompletedExceptionally()) pending.join();
+            if (stage == 3 && frames == 10) net.minecraft.client.Screenshot.grab(mc.gameDirectory,
+                    "tc4modern-original-scanner.png", mc.getMainRenderTarget(), message -> { });
             if (stage==0 && mc.screen instanceof TitleScreen && mc.getOverlay()==null) {
                 org.lwjgl.glfw.GLFW.glfwHideWindow(mc.getWindow().getWindow());
                 mc.options.pauseOnLostFocus=false;mc.options.renderDistance().set(2);
@@ -137,6 +139,7 @@ public final class ModernScannerSmokeProbe {
         boolean expired=false;try {api.accessor(ScanAccessors.Entity.class,borrowed.get()).world();}catch(LegacyAccessException expected){expired=true;}
         require(expired,"Player reference escaped callback scope");proof.put("borrowedPlayerExpires",true);
         player.teleportTo(0.5,80,0.5);player.setYRot(0);player.setXRot(0);
+        player.serverLevel().setBlockAndUpdate(new BlockPos(0,79,0),Blocks.STONE.defaultBlockState());
         for(BlockPos pos:BlockPos.betweenClosed(-2,80,1,2,84,8))player.serverLevel().setBlockAndUpdate(pos,Blocks.AIR.defaultBlockState());
         var scanner=api.mappings().toHost(LegacyMappings.ITEM_STACK,api.stack(new LegacyStack("Thaumcraft:ItemThaumometer",0,1,"")),ItemStack.class).orElseThrow();
         player.setItemInHand(InteractionHand.MAIN_HAND,scanner);

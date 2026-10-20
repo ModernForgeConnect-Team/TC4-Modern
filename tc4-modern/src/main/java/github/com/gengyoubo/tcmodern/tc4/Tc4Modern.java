@@ -3,6 +3,7 @@ package github.com.gengyoubo.tcmodern.tc4;
 import com.mojang.logging.LogUtils;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.tc4.compat.curios.Tc4CuriosCompat;
+import github.com.gengyoubo.tcmodern.tc4.compat.lang.Tc4LegacyLanguages;
 import github.com.gengyoubo.tcmodern.tc4.content.Tc4ModernContent;
 import github.com.gengyoubo.tcmodern.tc4.compat.scan.Tc4ScanDefaults;
 import net.minecraftforge.fml.ModList;
@@ -20,6 +21,7 @@ public final class Tc4Modern {
         Tc4ModernContent.register(modBus);
         modBus.addListener(this::commonSetup);
         TcModernApi.whenReady(Tc4ScanDefaults::install);
+        TcModernApi.whenReady(Tc4LegacyLanguages::install);
         TcModernApi.whenReady(runtime -> LogUtils.getLogger().info(
                 "TC4: Modern connected to original Thaumcraft through MFCL (legacy {}).",
                 runtime.sourceVersion()));

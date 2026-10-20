@@ -203,6 +203,16 @@ Modern deepslate variants of the original TC4 ores and elemental infused stones 
 
 在准备好旧运行时和 TC4/Baubles 的专用测试游戏目录中，执行 `:tc4-modern:runClient -PgameDir=run-cinnabar-smoke -PcinnabarSmokeTest` 可验证普通挖掘、时运、精准采集、低等级工具、实际熔炉烧炼和客户端配方同步。该选项会创建测试世界，输出 `logs/tc4modern/cinnabar-smoke.json`，然后退出客户端。
 
+## 扫描 / Scanning
+
+所有扫描均由原版 TC4 探测仪执行：原版 `doScan` 选择目标，原版持续使用回调控制计时与取消，原版 `ScanManager.completeScan` 处理前置条件、扫描记录、研究点、线索和提示，透镜内的显示也使用原版绘制器。现代侧不运行第二套扫描会话、完成请求或 HUD。
+
+Lib 将新版方块、物品和实体映射为 MFCL 的独立只读旧版身份，并通过 TC4 原有的要素注册 API 提供数据。深板岩矿石等变体可以继承对应旧方块的要素，但扫描身份相互独立。此映射不向已封闭的旧 Forge 注册表追加内容；旧版已有目标保留原始身份。
+
+需要包含 `LegacyRuntime.hostRepresentations()` 及只读身份查询桥接的 MFCL 构建；本地开发配置指向重新构建的 MFCL 运行时和 API JAR。现代扫描规则在登录及数据包重载时由服务端同步，实际扫描完成仍使用 TC4 原包经 MFCL 转发，并由服务端重新检查目标。
+
+执行 `:tc4-modern:runClient -PgameDir=run-modern-scanner-smoke -PmodernScannerSmokeTest`，可在独立测试世界验证原版探测仪扫描新版方块、掉落物和实体，以及重复扫描和存档重载。结果写入 `logs/tc4modern/modern-scanner-smoke.json`；应以其中的 `status: PASS` 判断成功，客户端正常退出本身不代表测试通过。
+
 ## API 起点与边界
 
 ```java
