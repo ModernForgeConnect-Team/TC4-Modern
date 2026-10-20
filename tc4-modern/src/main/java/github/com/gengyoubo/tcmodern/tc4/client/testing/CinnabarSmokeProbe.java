@@ -3,7 +3,7 @@ package github.com.gengyoubo.tcmodern.tc4.client.testing;
 import com.mojang.logging.LogUtils;
 import github.com.gengyoubo.mfcl.api.LegacyMappings;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
-import github.com.gengyoubo.tcmodern.tc4.content.Tc4ModernContent;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -108,7 +108,7 @@ public final class CinnabarSmokeProbe {
         quicksilver(recipe.getResultItem(level.registryAccess()));
         level.setBlockAndUpdate(pos, Blocks.FURNACE.defaultBlockState());
         var furnace = (FurnaceBlockEntity) level.getBlockEntity(pos);
-        furnace.setItem(0, new ItemStack(Tc4ModernContent.DEEPSLATE_CINNABAR_ORE.get(), 2));
+        furnace.setItem(0, new ItemStack(Tc4Blocks.DEEPSLATE_CINNABAR_ORE.get(), 2));
         furnace.setItem(1, new ItemStack(Items.COAL));
         for (int tick = 0; tick < 200; tick++)
             AbstractFurnaceBlockEntity.serverTick(level, pos, level.getBlockState(pos), furnace);
@@ -122,12 +122,12 @@ public final class CinnabarSmokeProbe {
         var player = FakePlayerFactory.getMinecraft(level);
         player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
         player.setItemInHand(InteractionHand.MAIN_HAND, tool);
-        level.setBlockAndUpdate(pos, Tc4ModernContent.DEEPSLATE_CINNABAR_ORE.get().defaultBlockState());
+        level.setBlockAndUpdate(pos, Tc4Blocks.DEEPSLATE_CINNABAR_ORE.get().defaultBlockState());
         require(player.gameMode.destroyBlock(pos), "Mining failed");
         var drops = level.getEntitiesOfClass(ItemEntity.class, new AABB(pos).inflate(1));
         int count = 0;
         for (var entity : drops) {
-            require(entity.getItem().is(Tc4ModernContent.DEEPSLATE_CINNABAR_ORE.get().asItem()), "Mining dropped another item");
+            require(entity.getItem().is(Tc4Blocks.DEEPSLATE_CINNABAR_ORE.get().asItem()), "Mining dropped another item");
             count += entity.getItem().getCount();
             entity.discard();
         }

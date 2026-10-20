@@ -1,7 +1,7 @@
 package github.com.gengyoubo.tcmodern.tc4.world;
 
 import github.com.gengyoubo.tcmodern.api.world.OriginalOre;
-import github.com.gengyoubo.tcmodern.tc4.content.Tc4ModernContent;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +40,10 @@ public final class Tc4OreFeature extends Feature<NoneFeatureConfiguration> {
     private static final TagMatchTest STONE = new TagMatchTest(BlockTags.STONE_ORE_REPLACEABLES);
     private static final TagMatchTest DEEPSLATE = new TagMatchTest(BlockTags.DEEPSLATE_ORE_REPLACEABLES);
     /** Original infused metadata 1..6: air, fire, water, earth, order, entropy. */
-    private static final List<RegistryObject<Block>> INFUSED = List.of(Tc4ModernContent.DEEPSLATE_AIR_INFUSED_STONE,
-            Tc4ModernContent.DEEPSLATE_FIRE_INFUSED_STONE, Tc4ModernContent.DEEPSLATE_WATER_INFUSED_STONE,
-            Tc4ModernContent.DEEPSLATE_EARTH_INFUSED_STONE, Tc4ModernContent.DEEPSLATE_ORDER_INFUSED_STONE,
-            Tc4ModernContent.DEEPSLATE_ENTROPY_INFUSED_STONE);
+    private static final List<RegistryObject<Block>> INFUSED = List.of(Tc4Blocks.DEEPSLATE_AIR_INFUSED_STONE,
+            Tc4Blocks.DEEPSLATE_FIRE_INFUSED_STONE, Tc4Blocks.DEEPSLATE_WATER_INFUSED_STONE,
+            Tc4Blocks.DEEPSLATE_EARTH_INFUSED_STONE, Tc4Blocks.DEEPSLATE_ORDER_INFUSED_STONE,
+            Tc4Blocks.DEEPSLATE_ENTROPY_INFUSED_STONE);
     /**
      * Original Config.registerBiomeInfo, with BiomeDictionary types as their 1.20 biome tags. The value is the
      * infused metadata, or 0 for a non-primal biome aspect, which keeps the random element as the original did.
@@ -67,12 +67,12 @@ public final class Tc4OreFeature extends Feature<NoneFeatureConfiguration> {
         boolean placed = false;
         if (cinnabar) for (int attempt = 0; attempt < 18; attempt++) {
             var pos = new BlockPos(chunkX + random.nextInt(16), bottom + random.nextInt(level.getHeight() / 5), chunkZ + random.nextInt(16));
-            placed |= replace(level, random, pos, stone == null ? null : stone.get(OriginalOre.CINNABAR), Tc4ModernContent.DEEPSLATE_CINNABAR_ORE.get());
+            placed |= replace(level, random, pos, stone == null ? null : stone.get(OriginalOre.CINNABAR), Tc4Blocks.DEEPSLATE_CINNABAR_ORE.get());
         }
         if (amber) for (int attempt = 0; attempt < 20; attempt++) {
             int x = chunkX + random.nextInt(16), z = chunkZ + random.nextInt(16);
             var pos = new BlockPos(x, level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) - random.nextInt(25), z);
-            placed |= replace(level, random, pos, stone == null ? null : stone.get(OriginalOre.AMBER), Tc4ModernContent.DEEPSLATE_AMBER_BEARING_STONE.get());
+            placed |= replace(level, random, pos, stone == null ? null : stone.get(OriginalOre.AMBER), Tc4Blocks.DEEPSLATE_AMBER_BEARING_STONE.get());
         }
         if (infused) for (int vein = 0; vein < 8; vein++) {
             int x = chunkX + random.nextInt(16), z = chunkZ + random.nextInt(16);

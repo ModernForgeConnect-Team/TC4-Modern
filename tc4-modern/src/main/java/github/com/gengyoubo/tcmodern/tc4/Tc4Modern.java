@@ -4,8 +4,12 @@ import com.mojang.logging.LogUtils;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.tc4.compat.curios.Tc4CuriosCompat;
 import github.com.gengyoubo.tcmodern.tc4.compat.lang.Tc4LegacyLanguages;
-import github.com.gengyoubo.tcmodern.tc4.content.Tc4ModernContent;
 import github.com.gengyoubo.tcmodern.tc4.compat.scan.Tc4ScanDefaults;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4CreativeTabs;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4Features;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4Items;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4RecipeSerializers;
 import github.com.gengyoubo.tcmodern.tc4.world.Tc4ModernWorldgen;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -19,8 +23,11 @@ public final class Tc4Modern {
 
     public Tc4Modern(FMLJavaModLoadingContext context) {
         var modBus = context.getModEventBus();
-        Tc4ModernContent.register(modBus);
-        Tc4ModernWorldgen.register(modBus);
+        Tc4Blocks.register(modBus);
+        Tc4Items.register(modBus);
+        Tc4CreativeTabs.register(modBus);
+        Tc4RecipeSerializers.register(modBus);
+        Tc4Features.register(modBus);
         modBus.addListener(this::commonSetup);
         TcModernApi.whenReady(Tc4ScanDefaults::install);
         TcModernApi.whenReady(Tc4ModernWorldgen::install);

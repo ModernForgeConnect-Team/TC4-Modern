@@ -207,6 +207,21 @@ Modern deepslate variants of the original TC4 ores and elemental infused stones 
 
 在准备好旧运行时和 TC4/Baubles 的专用测试游戏目录中，执行 `:tc4-modern:runClient -PgameDir=run-cinnabar-smoke -PcinnabarSmokeTest` 可验证普通挖掘、时运、精准采集、低等级工具、实际熔炉烧炼和客户端配方同步。该选项会创建测试世界，输出 `logs/tc4modern/cinnabar-smoke.json`，然后退出客户端。
 
+## 群系与地形 / Biomes and terrain
+
+MFCL 负责放置 TC4 群系（魔法森林、腐化之地，以及仅能由旧逻辑改写得到的怪异群系），但群系内容取自原版森林/平原模板。TC4: Modern 参考原版 `BiomeGenMagicalForest`、`BiomeGenTaint` 与 `ThaumcraftWorldGenerator.generateVegetation`，用 1.20.1 的 configured/placed feature 与 Forge biome modifier 重建这些装饰，并去掉 MFCL 复制进来的原版树木、花草：
+
+- 魔法森林：每区块 2 棵树（1/10 概率 3 棵），其中 1/14 银木（高 8+random(5)），其余 1/10 宏伟之木，余下为加高的大型橡树；苔石堆、巨型蘑菇、9 种小花各 10 簇、草与蕨、睡莲、蘑菇，以及长在原木旁草方块上的魔力菇。额外生成马和女巫。
+- 腐化之地：树木（1/8 大型橡树，其余为默认橡树/大橡树）、少量草、结壳腐化方块堆，以及草方块上和贴附在实心表面上的腐化纤维。
+- 怪异群系：补充原版刷怪表（含额外的女巫与末影人）。
+- 全局植被（遵循 Thaumcraft.cfg 的 `generate_trees`，超平坦世界不生成）：每区块 1/60 尝试在魔法类群系生成银木，1/25 尝试按原版 BiomeHandler 群系概率生成宏伟之木（森林 1.0、繁茂 0.5、针叶林/热带草原/平原/沼泽 0.2），1/30 在炎热沙质群系生成烈焰花。
+- 宏伟之木有 1/8 为蜘蛛树：下方埋有洞穴蜘蛛刷怪笼和地牢战利品箱，周围布满蛛网。银木根部生成水银花。
+- 原版 BiomeDictionary 类型以 1.20 群系标签表示：TC4 群系加入 `forge:is_magical`、`minecraft:is_forest`、`forge:is_wasteland`、`forge:is_spooky`。
+
+尚未包含：灵气节点（含银木节结中的纯净节点、图腾）、遗迹土丘 / 黑曜石图腾 / 山顶石圈等结构、魔力豆荚，以及佩奇、精灵等 TC4 自有生物的刷新——MFCL 公开 API 目前还无法从现代世界生成写入节点元素或生成旧实体。1.7.10 中的 forest hills / birch forest hills 在 1.20 中没有对应群系，因此原版在其中生成的银木不再出现。
+
+Using MFCL's TC4 biomes, the original magical forest, tainted land and global vegetation decorators are rebuilt as 1.20.1 features and biome modifiers (greatwood, silverwood and big magic trees ported as features; vanilla template vegetation removed). Aura nodes, structures, mana pods and TC4 mob spawns are not included yet.
+
 ## 扫描 / Scanning
 
 所有扫描均由原版 TC4 探测仪执行：原版 `doScan` 选择目标，原版持续使用回调控制计时与取消，原版 `ScanManager.completeScan` 处理前置条件、扫描记录、研究点、线索和提示，透镜内的显示也使用原版绘制器。现代侧不运行第二套扫描会话、完成请求或 HUD。

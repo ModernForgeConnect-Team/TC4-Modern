@@ -15,7 +15,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 
 /** Loads a normal furnace recipe with a legacy result, preserving its metadata/NBT envelope. */
-final class LegacyResultSmeltingSerializer implements RecipeSerializer<SmeltingRecipe> {
+public final class LegacyResultSmeltingSerializer implements RecipeSerializer<SmeltingRecipe> {
     @Override
     public SmeltingRecipe fromJson(ResourceLocation id, JsonObject json) {
         var output = GsonHelper.getAsJsonObject(json, "result");
