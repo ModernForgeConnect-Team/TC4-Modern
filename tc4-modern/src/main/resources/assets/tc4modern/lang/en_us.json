@@ -31,5 +31,15 @@
   "config.jade.plugin_tc4modern.essentia": "TC4 Essentia Contents",
   "jade.tc4modern.essentia.total": "Essentia: %s",
   "jade.tc4modern.essentia.empty": "Empty",
-  "jade.tc4modern.essentia.filter": "Label: %s"
+  "jade.tc4modern.essentia.filter": "Label: %s",
+  "tc.aspect.antiquitas": "Antiquity, The Past, Ages",
+  "tc.aspect.modernitas": "Modernity, The Present, Innovation",
+  "tc.aspect.echo": "Echo, Resonance, Reverberation",
+  "commands.tc4modern.unavailable": "The original Thaumcraft runtime is not available",
+  "commands.tc4modern.aspect.unknown": "Unknown aspect: %s",
+  "commands.tc4modern.aspect.give.single": "Gave %s %s to %s (now %s)",
+  "commands.tc4modern.aspect.give.single.multiple": "Gave %s %s to %s players",
+  "commands.tc4modern.aspect.give.all": "Gave %s of each of %s aspects to %s",
+  "commands.tc4modern.aspect.give.all.multiple": "Gave %s of each of %s aspects to %s players",
+  "commands.tc4modern.aspect.give.failed": "Could not give aspects to %s: %s"
 }

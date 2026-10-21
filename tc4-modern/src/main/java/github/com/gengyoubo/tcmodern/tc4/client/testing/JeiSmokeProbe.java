@@ -4,6 +4,7 @@ import net.minecraft.client.Screenshot;
 import com.mojang.logging.LogUtils;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntUnaryOperator;
@@ -32,6 +33,7 @@ public final class JeiSmokeProbe {
     private final Map<String, Object> proof = new LinkedHashMap<>();
     private final String[] categories = {"arcane", "crucible", "infusion"};
     private int stage, category, frames;
+    private java.util.concurrent.CompletableFuture<Map<String, Integer>> command;
 
     public static void ready(IntUnaryOperator callback) { showCategory = callback; }
 
@@ -74,8 +76,30 @@ public final class JeiSmokeProbe {
                     if (!Files.isRegularFile(mc.gameDirectory.toPath().resolve("screenshots/tc4modern-jei-" + name + ".png")))
                         throw new IllegalStateException("Missing screenshot for " + name);
                 }
+                var aspects = new LinkedHashMap<String, Object>();
+                for (var aspect : github.com.gengyoubo.tcmodern.api.aspect.TcAspects.snapshot(
+                        github.com.gengyoubo.tcmodern.api.TcModernApi.runtime().orElseThrow()))
+                    if (List.of("antiquitas", "modernitas", "echo").contains(aspect.tag())) aspects.put(aspect.tag(), aspect.components());
+                if (aspects.size() != 3) throw new IllegalStateException("Missing TC4: Modern aspects: " + aspects);
+                proof.put("modernAspects", aspects);
                 proof.put("allLayoutsCreated", true);
                 proof.put("recipeAndUsageLookups", true);
+                var server = mc.getSingleplayerServer();
+                command = server.submit(() -> {
+                    var player = server.getPlayerList().getPlayers().get(0);
+                    var source = player.createCommandSourceStack().withPermission(4).withSuppressedOutput();
+                    server.getCommands().performPrefixedCommand(source, "tc4modern aspect give @s modernitas 7");
+                    server.getCommands().performPrefixedCommand(source, "tc4modern aspect give @s all 2");
+                    // A fresh world starts with empty pools: modernitas 7 + 2 + 1, echo 2 + 1.
+                    return github.com.gengyoubo.tcmodern.api.aspect.TcPlayerAspects.give(
+                            github.com.gengyoubo.tcmodern.api.TcModernApi.runtime().orElseThrow(), player, Map.of("modernitas", 1, "echo", 1));
+                });
+                stage = 4;
+            } else if (stage == 4 && command.isDone()) {
+                var totals = command.join();
+                proof.put("aspectCommand", totals);
+                if (!Map.of("modernitas", 10, "echo", 3).equals(Map.copyOf(totals)))
+                    throw new IllegalStateException("Unexpected aspect pool after /tc4modern aspect give: " + totals);
                 finish(mc, null);
             }
         } catch (Exception | AssertionError failure) { finish(mc, failure); }

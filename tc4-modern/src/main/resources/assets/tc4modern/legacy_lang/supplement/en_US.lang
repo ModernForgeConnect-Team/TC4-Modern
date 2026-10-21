@@ -1,0 +1,7 @@
+# Keys TC4: Modern adds to the original domain. Original translations always take precedence.
+tc.aspect.antiquitas=Antiquity, The Past, Ages
+tc.aspect.modernitas=Modernity, The Present, Innovation
+tc.aspect.echo=Echo, Resonance, Reverberation
+tc.aspect.help.antiquitas=things from long ago
+tc.aspect.help.modernitas=the new and the current
+tc.aspect.help.echo=sounds returning

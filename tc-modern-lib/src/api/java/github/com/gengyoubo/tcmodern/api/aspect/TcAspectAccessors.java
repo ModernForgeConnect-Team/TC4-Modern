@@ -1,6 +1,7 @@
 package github.com.gengyoubo.tcmodern.api.aspect;
 
 import github.com.gengyoubo.mfcl.api.LegacyObject;
+import github.com.gengyoubo.mfcl.api.mla.LegacyConstructor;
 import github.com.gengyoubo.mfcl.api.mla.LegacyField;
 import github.com.gengyoubo.mfcl.api.mla.LegacyMethod;
 import github.com.gengyoubo.mfcl.api.mla.LegacyType;
@@ -41,6 +42,21 @@ public final class TcAspectAccessors {
         @LegacyMethod(name = "getComponents", descriptor = "()[Lthaumcraft/api/aspects/Aspect;") LegacyObject[] components();
     }
 
+    // Factories and static lookups must not share a receiver-less contract with instance members.
+    @LegacyType("thaumcraft.api.aspects.Aspect")
+    public interface AspectLookup {
+        /** Null when no aspect has that tag. */
+        @LegacyMethod(name = "getAspect", descriptor = "(Ljava/lang/String;)Lthaumcraft/api/aspects/Aspect;", isStatic = true)
+        LegacyObject find(String tag);
+    }
+
+    /** The original constructor adds the new aspect to {@link Registry#aspects()} itself. */
+    @LegacyType("thaumcraft.api.aspects.Aspect")
+    public interface AspectFactory {
+        @LegacyConstructor(descriptor = "(Ljava/lang/String;I[Lthaumcraft/api/aspects/Aspect;Lnet/minecraft/util/ResourceLocation;I)V")
+        LegacyObject create(String tag, int color, LegacyObject[] components, LegacyObject image, int blend);
+    }
+
     /** How the alchemical furnace and the thaumometer read an item: its object tags plus bonus tags. */
     @LegacyType("thaumcraft.common.lib.crafting.ThaumcraftCraftingManager")
     public interface Crafting {
@@ -60,5 +76,32 @@ public final class TcAspectAccessors {
     public interface Resource {
         @LegacyMethod(name = "func_110624_b", descriptor = "()Ljava/lang/String;") String namespace();
         @LegacyMethod(name = "func_110623_a", descriptor = "()Ljava/lang/String;") String path();
+    }
+
+    @LegacyType("thaumcraft.common.Thaumcraft")
+    public interface Thaumcraft {
+        @LegacyField(name = "proxy", descriptor = "Lthaumcraft/common/CommonProxy;", isStatic = true) LegacyObject proxy();
+    }
+
+    @LegacyType("thaumcraft.common.CommonProxy")
+    public interface Proxy {
+        @LegacyMethod(name = "getPlayerKnowledge", descriptor = "()Lthaumcraft/common/lib/research/PlayerKnowledge;") LegacyObject knowledge();
+    }
+
+    /** Per-player research state, keyed by player name. The aspect pool doubles as the discovered-aspect list. */
+    @LegacyType("thaumcraft.common.lib.research.PlayerKnowledge")
+    public interface Knowledge {
+        @LegacyMethod(name = "getAspectPoolFor", descriptor = "(Ljava/lang/String;Lthaumcraft/api/aspects/Aspect;)S") short pool(String player, LegacyObject aspect);
+        @LegacyMethod(name = "addAspectPool", descriptor = "(Ljava/lang/String;Lthaumcraft/api/aspects/Aspect;S)Z") boolean add(String player, LegacyObject aspect, short amount);
+    }
+
+    @LegacyType("net.minecraft.entity.player.EntityPlayer")
+    public interface Player {
+        @LegacyMethod(name = "func_70005_c_", descriptor = "()Ljava/lang/String;") String name();
+    }
+
+    @LegacyType("net.minecraft.util.ResourceLocation")
+    public interface ResourceFactory {
+        @LegacyConstructor(descriptor = "(Ljava/lang/String;Ljava/lang/String;)V") LegacyObject create(String namespace, String path);
     }
 }

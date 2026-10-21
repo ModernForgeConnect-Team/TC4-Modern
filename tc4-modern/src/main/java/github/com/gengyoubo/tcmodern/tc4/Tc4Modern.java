@@ -5,6 +5,7 @@ import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.tc4.compat.curios.Tc4CuriosCompat;
 import github.com.gengyoubo.tcmodern.tc4.compat.lang.Tc4LegacyLanguages;
 import github.com.gengyoubo.tcmodern.tc4.compat.scan.Tc4ScanDefaults;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4Aspects;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4CreativeTabs;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Features;
@@ -29,6 +30,8 @@ public final class Tc4Modern {
         Tc4RecipeSerializers.register(modBus);
         Tc4Features.register(modBus);
         modBus.addListener(this::commonSetup);
+        // Aspects first: everything after may read or assign them.
+        TcModernApi.whenReady(Tc4Aspects::install);
         TcModernApi.whenReady(Tc4ScanDefaults::install);
         TcModernApi.whenReady(Tc4ModernWorldgen::install);
         TcModernApi.whenReady(Tc4LegacyLanguages::install);

@@ -31,5 +31,15 @@
   "config.jade.plugin_tc4modern.essentia": "TC4 源质内容",
   "jade.tc4modern.essentia.total": "源质总量：%s",
   "jade.tc4modern.essentia.empty": "空",
-  "jade.tc4modern.essentia.filter": "标签：%s"
+  "jade.tc4modern.essentia.filter": "标签：%s",
+  "tc.aspect.antiquitas": "远古,古代,过去",
+  "tc.aspect.modernitas": "现代,现今,革新",
+  "tc.aspect.echo": "回声,回响,共鸣",
+  "commands.tc4modern.unavailable": "原版神秘时代运行时不可用",
+  "commands.tc4modern.aspect.unknown": "未知的要素：%s",
+  "commands.tc4modern.aspect.give.single": "已将 %s 点 %s 给予 %s（现有 %s 点）",
+  "commands.tc4modern.aspect.give.single.multiple": "已将 %s 点 %s 给予 %s 名玩家",
+  "commands.tc4modern.aspect.give.all": "已将全部 %2$s 种要素各 %1$s 点给予 %3$s",
+  "commands.tc4modern.aspect.give.all.multiple": "已将全部 %2$s 种要素各 %1$s 点给予 %3$s 名玩家",
+  "commands.tc4modern.aspect.give.failed": "无法给予 %s 要素：%s"
 }

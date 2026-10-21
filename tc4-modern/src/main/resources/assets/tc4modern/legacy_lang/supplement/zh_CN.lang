@@ -7,3 +7,10 @@ item.ItemResource.18.name=金币
 fluid.fluidPure=净化之水
 tc.research_page.CORELIQUID.2=    §n傀儡升级:混沌解锁§r<IMG>thaumcraft:textures/items/golem_upgrade_entropy.png:0:0:255:255:0.0625</IMG>安装这种升级后,傀儡会优先汲取与你所标记液体相连的最远处液体方块.这样它就能抽干整池液体,而不只是你标记的那一格.<BR>它只会在自身视野范围内搜索,距离按到达目标方块实际经过的方块数计算,而非直线距离.
 tc.research_page.TUBES.4=用魔杖点击一段管道,可以将它与相邻管道连接或断开.<BR>用魔杖点击管道的中央部分,还可以旋转某些管道,例如阀门.
+# Aspects added by TC4: Modern (issue #4).
+tc.aspect.antiquitas=远古,古代,过去
+tc.aspect.modernitas=现代,现今,革新
+tc.aspect.echo=回声,回响,共鸣
+tc.aspect.help.antiquitas=久远之物
+tc.aspect.help.modernitas=新近与当下
+tc.aspect.help.echo=往复的声响
