@@ -18,12 +18,11 @@ public final class TcAspects {
      */
     public static List<TcAspect> snapshot(LegacyRuntime runtime) {
         if (!runtime.isOpen() || !runtime.loadedMods().contains(TcModernApi.LEGACY_MOD_ID)) return List.of();
-        var copy = runtime.accessor(MapFactory.class).copy(runtime.accessor(Registry.class).aspects());
-        var values = runtime.accessor(CollectionView.class, runtime.accessor(MapView.class, copy).values()).elements();
+        var registry = runtime.values().map(runtime.accessor(Registry.class).aspects());
         var result = new ArrayList<TcAspect>();
-        for (LegacyObject value : values) {
+        for (Object value : registry.values()) {
             try {
-                result.add(read(runtime, value));
+                result.add(read(runtime, (LegacyObject) value));
             } catch (RuntimeException unreadable) {
                 // A malformed addon aspect must not hide the original ones.
             }

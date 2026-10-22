@@ -54,7 +54,7 @@ side="BOTH"
 [[dependencies.tc4modern]]
 modId="mfcl"
 mandatory=true
-versionRange="[0.2.0,0.3.0)"
+versionRange="[0.2.9,0.3.0)"
 ordering="AFTER"
 side="BOTH"
 

@@ -5,7 +5,10 @@ import github.com.gengyoubo.mfcl.api.mla.LegacyField;
 import github.com.gengyoubo.mfcl.api.mla.LegacyMethod;
 import github.com.gengyoubo.mfcl.api.mla.LegacyType;
 
-/** Exact public contracts of TC4 4.2.3.5 and the legacy runtime's Guava API. No old classes are linked. */
+/**
+ * Exact public contracts of TC4 4.2.3.5. No old classes are linked; the JDK collections they return
+ * are read with {@code LegacyValues#list}.
+ */
 public final class TcRecipeAccessors {
     private TcRecipeAccessors() { }
 
@@ -13,20 +16,6 @@ public final class TcRecipeAccessors {
     public interface Registry {
         @LegacyMethod(name = "getCraftingRecipes", descriptor = "()Ljava/util/List;", isStatic = true)
         LegacyObject recipes();
-    }
-
-    // JDK collection classes cannot be MLA targets. Snapshot through Guava's public
-    // ImmutableList API in the legacy domain instead; never unwrap legacy objects.
-    @LegacyType("com.google.common.collect.ImmutableList")
-    public interface ListFactory {
-        @LegacyMethod(name = "copyOf", descriptor = "(Ljava/util/Collection;)Lcom/google/common/collect/ImmutableList;", isStatic = true)
-        LegacyObject copy(LegacyObject collection);
-    }
-
-    @LegacyType("com.google.common.collect.ImmutableList")
-    public interface ListView {
-        @LegacyMethod(name = "toArray", descriptor = "()[Ljava/lang/Object;")
-        LegacyObject[] elements();
     }
 
     @LegacyType("thaumcraft.api.crafting.IArcaneRecipe")

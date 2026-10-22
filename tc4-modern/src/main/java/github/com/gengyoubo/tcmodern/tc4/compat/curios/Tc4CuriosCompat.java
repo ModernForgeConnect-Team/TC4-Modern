@@ -29,7 +29,6 @@ import top.theillusivec4.curios.api.SlotResult;
  */
 public final class Tc4CuriosCompat {
     private static final ResourceLocation VALIDATOR = ResourceLocation.fromNamespaceAndPath("tc4modern", "thaumcraft_bauble");
-    private static final String BAUBLE_PACKAGE = "thaumcraft.common.items.baubles";
     // Only the Goggles of Revealing: other IGoggles/IRevealer items are real helmets (fortress,
     // void robe) whose armor and set bonuses must not be worn from a Curios slot.
     private static final String GOGGLES = "thaumcraft.common.items.armor.ItemGoggles";
@@ -54,7 +53,7 @@ public final class Tc4CuriosCompat {
 
     private static void collect(LegacyRuntime runtime) {
         boolean baubles = runtime.loadedMods().contains(LEGACY_BAUBLES_MOD_ID);
-        boolean goggles = runtime.supports(LegacyFeatures.MLA_INSTANCE) && runtime.supports(LegacyFeatures.EQUIPMENT);
+        boolean goggles = runtime.supports(LegacyFeatures.EQUIPMENT);
         if (!baubles) LogUtils.getLogger().info("TC4 Curios: legacy Baubles is not loaded; no Thaumcraft baubles classified.");
         if (!goggles) LogUtils.getLogger().info("TC4 Curios: this MFCL build has no equipment sources; goggles stay helmet-only.");
         Map<Item, String> classified = new HashMap<>();
@@ -66,7 +65,8 @@ public final class Tc4CuriosCompat {
             try {
                 String slot;
                 if (goggles && runtime.values().isInstance(item, GOGGLES)) slot = HEAD;
-                else if (baubles && item.typeName().startsWith(BAUBLE_PACKAGE)) slot = baubleSlot(runtime, key, item);
+                // Every original IBauble, wherever its class lives (the focus pouch is a wand item).
+                else if (baubles && runtime.values().isInstance(item, Tc4BaubleAccessors.Bauble.class)) slot = baubleSlot(runtime, key, item);
                 else continue;
                 candidates++;
                 if (slot == null) continue;

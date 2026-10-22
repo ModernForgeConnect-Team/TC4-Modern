@@ -103,8 +103,6 @@ class TcAspectsTest {
                     registry.members().put("values", values);
                     return created;
                 }
-                if (contract == TcAspectAccessors.MapFactory.class || contract == TcAspectAccessors.MapView.class) return args == null ? receiver : args[0];
-                if (contract == TcAspectAccessors.CollectionView.class) return ((Handle) receiver).members().get("values");
                 // Bonus tags add one to every aspect the item already has.
                 if (contract == TcAspectAccessors.Crafting.class) return method.getName().equals("tags")
                         ? ((Handle) args[0]).members().get("tags") : bonus((Handle) args[1]);
@@ -120,6 +118,14 @@ class TcAspectsTest {
             var amounts = new HashMap<String, Integer>();
             ((Map<?, ?>) tags.members().get("amounts")).forEach((tag, amount) -> amounts.put((String) tag, (Integer) amount > 0 ? (Integer) amount + 1 : 0));
             return new Handle(tags.typeName(), Map.of("values", tags.members().get("values"), "amounts", amounts));
+        }
+        @Override public LegacyValues values() {
+            return (LegacyValues) Proxy.newProxyInstance(LegacyValues.class.getClassLoader(), new Class<?>[]{LegacyValues.class}, (proxy, method, args) -> {
+                if (!method.getName().equals("map")) throw new UnsupportedOperationException(method.getName());
+                var map = new LinkedHashMap<Object, Object>();
+                for (var aspect : (LegacyObject[]) ((Handle) args[0]).members().get("values")) map.put(((Handle) aspect).members().get("tag"), aspect);
+                return Collections.unmodifiableMap(map);
+            });
         }
         @Override public LegacyStack snapshot(LegacyObject value) { throw new UnsupportedOperationException(); }
         @Override public LegacyObject stack(LegacyStack value) { throw new UnsupportedOperationException(); }

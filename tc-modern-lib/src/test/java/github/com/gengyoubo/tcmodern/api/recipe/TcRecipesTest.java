@@ -145,11 +145,18 @@ class TcRecipesTest {
             if (registryFailure) throw new IllegalStateException("fixture registry failure");
             return contract.cast(Proxy.newProxyInstance(contract.getClassLoader(), new Class<?>[]{contract}, (proxy, method, args) -> {
                 if (contract == TcRecipeAccessors.Registry.class) return recipes;
-                if (contract == TcRecipeAccessors.ListFactory.class) return args[0];
                 var members = ((Handle) receiver).members();
                 if (!members.containsKey(method.getName())) throw new IllegalArgumentException("Missing fixture member " + method);
                 return members.get(method.getName());
             }));
+        }
+        @Override public LegacyValues values() {
+            return (LegacyValues) Proxy.newProxyInstance(LegacyValues.class.getClassLoader(), new Class<?>[]{LegacyValues.class}, (proxy, method, args) -> {
+                if (!method.getName().equals("list")) throw new UnsupportedOperationException(method.getName());
+                var elements = ((Handle) args[0]).members().get("elements");
+                if (elements == null) throw new IllegalArgumentException("Not an old Iterable or array");
+                return Collections.unmodifiableList(Arrays.asList((Object[]) elements));
+            });
         }
         @Override public LegacyStack snapshot(LegacyObject value) { return (LegacyStack) ((Handle) value).members().get("snapshot"); }
         @Override public LegacyObject stack(LegacyStack value) { throw new UnsupportedOperationException(); }

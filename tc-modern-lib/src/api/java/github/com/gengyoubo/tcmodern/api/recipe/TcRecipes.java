@@ -42,8 +42,7 @@ public final class TcRecipes {
         Reader(LegacyRuntime runtime) { this.runtime = runtime; }
 
         LegacyObject[] list(LegacyObject collection) {
-            var copy = runtime.accessor(ListFactory.class).copy(collection);
-            return runtime.accessor(ListView.class, copy).elements();
+            return runtime.values().list(collection).stream().map(LegacyObject.class::cast).toArray(LegacyObject[]::new);
         }
 
         TcRecipe read(LegacyObject original) {

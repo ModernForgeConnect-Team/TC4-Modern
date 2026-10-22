@@ -6,31 +6,14 @@ import github.com.gengyoubo.mfcl.api.mla.LegacyField;
 import github.com.gengyoubo.mfcl.api.mla.LegacyMethod;
 import github.com.gengyoubo.mfcl.api.mla.LegacyType;
 
-/** Exact public contracts of TC4 4.2.3.5 and the legacy runtime's Guava API. No old classes are linked. */
+/** Exact public contracts of TC4 4.2.3.5. No old classes are linked. */
 public final class TcAspectAccessors {
     private TcAspectAccessors() { }
 
     @LegacyType("thaumcraft.api.aspects.Aspect")
     public interface Registry {
-        /** Every registered aspect by tag, in registration order (primals first). */
+        /** Every registered aspect by tag, in registration order (primals first); read with {@code LegacyValues#map}. */
         @LegacyField(name = "aspects", descriptor = "Ljava/util/LinkedHashMap;", isStatic = true) LegacyObject aspects();
-    }
-
-    // JDK collection classes cannot be MLA targets; snapshot through Guava's public ImmutableMap instead.
-    @LegacyType("com.google.common.collect.ImmutableMap")
-    public interface MapFactory {
-        @LegacyMethod(name = "copyOf", descriptor = "(Ljava/util/Map;)Lcom/google/common/collect/ImmutableMap;", isStatic = true)
-        LegacyObject copy(LegacyObject map);
-    }
-
-    @LegacyType("com.google.common.collect.ImmutableMap")
-    public interface MapView {
-        @LegacyMethod(name = "values", descriptor = "()Lcom/google/common/collect/ImmutableCollection;") LegacyObject values();
-    }
-
-    @LegacyType("com.google.common.collect.ImmutableCollection")
-    public interface CollectionView {
-        @LegacyMethod(name = "toArray", descriptor = "()[Ljava/lang/Object;") LegacyObject[] elements();
     }
 
     @LegacyType("thaumcraft.api.aspects.Aspect")
