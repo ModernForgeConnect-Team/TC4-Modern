@@ -62,6 +62,11 @@ record JeiAspect(TcAspect aspect, long amount) {
         @Override public ResourceLocation getResourceLocation(JeiAspect value) {
             return ResourceLocation.fromNamespaceAndPath("tc4modern", "aspect/" + value.aspect().tag());
         }
+        @Override public String getDisplayModId(JeiAspect value) {
+            // The integration owns the JEI identity; the icon identifies the aspect's source mod.
+            var texture = value.aspect().texture().isBlank() ? null : ResourceLocation.tryParse(value.aspect().texture());
+            return texture != null ? texture.getNamespace() : "thaumcraft";
+        }
         @Override public long getAmount(JeiAspect value) { return Math.max(1, value.amount()); }
         @Override public JeiAspect copyWithAmount(JeiAspect value, long amount) { return new JeiAspect(value.aspect(), amount); }
         @Override public JeiAspect copyIngredient(JeiAspect value) { return value; }

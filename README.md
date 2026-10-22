@@ -185,9 +185,10 @@ Curios `5.9.1`（Minecraft 1.20.1 / Forge）是与旧版 Baubles 二选一的**�
 - 注册与旧版 Baubles 对应的现代 Curios 槽位：`amulet`（1 格）、`ring`（2 格）、`belt`（1 格），并授予玩家。
 - 通过 MFCL 公开 MLA API 读取旧版 `baubles.api.IBauble#getBaubleType`，把原版 TC4 饰品按类型归入上述槽位。
 - 原版 TC4 物品在 MFCL 现代注册表中使用非透明 ID（大写 `Thaumcraft:` 会编码为 `mfcl:legacy/<hex>`），无法用静态 `curios:` 物品标签引用，因此改用 Curios 谓词校验（`tc4modern:thaumcraft_bauble`）。
-- 仅桥接现代侧的装备归属：旧运行时中的 Baubles 饰品背包与佩戴效果仍由原版逻辑处理，当前不与其同步，也不复制或替换原版 Baubles 逻辑。
+- 揭示护目镜（`ItemGoggles`）可放入 Curios 自带的 `head` 槽：通过 MFCL 0.2.9 的装备来源 API（`LegacyEquipment`）在原版头盔槽为空时作为“佩戴的头盔”交给旧运行时，因此看节点、要素悬浮、神秘减耗等原版判断都会生效。原版头盔槽有头盔时以头盔为准。神秘头盔、虚空兜帽等真正的头盔不进入 Curios 槽。
+- 饰品（护身符/戒指/腰带）目前仅桥接现代侧的装备归属：旧运行时中的 Baubles 饰品背包与佩戴效果仍由原版逻辑处理，当前不与其同步。
 
-Curios is an optional, mutually exclusive alternative to the original Baubles slots: when Curios is installed it takes precedence and this mod no longer drives the legacy Baubles slots; when Curios is absent the mod does not intervene at all and no Curios class is loaded. Original TC4 hard-depends on Baubles, so both always coexist on the legacy runtime; the choice is only about which system provides the modern slots. Legacy TC4 item ids are opaque (`mfcl:legacy/<hex>`), so a Curios predicate is used instead of static item tags. Only modern-side placement is bridged: the legacy Baubles inventory and worn-item effects are not synchronized.
+Curios is an optional, mutually exclusive alternative to the original Baubles slots: when Curios is installed it takes precedence and this mod no longer drives the legacy Baubles slots; when Curios is absent the mod does not intervene at all and no Curios class is loaded. Original TC4 hard-depends on Baubles, so both always coexist on the legacy runtime; the choice is only about which system provides the modern slots. Legacy TC4 item ids are opaque (`mfcl:legacy/<hex>`), so a Curios predicate is used instead of static item tags. Goggles of Revealing fit the Curios `head` slot and are handed to the legacy runtime as the worn helmet (MFCL 0.2.9 equipment sources) while the vanilla helmet slot is empty. For baubles only modern-side placement is bridged so far: the legacy Baubles inventory and worn-item effects are not synchronized.
 
 ## 深板岩变体 / Deepslate variants
 
