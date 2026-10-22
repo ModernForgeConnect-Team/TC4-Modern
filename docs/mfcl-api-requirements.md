@@ -153,3 +153,75 @@ AutoCloseable redirectCall(String targetClass, String owner, String name, String
 2. §2 + §3：饰品 tick 与写回 → 视力护符、悬浮腰带。
 3. §4 + §5：符文护盾。
 4. §6：悬浮飞行等状态细节。
+
+---
+
+# 补充需求（API v2 之后）：JSON 配方注册（只新增）
+
+§1–§9 已在 MFCL 0.2.9-dev1 实现。以下为 TC4-Modern 用 JSON 新增奥术（有序/无序）、坩埚、注魔配方时缺的部分。
+
+## 目标做法
+
+启动时（两端各一次）读取各模组 jar 内 `data/<ns>/tc4_recipes/**.json` 与 `config/` 下的整合包目录，
+通过 MLA 直接调用 TC4 自己的注册方法，配方进入原版 `ThaumcraftApi.craftingRecipes`，匹配、JEI 快照全部复用原版：
+
+| 类型 | 原版入口 | 参数里需要跨边界的值 |
+|---|---|---|
+| 有序奥术 | `ThaumcraftApi.addArcaneCraftingRecipe(String, ItemStack, AspectList, Object...)` | `Object[]` 内混有 **String**（图案行、矿物词典名）、**Character**（键）、ItemStack |
+| 无序奥术 | `addShapelessArcaneCraftingRecipe(String, ItemStack, AspectList, Object...)` | `Object[]` 内混有 **String**（矿物词典名）、ItemStack |
+| 坩埚 | `addCrucibleRecipe(String, ItemStack, Object, AspectList)` | `Object` 参数是 ItemStack 或 **String**（矿物词典名） |
+| 注魔 | `addInfusionCraftingRecipe(String, Object, int, AspectList, ItemStack, ItemStack[])` | `Object` 结果是 ItemStack；`ItemStack[]` 已可用 `LegacyObject[]` 传 |
+
+`AspectList` 用 `@LegacyConstructor` + `add(Aspect,int)` 构造，`Aspect` 用 `Aspect.getAspect(String)`，均已可行。
+
+## §10 MLA 参数：允许把 String / 装箱基本类型传给 `Object` 形参（阻塞项）
+
+现状（`LegacyApiRuntime.argument`）：目标形参是 `Object`、或 `Object[]` 的元素时，只接受 `LegacyObject`；
+`String` 只在形参恰好是 `String` 时放行，`Character`/`Integer` 等装箱值只在形参是基本类型时放行。
+因此上表四个入口里三个无法调用。
+
+需要：形参类型（或数组元素类型）**能接受该值**时（`expected.isInstance(value)`），直接传入
+`String`、`Character`、`Boolean`、`Number` 的装箱值；对 `LegacyObject` 引用的处理不变。
+同样适用于 `@LegacyConstructor` 和 `LegacyValues.set`（后者实现已放行，文档写的是"装箱值只用于基本类型数组"，需对齐）。
+
+验收用例：
+
+```java
+@LegacyType("thaumcraft.api.ThaumcraftApi")
+interface Recipes {
+    @LegacyMethod(name = "addArcaneCraftingRecipe", isStatic = true,
+        descriptor = "(Ljava/lang/String;Lnet/minecraft/item/ItemStack;Lthaumcraft/api/aspects/AspectList;[Ljava/lang/Object;)Lthaumcraft/api/crafting/ShapedArcaneRecipe;")
+    LegacyObject arcane(String research, LegacyObject result, LegacyObject aspects, Object[] recipe);
+}
+// recipe = { "G G", " I ", "G G", 'G', "blockGlass", 'I', ironStack }
+```
+
+注意：接口形参写成 `Object[]` 时 `infer` 无法推断描述符，必须显式给 descriptor（现状即如此，文档里写明即可）。
+
+## §11 宿主物品作为配方材料/产物（非阻塞，按需）
+
+JSON 里只写旧版物品（`Thaumcraft:ItemResource`、`minecraft:iron_ingot`）时不需要新东西。
+若要用**只有宿主才有**的物品（1.13+ 物品、`tc4modern:*` 自己的物品）：
+
+- 材料：`hostRepresentations().item(id)` 给出只读旧版身份。需要 MFCL **保证**：玩家放进奥术工作台/注魔祭坛的宿主物品，映射成的旧版物品与这个身份相同，
+  使原版 `matches` 能成立。
+- 产物：配方产出该只读身份时，需要保证写回宿主时还原成原来的宿主物品（含数量、NBT）。
+
+请在 `LegacyHostRepresentations` 文档里说明这两点是否成立；不成立时 JSON 只允许旧版物品。
+
+## §12 数组构造（可选，便利）
+
+`LegacyValues.newArray(String componentType, int length)`：在旧运行时里建指定元素类型的空数组，配合 `set` 使用。
+§10 实现后配方注册不再需要它；只在需要把一个旧数组交给多个旧方法、或元素类型不能从形参推出时有用。
+
+## 不需要 MFCL 的部分（TC4-Modern 自己做）
+
+- 资源发现：Forge 的 `ModList` / `IModFile` 读各 jar 的 `data/<ns>/tc4_recipes/`，`FMLPaths.CONFIGDIR` 读整合包目录。
+- 时机：在 `FMLLoadCompleteEvent`（所有 `whenReady`、自定义要素注册之后，JEI 读取之前）注册。
+- 单人游戏只注册一次：集成服务端与客户端共用同一个旧运行时，静态配方表只有一份。
+- 矿物词典：原版构造函数自己展开字符串；需要额外别名时可调用 `OreDictionary.registerOre(String, ItemStack)`（形参就是 `String`，现在已可用）。
+- 研究门槛沿用 `research` 字段；典籍书页不在本期范围。
+
+## 以后（只新增阶段不需要）
+
+删除/覆盖原版配方、`/reload`、数据包同步：需要修改旧版 JDK 集合（`ArrayList.remove` 等）的能力，届时另提。

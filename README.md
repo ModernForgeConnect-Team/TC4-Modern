@@ -131,10 +131,10 @@ bash gradlew build
 
 ### 前置 / Prerequisites
 
-- 现代侧：Minecraft 1.20.1、Forge 47.4.28、完整 MFCL 0.1.4+（低于 0.2.0，必需）、Curios 5.9.1+（可选，安装后优先于旧版 Baubles）。
+- 现代侧：Minecraft 1.20.1、Forge 47.4.28、完整 MFCL 0.2.9+（低于 0.3.0，必需；使用开发者 API v2）、Curios 5.9.1+（可选，安装后优先于旧版 Baubles）。
 - 旧运行时（`mods/1.7.10/`）：原版 Thaumcraft 4.2.3.5（必需）及其强制前置 Baubles 1.0.1.10。
 
-原版 TC4 与 Baubles 属于 MFCL 旧运行时中的旧模组，**不会进入现代 Forge 的模组列表**，因此不能写入普通 `[[dependencies.tc4modern]]`。本模组通过 `mods.toml` 的 `[[mfclDependencies.tc4modern]]` 声明原版 Thaumcraft `4.2.3.5` 和 Baubles `1.0.1.10`，由 MFCL 0.1.4+ 在自身构造阶段校验实际加载结果及版本；缺失、版本不符或旧运行时启动失败均会阻止启动。附属端不再重复执行 `FMLLoadCompleteEvent` 检查。当前使用的公共 API 接口未改变，编译用 `mfcl_api_version` 保持 0.1.3。
+原版 TC4 与 Baubles 属于 MFCL 旧运行时中的旧模组，**不会进入现代 Forge 的模组列表**，因此不能写入普通 `[[dependencies.tc4modern]]`。本模组通过 `mods.toml` 的 `[[mfclDependencies.tc4modern]]` 声明原版 Thaumcraft `4.2.3.5` 和 Baubles `1.0.1.10`，由 MFCL 0.1.4+ 在自身构造阶段校验实际加载结果及版本；缺失、版本不符或旧运行时启动失败均会阻止启动。附属端不再重复执行 `FMLLoadCompleteEvent` 检查。编译使用 MFCL 开发者 API v2（`mfcl_api_version` 0.2.9-dev1）：要素与配方快照通过 `LegacyValues` 读取旧版集合，不再借道旧运行时的 Guava。
 
 | 产物 | 路径 |
 | --- | --- |
@@ -235,6 +235,44 @@ Lib 将新版方块、物品和实体映射为 MFCL 的独立只读旧版身份�
 需要包含 `LegacyRuntime.hostRepresentations()` 及只读身份查询桥接的 MFCL 构建；本地开发配置指向重新构建的 MFCL 运行时和 API JAR。现代扫描规则在登录及数据包重载时由服务端同步，实际扫描完成仍使用 TC4 原包经 MFCL 转发，并由服务端重新检查目标。
 
 执行 `:tc4-modern:runClient -PgameDir=run-modern-scanner-smoke -PmodernScannerSmokeTest`，可在独立测试世界验证原版探测仪扫描新版方块、掉落物和实体，以及重复扫描和存档重载。结果写入 `logs/tc4modern/modern-scanner-smoke.json`；应以其中的 `status: PASS` 判断成功，客户端正常退出本身不代表测试通过。
+
+## JSON 配方 / JSON recipes
+
+可以用 JSON **新增**奥术（有序/无序）、坩埚、注魔配方。它们通过原版 `ThaumcraftApi.add*` 加入原版配方表，因此合成匹配、研究门槛和 JEI 显示都与原版配方完全一致。原版配方不会被删除或覆盖。
+
+- 位置：任意模组 JAR 的 `data/<namespace>/tc4_recipes/**.json`；整合包可放在 `config/tc4modern/tc4_recipes/<namespace>/**.json`，与 JAR 内同 ID（`namespace:路径`）的文件以配置目录为准。
+- 时机：每个物理端在加载完成（`FMLLoadCompleteEvent`）时读取一次。**不是数据包**：不支持 `/reload`，客户端与服务端必须拥有相同的文件（JAR 内文件自然一致；配置目录需要整合包两端同时分发）。
+- 出错的文件会在日志中写明原因并跳过（`TC4 recipes: skipped ...`），不影响其他配方；研究、要素、物品、矿物词典名都会在注册前校验。
+- 需要 MFCL 0.2.9-dev2+（`mla.object-arguments`）；更早的构建会记录警告并不加载。
+
+| `type` | 字段 |
+|---|---|
+| `tc4modern:arcane_shaped` | `research`、`pattern`（1–3 行，等宽，最多 3 列，空格为空槽）、`key`、`aspects`、`result`、可选 `mirrored`（默认 `true`） |
+| `tc4modern:arcane_shapeless` | `research`、`ingredients`（1–9 个）、`aspects`、`result` |
+| `tc4modern:crucible` | `research`、`catalyst`、`aspects`（必填）、`result` |
+| `tc4modern:infusion` | `research`、`input`、`components`（仅物品，不支持矿物词典，与原版一致）、`aspects`、`instability`（默认 0）、`result` |
+
+物品写法：
+- 原版物品：`{"legacy_item": "Thaumcraft:ItemResource", "metadata": 2}`；`metadata` 可写 `"*"` 表示任意（仅限材料）；`nbt` 为 1.7.10 SNBT。
+- 新版物品：`{"item": "minecraft:amethyst_shard"}`，通过 MFCL 的宿主物品身份进入旧版，数量与 `nbt`（新版 SNBT）完整保留。
+- 矿物词典（仅材料）：`{"ore": "ingotIron"}`。
+- `count` 只用于 `result`。
+
+```json
+{
+  "type": "tc4modern:arcane_shaped",
+  "research": "BASICARTIFACE",
+  "pattern": ["G G", " I ", "G G"],
+  "key": {
+    "G": { "ore": "blockGlass" },
+    "I": { "legacy_item": "minecraft:iron_ingot" }
+  },
+  "aspects": { "aer": 5, "ordo": 5 },
+  "result": { "legacy_item": "Thaumcraft:ItemResource", "metadata": 2, "count": 1 }
+}
+```
+
+其他附属可直接使用 Lib API：`TcRecipeRegistrar.register(runtime, TcRecipeDefinition)`。神秘学典籍书页不会自动包含新配方。
 
 ## API 起点与边界
 

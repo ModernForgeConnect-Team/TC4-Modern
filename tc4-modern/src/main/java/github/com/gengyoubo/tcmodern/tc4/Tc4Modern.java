@@ -11,10 +11,12 @@ import github.com.gengyoubo.tcmodern.tc4.init.Tc4CreativeTabs;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Features;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Items;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4RecipeSerializers;
+import github.com.gengyoubo.tcmodern.tc4.recipe.Tc4RecipeLoader;
 import github.com.gengyoubo.tcmodern.tc4.world.Tc4ModernWorldgen;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 /** Gameplay module. Shared runtime access belongs in tc-modern-lib. */
@@ -30,6 +32,7 @@ public final class Tc4Modern {
         Tc4RecipeSerializers.register(modBus);
         Tc4Features.register(modBus);
         modBus.addListener(this::commonSetup);
+        modBus.addListener(this::loadComplete);
         // Aspects first: everything after may read or assign them.
         TcModernApi.whenReady(Tc4Aspects::install);
         TcModernApi.whenReady(Tc4ScanDefaults::install);
@@ -48,5 +51,10 @@ public final class Tc4Modern {
             return;
         }
         event.enqueueWork(Tc4CuriosCompat::install);
+    }
+
+    private void loadComplete(FMLLoadCompleteEvent event) {
+        // After every whenReady callback (custom aspects included) and before JEI reads the recipe list.
+        event.enqueueWork(() -> TcModernApi.runtime().ifPresent(Tc4RecipeLoader::load));
     }
 }
