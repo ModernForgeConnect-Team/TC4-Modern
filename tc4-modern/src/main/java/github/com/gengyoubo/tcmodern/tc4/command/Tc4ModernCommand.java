@@ -9,6 +9,7 @@ import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
 import github.com.gengyoubo.tcmodern.api.aspect.TcPlayerAspects;
+import github.com.gengyoubo.tcmodern.api.research.TcResearch;
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -24,7 +25,10 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** {@code /tc4modern aspect give <targets> <aspect|all> [amount]}: adds points to the original research aspect pool. */
+/**
+ * {@code /tc4modern aspect give <targets> <aspect|all> [amount]}: adds points to the original research aspect pool.
+ * {@code /tc4modern research give <targets> <research|all>}: completes one research with its prerequisites, or all of it.
+ */
 @Mod.EventBusSubscriber(modid = Tc4Modern.MOD_ID)
 public final class Tc4ModernCommand {
     private static final String ALL = "all";
@@ -43,7 +47,48 @@ public final class Tc4ModernCommand {
                                                 TcModernApi.runtime().map(TcAspects::snapshot).orElse(java.util.List.of()).stream().map(TcAspect::tag)), builder))
                                         .executes(context -> give(context, 1))
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1, TcPlayerAspects.MAX_POOL))
-                                                .executes(context -> give(context, IntegerArgumentType.getInteger(context, "amount")))))))));
+                                                .executes(context -> give(context, IntegerArgumentType.getInteger(context, "amount"))))))))
+                .then(Commands.literal("research").then(Commands.literal("give")
+                        .then(Commands.argument("targets", EntityArgument.players())
+                                .then(Commands.argument("research", StringArgumentType.word())
+                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(Stream.concat(Stream.of(ALL),
+                                                TcModernApi.runtime().map(TcResearch::keys).orElse(java.util.List.of()).stream()), builder))
+                                        .executes(Tc4ModernCommand::research))))));
+    }
+
+    private static int research(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        var source = context.getSource();
+        Collection<ServerPlayer> targets = EntityArgument.getPlayers(context, "targets");
+        String key = StringArgumentType.getString(context, "research");
+        var runtime = TcModernApi.runtime();
+        if (runtime.isEmpty()) {
+            source.sendFailure(Component.translatable("commands.tc4modern.unavailable"));
+            return 0;
+        }
+        boolean all = key.equals(ALL);
+        if (!all && !TcResearch.keys(runtime.get()).contains(key)) {
+            source.sendFailure(Component.translatable("commands.tc4modern.research.unknown", key));
+            return 0;
+        }
+        int given = 0;
+        for (var player : targets) {
+            try {
+                int completed = all ? TcResearch.completeAll(runtime.get(), player) : TcResearch.complete(runtime.get(), player, key);
+                given++;
+                if (targets.size() == 1) source.sendSuccess(() -> all
+                        ? Component.translatable("commands.tc4modern.research.give.all", player.getDisplayName(), completed)
+                        : Component.translatable("commands.tc4modern.research.give.single", key, player.getDisplayName(), completed), true);
+            } catch (RuntimeException failure) {
+                source.sendFailure(Component.translatable("commands.tc4modern.research.give.failed", player.getDisplayName(), String.valueOf(failure.getMessage())));
+            }
+        }
+        if (targets.size() > 1 && given > 0) {
+            int players = given;
+            source.sendSuccess(() -> all
+                    ? Component.translatable("commands.tc4modern.research.give.all.multiple", players)
+                    : Component.translatable("commands.tc4modern.research.give.single.multiple", key, players), true);
+        }
+        return given;
     }
 
     private static int give(CommandContext<CommandSourceStack> context, int amount) throws com.mojang.brigadier.exceptions.CommandSyntaxException {

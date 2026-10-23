@@ -152,7 +152,8 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 new TcRecipeCategory(INFUSION, "jei.tc4modern.infusion", helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.END_CRYSTAL))),
                 new AspectCompositionCategory(),
                 new AlchemyFurnaceCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.FURNACE))),
-                new WandConversionCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.STICK))));
+                new WandConversionCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.STICK))),
+                new MultiblockCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.BRICKS))));
     }
 
     @Override
@@ -194,7 +195,11 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 recipes.get(ARCANE).size(), recipes.get(CRUCIBLE).size(), recipes.get(INFUSION).size(), compounds.size(), snapshot.issues().size(), unmapped);
         var wand = wandConversions(runtime, registration.getIngredientManager().getAllItemStacks());
         registration.addRecipes(WandConversionCategory.TYPE, wand);
-        LogUtils.getLogger().info("TC4 JEI: alchemical furnace={} items with essentia, wand conversions={}.", furnace.size(), wand.size());
+        var multiblocks = Tc4Multiblocks.all(runtime, new JeiRecipeConverter(runtime, List.of(), Set.of()),
+                wands(runtime, registration.getIngredientManager().getAllItemStacks()));
+        registration.addRecipes(MultiblockCategory.TYPE, multiblocks);
+        LogUtils.getLogger().info("TC4 JEI: alchemical furnace={} items with essentia, wand conversions={}, multiblocks={}.",
+                furnace.size(), wand.size(), multiblocks.size());
         snapshot.issues().forEach(issue -> LogUtils.getLogger().debug("TC4 JEI source {}: {}", issue.source(), issue.detail()));
     }
 
@@ -264,7 +269,12 @@ public final class Tc4JeiPlugin implements IModPlugin {
                     .ifPresent(stack -> registration.addRecipeCatalyst(stack, INFUSION));
             converter.map(new LegacyStack("Thaumcraft:blockStoneDevice", 0, 1, ""))
                     .ifPresent(stack -> registration.addRecipeCatalyst(stack, AlchemyFurnaceCategory.TYPE));
-            converter.map(IRON_WOOD_WAND).ifPresent(stack -> registration.addRecipeCatalyst(stack, WandConversionCategory.TYPE));
+            converter.map(IRON_WOOD_WAND).ifPresent(stack -> {
+                registration.addRecipeCatalyst(stack, WandConversionCategory.TYPE);
+                registration.addRecipeCatalyst(stack, MultiblockCategory.TYPE);
+            });
+            converter.map(new LegacyStack("Thaumcraft:ItemInkwell", 0, 1, ""))
+                    .ifPresent(stack -> registration.addRecipeCatalyst(stack, MultiblockCategory.TYPE));
         });
     }
 }
