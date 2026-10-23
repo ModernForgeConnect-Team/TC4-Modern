@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import github.com.gengyoubo.tcmodern.tc4.client.FormedStructures;
 import java.util.List;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
@@ -43,20 +44,24 @@ import net.minecraftforge.client.model.data.ModelData;
 
 /**
  * A TC4 multiblock structure the wand (or scribing tools) turns into a device, as WandManager and BlockTable check
- * it: a rotatable 3D preview that shows all layers or one at a time, the blocks it takes, and the vis it costs.
- * Drag rotates, scrolling or clicking the layer label steps through the layers.
+ * it: the research the check requires, a rotatable 3D preview that shows all layers or one at a time, the blocks it
+ * takes, and the vis it costs. The preview can also show the structure as the original forms it.
+ * Drag rotates, scrolling or clicking the layer label steps through the layers, clicking the form label switches
+ * between the blocks to place and the formed structure.
  */
 final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Recipe> {
     /**
      * One block of a structure. Nothing to render or list is allowed: the preview falls back to a marker.
      *
-     * @param state   the host state MFCL gives the block, or null
-     * @param items   what the material slot shows, the first also renders the block when its state cannot
-     * @param trigger whether this is a block to right-click
+     * @param state     the host state MFCL gives the block, or null
+     * @param items     what the material slot shows, the first also renders the block when its state cannot
+     * @param trigger   whether this is a block to right-click
+     * @param legacyKey the original block, drawn by its own renderers when MFCL offers preview scenes; null for host blocks
      */
-    record Part(BlockState state, List<ItemStack> items, boolean trigger) {
+    record Part(BlockState state, List<ItemStack> items, boolean trigger, String legacyKey, int metadata) {
         Part { items = items.stream().map(stack -> stack.copyWithCount(1)).toList(); }
-        Part asTrigger() { return new Part(state, items, true); }
+        Part(BlockState state, List<ItemStack> items, boolean trigger) { this(state, items, trigger, null, 0); }
+        Part asTrigger() { return new Part(state, items, true, legacyKey, metadata); }
     }
 
     record Placed(int x, int y, int z, Part part) { }
@@ -73,11 +78,12 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
     }
 
     static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "multiblock", Recipe.class);
-    private static final int WIDTH = 150, HEIGHT = 132;
-    private static final int VIEW_X = 0, VIEW_Y = 12, VIEW_W = 96, VIEW_H = 78;
-    private static final int SIDE_X = 102, TOOL_Y = 12, COST_Y = 36, MATERIAL_Y = 92, NOTE_Y = 112;
+    private static final int WIDTH = 150, HEIGHT = 142;
+    private static final int RESEARCH_Y = 12;
+    private static final int VIEW_X = 0, VIEW_Y = 22, VIEW_W = 96, VIEW_H = 78;
+    private static final int SIDE_X = 102, TOOL_Y = 22, COST_Y = 46, MATERIAL_Y = 102, NOTE_Y = 122;
     private static final int LAYER_H = 10;
-    private static final int INK = 0xFF505050;
+    private static final int INK = 0xFF505050, REQUIRED = 0xFF8B1A1A;
     private final IDrawable icon;
 
     MultiblockCategory(IDrawable icon) { this.icon = icon; }
@@ -124,6 +130,8 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
         for (int i = 0; i < recipe.materials().stream().filter(material -> !material.part().items().isEmpty()).count(); i++)
             frame(graphics, 1 + i * 18, MATERIAL_Y);
         graphics.drawString(font, font.plainSubstrByWidth(Component.translatable(name(recipe)).getString(), VIEW_W), 0, 2, INK, false);
+        graphics.drawString(font, font.plainSubstrByWidth(research(recipe).getString(), WIDTH), 0, RESEARCH_Y,
+                recipe.research().isEmpty() ? INK : REQUIRED, false);
         if (recipe.cost().isEmpty()) graphics.drawString(font, Component.translatable("jei.tc4modern.multiblock.free"), SIDE_X, COST_Y + 4, INK, false);
         var lines = font.split(Component.translatable(name(recipe) + ".note"), WIDTH);
         for (int i = 0; i < Math.min(2, lines.size()); i++) graphics.drawString(font, lines.get(i), 0, NOTE_Y + i * 10, INK, false);
@@ -131,16 +139,21 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
 
     @Override
     public void getTooltip(ITooltipBuilder tooltip, Recipe recipe, IRecipeSlotsView slots, double x, double y) {
-        if (y >= 0 && y < VIEW_Y) tooltip.add(research(recipe));
+        if (y >= RESEARCH_Y && y < VIEW_Y) {
+            tooltip.add(research(recipe));
+            if (!recipe.research().isEmpty())
+                tooltip.add(Component.translatable("jei.tc4modern.multiblock.research.hint").withStyle(ChatFormatting.GRAY));
+        }
         else if (y >= NOTE_Y) tooltip.add(Component.translatable(name(recipe) + ".note"));
     }
 
     private static String name(Recipe recipe) { return "jei.tc4modern.multiblock." + recipe.id(); }
 
+    /** The research's own name where Thaumcraft's language files have one, else its key. */
     private static Component research(Recipe recipe) {
         if (recipe.research().isEmpty()) return Component.translatable("jei.tc4modern.no_research");
         String name = "tc.research_name." + recipe.research();
-        return Component.translatable("jei.tc4modern.research", I18n.exists(name) ? I18n.get(name) : recipe.research());
+        return Component.translatable("jei.tc4modern.multiblock.research", I18n.exists(name) ? I18n.get(name) : recipe.research());
     }
 
     private static void frame(GuiGraphics graphics, int x, int y) {
@@ -154,6 +167,8 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
         private final Recipe recipe;
         /** -1 shows every layer. */
         private int layer = -1;
+        /** Shows the structure as the original forms it instead of the blocks to place. */
+        private boolean formed;
         private float yaw = 45, pitch = 30;
         /** Spins slowly until the player first turns it. */
         private boolean turned;
@@ -166,14 +181,32 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
 
         @Override
         public void drawWidget(GuiGraphics graphics, double mouseX, double mouseY) {
-            renderStructure(graphics);
             var font = Minecraft.getInstance().font;
-            var label = layerLabel();
-            boolean hover = mouseX >= 0 && mouseX < font.width(label) + 4 && mouseY >= VIEW_H - LAYER_H && mouseY < VIEW_H;
+            boolean shown = !formed || FormedStructures.render(graphics, recipe.id(), VIEW_W / 2F, (VIEW_H - LAYER_H) / 2F,
+                    Math.min(VIEW_W, VIEW_H - LAYER_H), 20, currentYaw(), pitch);
+            if (!formed) renderStructure(graphics);
             graphics.pose().pushPose();
             graphics.pose().translate(0, 0, 400);
-            graphics.drawString(font, label, 0, VIEW_H - LAYER_H + 1, hover ? 0xFF2050C0 : INK, false);
+            if (!shown) {
+                var lines = font.split(Component.translatable("jei.tc4modern.multiblock.formed.unavailable"), VIEW_W - 8);
+                for (int i = 0; i < lines.size(); i++)
+                    graphics.drawString(font, lines.get(i), 4, (VIEW_H - LAYER_H) / 2 - lines.size() * 5 + i * 10, INK, false);
+            }
+            if (!formed) {
+                var label = layerLabel();
+                boolean hover = mouseX >= 0 && mouseX < font.width(label) + 4 && mouseY >= VIEW_H - LAYER_H && mouseY < VIEW_H;
+                graphics.drawString(font, label, 0, VIEW_H - LAYER_H + 1, hover ? 0xFF2050C0 : INK, false);
+            }
+            var toggle = formLabel();
+            int toggleX = VIEW_W - font.width(toggle);
+            boolean hover = mouseX >= toggleX - 4 && mouseX < VIEW_W && mouseY >= VIEW_H - LAYER_H && mouseY < VIEW_H;
+            graphics.drawString(font, toggle, toggleX, VIEW_H - LAYER_H + 1, hover ? 0xFF2050C0 : INK, false);
             graphics.pose().popPose();
+        }
+
+        /** Names the view a click switches to. */
+        private Component formLabel() {
+            return Component.translatable(formed ? "jei.tc4modern.multiblock.show_unformed" : "jei.tc4modern.multiblock.show_formed");
         }
 
         private Component layerLabel() {
@@ -190,16 +223,22 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
         public boolean handleInput(double mouseX, double mouseY, IJeiUserInput input) {
             var key = input.getKey();
             if (key.getType() != InputConstants.Type.MOUSE || key.getValue() != InputConstants.MOUSE_BUTTON_LEFT) return false;
+            // JEI passes positions relative to getArea().
             var font = Minecraft.getInstance().font;
-            double x = mouseX - VIEW_X, y = mouseY - VIEW_Y;
-            if (x < 0 || x >= font.width(layerLabel()) + 4 || y < VIEW_H - LAYER_H || y >= VIEW_H) return false;
+            double x = mouseX, y = mouseY;
+            if (y < VIEW_H - LAYER_H || y >= VIEW_H) return false;
+            if (x >= VIEW_W - font.width(formLabel()) - 4 && x < VIEW_W) {
+                if (!input.isSimulate()) formed = !formed;
+                return true;
+            }
+            if (formed || x < 0 || x >= font.width(layerLabel()) + 4) return false;
             if (!input.isSimulate()) stepLayer(1);
             return true;
         }
 
         @Override
         public boolean handleMouseScrolled(double mouseX, double mouseY, double delta) {
-            if (recipe.sizeY() < 2 || delta == 0) return false;
+            if (formed || recipe.sizeY() < 2 || delta == 0) return false;
             stepLayer(delta > 0 ? 1 : -1);
             return true;
         }
@@ -238,7 +277,7 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
                 if (layer >= 0 && block.y() != layer) continue;
                 pose.pushPose();
                 pose.translate(block.x(), block.y(), block.z());
-                render(mc, block.part(), pose, buffers);
+                render(mc, block.part(), pose, buffers, currentYaw(), pitch);
                 pose.popPose();
             }
             graphics.flush();
@@ -246,8 +285,10 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
             pose.popPose();
         }
 
-        /** The block's model, else its item, else a cube of its texture, else a marker. */
-        private static void render(Minecraft mc, Part part, PoseStack pose, MultiBufferSource buffers) {
+        /** The original block's own renderers, else the block's model, else its item, else a cube of its texture, else a marker. */
+        private static void render(Minecraft mc, Part part, PoseStack pose, MultiBufferSource buffers, float yaw, float pitch) {
+            // Tile-rendered originals (rune matrix, table) have no host model; the preview scene draws them as placed.
+            if (part.legacyKey() != null && FormedStructures.renderBlock(part.legacyKey(), part.metadata(), pose, buffers, yaw + 180, pitch)) return;
             var state = part.state();
             var blocks = mc.getBlockRenderer();
             try {

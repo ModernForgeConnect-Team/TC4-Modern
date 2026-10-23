@@ -174,6 +174,9 @@ JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafti
 ```
 
 该选项会新建独立测试世界，检查三类配方的 JEI 注册与全部布局，保存各页面截图到测试游戏目录 `screenshots/`，生成 `logs/tc4modern/jei-smoke.json`，然后退出测试客户端。仅在专用测试游戏目录使用。
+
+多方块页面可切换“成型后”，用 MFCL 0.2.9-dev3 的预览场景（`LegacyFeatures.SCENES`）显示原版成型代码生成的结构；成型前视图中的原版方块（符文矩阵、台桌等由 TESR 绘制的方块）也通过预览场景绘制。看向只存在于成型结构中的方块时，Jade 图标显示整个成型结构。`-PformedPreviewSmokeTest` 会在测试世界中绘制全部成型结构和几个 TESR 单方块，截图为 `screenshots/tc4modern-formed-previews.png`，报告为 `logs/tc4modern/formed-preview-smoke.json`。
+
 Lib 的 `TcRecipes.snapshot(runtime)` 返回不持有旧对象引用的独立配方数据及诊断，第三方现代附属可复用，不依赖 JEI 或任一版本的 Minecraft 编译类。
 
 ## Curios 兼容 / Curios integration

@@ -94,6 +94,9 @@ minecraft {
             if (providers.gradleProperty('cinnabarSmokeTest').isPresent()) {
                 property 'tc4modern.cinnabarSmokeTest', 'true'
             }
+            if (providers.gradleProperty('formedPreviewSmokeTest').isPresent()) {
+                property 'tc4modern.formedPreviewSmokeTest', 'true'
+            }
             if (providers.gradleProperty('modernScannerSmokeTest').isPresent()) {
                 property 'tc4modern.modernScannerSmokeTest', 'true'
             }

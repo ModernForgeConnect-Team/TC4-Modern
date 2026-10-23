@@ -5,6 +5,7 @@ import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
 import github.com.gengyoubo.tcmodern.tc4.client.AspectIcons;
+import github.com.gengyoubo.tcmodern.tc4.client.FormedStructures;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +34,13 @@ import snownee.jade.api.ui.IElementHelper;
 /**
  * Shows the essentia held by original TC4 tiles: jars, alembics, the crucible, reservoirs, tubes, the alchemical
  * furnace and nodes. Loaded only by Jade. The server reads the tile when Jade is installed there; otherwise the
- * client reads the copy MFCL synchronises for rendering.
+ * client reads the copy MFCL synchronises for rendering. Blocks that only exist in a formed multiblock show the whole
+ * formed structure as their icon and name it.
  */
 @WailaPlugin(Tc4Modern.MOD_ID)
 public final class Tc4JadePlugin implements IWailaPlugin {
     static final ResourceLocation ESSENTIA = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "essentia");
+    static final ResourceLocation FORMED = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "formed_structure");
     /** Up to this many aspects are listed by name; more become a grid of icons until details are shown. */
     private static final int NAMED_LIMIT = 4;
     private static final int ICONS_PER_ROW = 8;
@@ -48,6 +51,24 @@ public final class Tc4JadePlugin implements IWailaPlugin {
 
     @Override public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(Client.INSTANCE, Block.class);
+        registration.registerBlockIcon(Formed.INSTANCE, Block.class);
+        registration.registerBlockComponent(Formed.INSTANCE, Block.class);
+    }
+
+    private enum Formed implements IBlockComponentProvider {
+        INSTANCE;
+
+        @Override public IElement getIcon(BlockAccessor accessor, IPluginConfig config, IElement currentIcon) {
+            return FormedStructures.partOf(accessor.getBlockState()).filter(id -> FormedStructures.scene(id).isPresent())
+                    .<IElement>map(FormedElement::new).orElse(currentIcon);
+        }
+
+        @Override public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
+            FormedStructures.partOf(accessor.getBlockState()).ifPresent(id -> tooltip.add(Component.translatable("jade.tc4modern.formed",
+                    Component.translatable("jei.tc4modern.multiblock." + id)).withStyle(ChatFormatting.GRAY)));
+        }
+
+        @Override public ResourceLocation getUid() { return FORMED; }
     }
 
     private enum Server implements IServerDataProvider<BlockAccessor> {

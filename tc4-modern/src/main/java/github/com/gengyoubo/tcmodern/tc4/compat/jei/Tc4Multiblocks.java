@@ -119,7 +119,7 @@ final class Tc4Multiblocks {
         } catch (RuntimeException unsupported) {
             state = null;
         }
-        return new Part(state, Optional.of(item(name, meta)).filter(stack -> !stack.isEmpty()).map(List::of).orElse(List.of()), false);
+        return new Part(state, Optional.of(item(name, meta)).filter(stack -> !stack.isEmpty()).map(List::of).orElse(List.of()), false, TC + name, meta);
     }
 
     private static Part vanilla(Block block) { return new Part(block.defaultBlockState(), List.of(new ItemStack(block)), false); }
