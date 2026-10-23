@@ -47,6 +47,7 @@ public final class Tc4JeiPlugin implements IModPlugin {
     public void onRuntimeAvailable(IJeiRuntime runtime) {
         if (Boolean.getBoolean("tc4modern.jeiSmokeTest")) {
             github.com.gengyoubo.tcmodern.tc4.client.testing.JeiSmokeProbe.ready(index -> {
+                if (index == 3) return checkItemInFluid(runtime);
                 var type = List.of(ARCANE, CRUCIBLE, INFUSION).get(index);
                 var manager = runtime.getRecipeManager();
                 var recipes = manager.createRecipeLookup(type).get().toList();
@@ -153,6 +154,7 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 new AspectCompositionCategory(),
                 new AlchemyFurnaceCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.FURNACE))),
                 new WandConversionCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.STICK))),
+                new ItemInFluidCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.WATER_BUCKET))),
                 new MultiblockCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.BRICKS))));
     }
 
@@ -195,12 +197,44 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 recipes.get(ARCANE).size(), recipes.get(CRUCIBLE).size(), recipes.get(INFUSION).size(), compounds.size(), snapshot.issues().size(), unmapped);
         var wand = wandConversions(runtime, registration.getIngredientManager().getAllItemStacks());
         registration.addRecipes(WandConversionCategory.TYPE, wand);
+        var fluid = itemInFluidRecipes(converter);
+        registration.addRecipes(ItemInFluidCategory.TYPE, fluid);
         var multiblocks = Tc4Multiblocks.all(runtime, new JeiRecipeConverter(runtime, List.of(), Set.of()),
                 wands(runtime, registration.getIngredientManager().getAllItemStacks()));
         registration.addRecipes(MultiblockCategory.TYPE, multiblocks);
-        LogUtils.getLogger().info("TC4 JEI: alchemical furnace={} items with essentia, wand conversions={}, multiblocks={}.",
-                furnace.size(), wand.size(), multiblocks.size());
+        LogUtils.getLogger().info("TC4 JEI: alchemical furnace={} items with essentia, wand conversions={}, multiblocks={}, item in fluid={}.",
+                furnace.size(), wand.size(), multiblocks.size(), fluid.size());
         snapshot.issues().forEach(issue -> LogUtils.getLogger().debug("TC4 JEI source {}: {}", issue.source(), issue.detail()));
+    }
+
+    /** Original ItemBathSalts expires after 200 ticks; EventHandlerEntity turns still source water into fluidPure. */
+    private static List<ItemInFluidCategory.Recipe> itemInFluidRecipes(JeiRecipeConverter converter) {
+        return converter.map(new LegacyStack("Thaumcraft:ItemBathSalts", 0, 1, ""))
+                .flatMap(salt -> converter.map(new LegacyStack("Thaumcraft:blockFluidPure", 0, 1, ""))
+                        .map(result -> new ItemInFluidCategory.Recipe(salt, result)))
+                .map(List::of).orElseGet(List::of);
+    }
+
+    private static int checkItemInFluid(IJeiRuntime runtime) {
+        var manager = runtime.getRecipeManager();
+        var type = ItemInFluidCategory.TYPE;
+        var recipes = manager.createRecipeLookup(type).get().toList();
+        if (recipes.size() != 1) throw new IllegalStateException("Expected one bath salts conversion: " + recipes.size());
+        var recipe = recipes.get(0);
+        var factory = runtime.getJeiHelpers().getFocusFactory();
+        if (manager.createRecipeLayoutDrawable(manager.getRecipeCategory(type), recipe, factory.getEmptyFocusGroup()).isEmpty())
+            throw new IllegalStateException("JEI could not build bath salts layout");
+        var output = factory.createFocus(RecipeIngredientRole.OUTPUT, VanillaTypes.ITEM_STACK, recipe.result());
+        var salt = factory.createFocus(RecipeIngredientRole.INPUT, VanillaTypes.ITEM_STACK, recipe.ingredient());
+        var bucket = factory.createFocus(RecipeIngredientRole.INPUT, VanillaTypes.ITEM_STACK, new ItemStack(Items.WATER_BUCKET));
+        var water = factory.createFocus(RecipeIngredientRole.INPUT, mezz.jei.api.forge.ForgeTypes.FLUID_STACK,
+                new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1000));
+        for (var focus : List.of(output, salt, bucket, water)) {
+            if (manager.createRecipeLookup(type).limitFocus(List.of(focus)).get().noneMatch(recipe::equals))
+                throw new IllegalStateException("JEI bath salts lookup failed for " + focus);
+        }
+        runtime.getRecipesGui().showTypes(List.of(type));
+        return recipes.size();
     }
 
     /** Every listed item the original alchemical furnace accepts, with the essentia TC4 gives it. */

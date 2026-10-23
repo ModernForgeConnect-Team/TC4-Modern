@@ -31,7 +31,7 @@ public final class JeiSmokeProbe {
     private static volatile IntUnaryOperator showCategory;
     private final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(5);
     private final Map<String, Object> proof = new LinkedHashMap<>();
-    private final String[] categories = {"arcane", "crucible", "infusion"};
+    private final String[] categories = {"arcane", "crucible", "infusion", "item_in_fluid"};
     private int stage, category, frames;
     private java.util.concurrent.CompletableFuture<Map<String, Integer>> command;
 

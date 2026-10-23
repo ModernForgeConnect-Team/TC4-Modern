@@ -154,6 +154,7 @@ JEI 是可选的客户端集成，当前固定开发版本为 `15.20.0.106`（Mi
 - 页面仿照原版神秘学典籍（`GuiResearchRecipe`）的配方页：羊皮纸背景、奥术网格、坩埚、注魔符文与法杖图标均在运行时读取已安装 TC4 的 GUI 贴图（不重新分发），按原版坐标缩放为 9/16；研究条件显示研究名称，注魔显示原版风险等级。缺少贴图时退回为普通格子。
 - 要素是 JEI 成分：配方中、成分列表中的要素均可按 R 查看其组成（「要素组合」），按 U 查看消耗它的配方及以它为组分的复合要素。
 - 「炼金炉」页列出原版炼金炉接受的每个物品及其产出的源质（TC4 物品要素加奖励要素，与探测仪一致），可从物品或要素双向查询。
+- 「物品丢入流体」页展示净化浴盐 ×1 + 一格静止水源 → 净化之水 ×1，提示等待约 10 秒；支持浴盐、水／水桶的用途与净化之水的配方查询。整组浴盐丢入也只转换一格水源并消耗整组。
 - 材料保留数量、metadata、原始 NBT 与矿物词典候选；通配 metadata 从 JEI 已知物品变体展开，无法映射的必需材料或产物会使该配方跳过。
 - 页面显示基础魔力／源质消耗、研究 key，以及注魔不稳定性。基础魔力消耗未计算法杖减免。
 - 注册实际旧工作台、坩埚和注魔矩阵的工作站入口，并为 TC4 物品注册 metadata／原始 NBT 子类型身份。
@@ -173,7 +174,7 @@ JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafti
 .\gradlew.bat :tc4-modern:runClient '-PmfclRuntimeJar=C:/path/to/mfcl-0.1.0.jar' '-PgameDir=C:/path/to/test-game' -PjeiSmokeTest
 ```
 
-该选项会新建独立测试世界，检查三类配方的 JEI 注册与全部布局，保存各页面截图到测试游戏目录 `screenshots/`，生成 `logs/tc4modern/jei-smoke.json`，然后退出测试客户端。仅在专用测试游戏目录使用。
+该选项会新建独立测试世界，检查三类配方及浴盐流体转换的 JEI 注册、布局和查询，保存各页面截图到测试游戏目录 `screenshots/`，生成 `logs/tc4modern/jei-smoke.json`，然后退出测试客户端。仅在专用测试游戏目录使用。
 
 多方块页面可切换“成型后”，用 MFCL 0.2.9-dev3 的预览场景（`LegacyFeatures.SCENES`）显示原版成型代码生成的结构；成型前视图中的原版方块（符文矩阵、台桌等由 TESR 绘制的方块）也通过预览场景绘制。看向只存在于成型结构中的方块时，Jade 图标显示整个成型结构。`-PformedPreviewSmokeTest` 会在测试世界中绘制全部成型结构和几个 TESR 单方块，截图为 `screenshots/tc4modern-formed-previews.png`，报告为 `logs/tc4modern/formed-preview-smoke.json`。
 
