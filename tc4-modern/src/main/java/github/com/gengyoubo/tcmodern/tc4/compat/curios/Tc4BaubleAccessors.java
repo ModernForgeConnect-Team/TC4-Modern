@@ -12,6 +12,21 @@ public final class Tc4BaubleAccessors {
     public interface Bauble {
         @LegacyMethod(name = "getBaubleType", descriptor = "(Lnet/minecraft/item/ItemStack;)Lbaubles/api/BaubleType;")
         LegacyObject baubleType(LegacyObject stack);
+
+        @LegacyMethod(name = "canEquip", descriptor = "(Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/EntityLivingBase;)Z")
+        boolean canEquip(LegacyObject stack, LegacyObject player);
+        @LegacyMethod(name = "canUnequip", descriptor = "(Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/EntityLivingBase;)Z")
+        boolean canUnequip(LegacyObject stack, LegacyObject player);
+        @LegacyMethod(name = "onEquipped", descriptor = "(Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/EntityLivingBase;)V")
+        void equipped(LegacyObject stack, LegacyObject player);
+        @LegacyMethod(name = "onUnequipped", descriptor = "(Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/EntityLivingBase;)V")
+        void unequipped(LegacyObject stack, LegacyObject player);
+    }
+
+    @LegacyType("net.minecraft.item.ItemStack")
+    public interface Stack {
+        @LegacyMethod(name = "func_77973_b", descriptor = "()Lnet/minecraft/item/Item;")
+        LegacyObject item();
     }
 
     @LegacyType("baubles.api.BaubleType")

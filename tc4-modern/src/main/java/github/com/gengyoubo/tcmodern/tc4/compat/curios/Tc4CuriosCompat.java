@@ -25,7 +25,7 @@ import top.theillusivec4.curios.api.SlotResult;
  * {@code curios:} item tags cannot reference them. Slot assignment therefore uses a Curios
  * predicate that inspects the legacy identity through the public MLA API. Goggles worn in the
  * Curios head slot are handed to the original code as the worn helmet by {@link Tc4CuriosGoggles};
- * the original Baubles inventory and its worn-item effects are not yet synchronized with Curios.</p>
+ * baubles are supplied through {@link Tc4CuriosBaubles} to the old inventory and worn-item logic.</p>
  */
 public final class Tc4CuriosCompat {
     private static final ResourceLocation VALIDATOR = ResourceLocation.fromNamespaceAndPath("tc4modern", "thaumcraft_bauble");
@@ -54,7 +54,8 @@ public final class Tc4CuriosCompat {
     private static void collect(LegacyRuntime runtime) {
         boolean baubles = runtime.loadedMods().contains(LEGACY_BAUBLES_MOD_ID);
         boolean goggles = runtime.supports(LegacyFeatures.EQUIPMENT);
-        if (!baubles) LogUtils.getLogger().info("TC4 Curios: legacy Baubles is not loaded; no Thaumcraft baubles classified.");
+        if (!baubles || !runtime.supports(LegacyFeatures.EQUIPMENT_BAUBLES))
+            throw new IllegalStateException("TC4 Curios requires MFCL equipment.baubles and the original or embedded Baubles API provider");
         if (!goggles) LogUtils.getLogger().info("TC4 Curios: this MFCL build has no equipment sources; goggles stay helmet-only.");
         Map<Item, String> classified = new HashMap<>();
         int candidates = 0;
@@ -78,6 +79,7 @@ public final class Tc4CuriosCompat {
             }
         }
         itemToSlot = Map.copyOf(classified);
+        Tc4CuriosBaubles.install(runtime, classified);
         LogUtils.getLogger().info("TC4 Curios: classified {} of {} Thaumcraft items into Curios slots.", classified.size(), candidates);
         var head = classified.entrySet().stream().filter(entry -> HEAD.equals(entry.getValue())).map(Map.Entry::getKey).collect(Collectors.toUnmodifiableSet());
         if (!head.isEmpty()) Tc4CuriosGoggles.install(runtime, head);

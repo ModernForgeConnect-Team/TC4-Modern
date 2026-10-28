@@ -70,3 +70,5 @@ modId="Baubles"
 mandatory=true
 versionRange="[1.0.1.10]"
 side="BOTH"
+# Either original Baubles or TC4 Modern's embedded API provider satisfies this legacy ABI.
+# The original Baubles JAR is optional when modern Curios is installed.

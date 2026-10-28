@@ -73,6 +73,39 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Independently implemented binary compatibility API, loaded only in MFCL's old class loader.
+// The tiny compile stubs are never packaged or added to the modern class path.
+sourceSets {
+    legacyBaublesStubs
+    legacyBaubles
+    legacyBaublesTest
+}
+dependencies {
+    legacyBaublesCompileOnly sourceSets.legacyBaublesStubs.output
+    legacyBaublesTestImplementation sourceSets.legacyBaubles.output
+    legacyBaublesTestImplementation sourceSets.legacyBaublesStubs.output
+    legacyBaublesTestImplementation platform('org.junit:junit-bom:5.11.4')
+    legacyBaublesTestImplementation 'org.junit.jupiter:junit-jupiter'
+    legacyBaublesTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.named('compileLegacyBaublesJava', JavaCompile) { options.release = 8 }
+tasks.named('compileLegacyBaublesStubsJava', JavaCompile) { options.release = 8 }
+tasks.register('legacyBaublesJar', Jar) {
+    archiveFileName = 'tc4modern-baubles-bridge-1.7.10.jar'
+    destinationDirectory = layout.buildDirectory.dir('legacy')
+    from sourceSets.legacyBaubles.output
+}
+tasks.named('processResources') {
+    from(tasks.named('legacyBaublesJar')) { into 'tc4modern/legacy' }
+}
+tasks.named('test') { dependsOn tasks.named('legacyBaublesJar') }
+tasks.register('legacyBaublesTest', Test) {
+    testClassesDirs = sourceSets.legacyBaublesTest.output.classesDirs
+    classpath = sourceSets.legacyBaublesTest.runtimeClasspath
+    useJUnitPlatform()
+}
+tasks.named('check') { dependsOn tasks.named('legacyBaublesTest') }
+
 tasks.named('test') { useJUnitPlatform() }
 
 // The full MFCL runtime is resolved from the MFCL Maven repository (see dependencies above).
