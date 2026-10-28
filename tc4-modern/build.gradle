@@ -136,6 +136,9 @@ minecraft {
             if (providers.gradleProperty('cinnabarSmokeTest').isPresent()) {
                 property 'tc4modern.cinnabarSmokeTest', 'true'
             }
+            if (providers.gradleProperty('workbookSmokeTest').isPresent()) {
+                property 'tc4modern.workbookSmokeTest', 'true'
+            }
             if (providers.gradleProperty('curiosSmokeTest').isPresent()) {
                 property 'tc4modern.curiosSmokeTest', 'true'
             }

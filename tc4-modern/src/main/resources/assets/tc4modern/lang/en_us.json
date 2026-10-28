@@ -76,5 +76,19 @@
   "jei.tc4modern.multiblock.thaumatorium": "Thaumatorium",
   "jei.tc4modern.multiblock.thaumatorium.note": "The clicked face is the front. The crucible stays and needs heat below; each adjacent mnemonic matrix adds 2 recipes.",
   "jei.tc4modern.multiblock.node_jar": "Node in a Jar",
-  "jei.tc4modern.multiblock.node_jar.note": "Build around an existing aura node, any wooden slabs on top. 75% chance to weaken it: normal→pale→fading, bright→normal."
+  "jei.tc4modern.multiblock.node_jar.note": "Build around an existing aura node, any wooden slabs on top. 75% chance to weaken it: normal→pale→fading, bright→normal.",
+  "item.tc4modern.element_workbook": "Element Workbook",
+  "workbook.tc4modern.tooltip": "Right-click to practice aspect links · Levels 1–7 · Free practice",
+  "workbook.tc4modern.level": "L%s",
+  "workbook.tc4modern.rules": "Link all gold cells using direct component relationships.",
+  "workbook.tc4modern.controls": "Left: select/place · Right: erase · Hover: composition",
+  "workbook.tc4modern.reset": "Clear",
+  "workbook.tc4modern.hint": "Hint",
+  "workbook.tc4modern.new": "New",
+  "workbook.tc4modern.page": "%s / %s",
+  "workbook.tc4modern.unavailable": "No usable aspects at this tier in the current runtime. Choose another level.",
+  "workbook.tc4modern.solved": "Complete! All fixed aspects are connected.",
+  "workbook.tc4modern.progress": "Fixed aspects connected: %s / %s",
+  "workbook.tc4modern.tier": "Tier %s (primal aspects are tier 0)",
+  "workbook.tc4modern.fixed": "Fixed aspect: cannot replace or erase"
 }

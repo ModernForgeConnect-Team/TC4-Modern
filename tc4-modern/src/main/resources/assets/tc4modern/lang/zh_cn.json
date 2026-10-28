@@ -76,5 +76,19 @@
   "jei.tc4modern.multiblock.thaumatorium": "神秘炼金塔",
   "jei.tc4modern.multiblock.thaumatorium.note": "被点的那一面是出料正面；坩埚保留，下方需热源。贴着放记忆矩阵，每个多监控 2 个配方。",
   "jei.tc4modern.multiblock.node_jar": "缸中节点",
-  "jei.tc4modern.multiblock.node_jar.note": "围绕已有灵气节点搭建，顶层为任意木台阶。成型时 75% 概率削弱节点：普通→苍白→衰退，明亮→普通。"
+  "jei.tc4modern.multiblock.node_jar.note": "围绕已有灵气节点搭建，顶层为任意木台阶。成型时 75% 概率削弱节点：普通→苍白→衰退，明亮→普通。",
+  "item.tc4modern.element_workbook": "元素练习册",
+  "workbook.tc4modern.tooltip": "右键练习要素连线 · 1～7 级 · 免费练习",
+  "workbook.tc4modern.level": "%s级",
+  "workbook.tc4modern.rules": "相邻要素须有直接合成关系，将所有金边要素连通。",
+  "workbook.tc4modern.controls": "左键选取并填入 · 右键擦除 · 悬停查看组成",
+  "workbook.tc4modern.reset": "清空",
+  "workbook.tc4modern.hint": "提示",
+  "workbook.tc4modern.new": "换一题",
+  "workbook.tc4modern.page": "%s / %s",
+  "workbook.tc4modern.unavailable": "当前运行时缺少该阶的可用要素，请选择其他等级。",
+  "workbook.tc4modern.solved": "练习完成！所有固定要素已连通。",
+  "workbook.tc4modern.progress": "固定要素连通：%s / %s",
+  "workbook.tc4modern.tier": "%s 阶要素（元要素为 0 阶）",
+  "workbook.tc4modern.fixed": "固定要素，不能替换或擦除"
 }
