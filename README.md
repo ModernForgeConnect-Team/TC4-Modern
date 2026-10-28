@@ -118,11 +118,11 @@ bash gradlew build
 ```
 
 开发运行会加载两个模块的源码。
-游戏目录需按 [MFCL 文档](https://github.com/gengyoubo/ModernForgeConnectLoader) 准备旧运行时，并将原始 Thaumcraft 4.2.3.5、Baubles 1.0.1.10 放入 `mods/1.7.10/`；这些文件不由本项目下载或分发。
-现代侧 `mods/` 可选放入 Curios 5.9.1+1.20.1；未安装时保持旧版 Baubles。开发运行时默认包含 Curios，可用 `-PwithCurios=false` 关闭以验证 Baubles 路径。
+游戏目录需按 [MFCL 文档](https://github.com/gengyoubo/ModernForgeConnectLoader) 准备旧运行时，并将原始 Thaumcraft 4.2.3.5 放入 `mods/1.7.10/`；原版文件不由本项目下载或分发。
+饰品前置二选一：现代侧 `mods/` 安装 Curios 5.9.1+1.20.1，或旧运行时安装 Baubles 1.0.1.10。**只装 Curios 时无需安装旧版 Baubles**。两者同时安装时使用 Curios。开发运行时默认包含 Curios，可用 `-PwithCurios=false` 关闭以验证 Baubles 路径。
 如需分离旧运行时目录，可额外指定 `-PlegacyRuntimeDir=...`。服务端任务仅提供入口，专用服务器兼容性尚未验证。
 
-默认 `gameDir=run` 时，原始 TC4/Baubles JAR 必须直接位于本仓库的 `run/mods/1.7.10/`，私有运行时位于 `run/mfcl/runtime/1.7.10/`（含 `runtime-manifest.json`、`minecraft-forge-1.7.10-srg.jar` 和清单中的依赖）。`legacyRuntimeDir` 只改变私有运行时位置，不改变旧模组扫描目录。已有 MFCL 联调环境时，可将其原始旧模组复制到本项目 `run/mods/1.7.10/`，并通过本地配置的 `legacyRuntimeDir` 指向已准备的运行时。
+默认 `gameDir=run` 时，原始 TC4 JAR 放在本仓库的 `run/mods/1.7.10/`；未使用 Curios 时还须放入原版 Baubles。私有运行时位于 `run/mfcl/runtime/1.7.10/`（含 `runtime-manifest.json`、`minecraft-forge-1.7.10-srg.jar` 和清单中的依赖）。`legacyRuntimeDir` 只改变私有运行时位置，不改变旧模组扫描目录。已有 MFCL 联调环境时，可将其原始旧模组复制到本项目 `run/mods/1.7.10/`，并通过本地配置的 `legacyRuntimeDir` 指向已准备的运行时。
 
 若 MFCL 报旧前置未成功加载，先检查当前游戏目录的 `logs/mfcl/legacy-1.7.10.json`：`NO_LEGACY_MODS` / `0 legacy archives` 表示旧模组扫描目录为空，并非未安装 MFCL。存在旧模组但未启动时，再查看该报告的 `diagnostics` 和 `logs/mfcl/runtime-1.7.10.json` 中的运行时启动错误。
 
@@ -132,9 +132,9 @@ bash gradlew build
 ### 前置 / Prerequisites
 
 - 现代侧：Minecraft 1.20.1、Forge 47.4.28、完整 MFCL 0.2.9+（低于 0.3.0，必需；使用开发者 API v2）、Curios 5.9.1+（可选，安装后优先于旧版 Baubles）。
-- 旧运行时（`mods/1.7.10/`）：原版 Thaumcraft 4.2.3.5（必需）及其强制前置 Baubles 1.0.1.10。
+- 旧运行时（`mods/1.7.10/`）：原版 Thaumcraft 4.2.3.5（必需）；Baubles 1.0.1.10（未安装 Curios 时必需）。
 
-原版 TC4 与 Baubles 属于 MFCL 旧运行时中的旧模组，**不会进入现代 Forge 的模组列表**，因此不能写入普通 `[[dependencies.tc4modern]]`。本模组通过 `mods.toml` 的 `[[mfclDependencies.tc4modern]]` 声明原版 Thaumcraft `4.2.3.5` 和 Baubles `1.0.1.10`，由 MFCL 0.1.4+ 在自身构造阶段校验实际加载结果及版本；缺失、版本不符或旧运行时启动失败均会阻止启动。附属端不再重复执行 `FMLLoadCompleteEvent` 检查。编译使用 MFCL 开发者 API v2（`mfcl_api_version` 0.2.9-dev1）：要素与配方快照通过 `LegacyValues` 读取旧版集合，不再借道旧运行时的 Guava。
+原版 TC4 与 Baubles API 提供方属于 MFCL 旧运行时，**不会进入现代 Forge 的模组列表**，因此不能写入普通 `[[dependencies.tc4modern]]`。`mods.toml` 的 `[[mfclDependencies.tc4modern]]` 校验 Thaumcraft `4.2.3.5` 及 Baubles ABI `1.0.1.10`；后者可由原版 Baubles 或本项目独立实现的内嵌兼容层提供。兼容层只在安装 Curios 且不存在原版 Baubles 时启用。缺少两种饰品前置、版本不符或旧运行时启动失败会阻止启动。要素与配方快照通过公开 API `LegacyValues` 读取旧版集合。
 
 | 产物 | 路径 |
 | --- | --- |
@@ -182,17 +182,22 @@ Lib 的 `TcRecipes.snapshot(runtime)` 返回不持有旧对象引用的独立配
 
 ## Curios 兼容 / Curios integration
 
-Curios `5.9.1`（Minecraft 1.20.1 / Forge）是与旧版 Baubles 二选一的**可选**前置，`mods.toml` 中声明为 `mandatory=false`。**安装了 Curios 时优先使用 Curios，本模块不再驱动旧版 Baubles 饰品槽；未安装 Curios 时本模块完全不介入，保持旧版 Baubles 原样**（此时不加载任何 Curios 类）。
+Curios `5.9.1`（Minecraft 1.20.1 / Forge）与旧版 Baubles 是二选一的**可选**前置，`mods.toml` 中 Curios 声明为 `mandatory=false`。**安装 Curios 时优先使用 Curios，旧版 Baubles JAR 可以不安装；未安装 Curios 时保持原版 Baubles 路径**（不加载 Curios 集成类）。
 
-> 原版 TC4 硬依赖 Baubles（`required-after:Baubles`），因此只要运行 TC4，旧版 Baubles 必然存在于旧运行时；“二选一”指由哪一套系统提供现代侧的饰品槽位。
+TC4 原始二进制仍引用旧 Baubles API。本项目独立实现了一层最小 ABI 兼容：通过 MFCL 公开的启动前 SPI，在旧模组扫描前把内嵌的 `tc4modern-baubles-bridge-1.7.10.jar` 写入游戏目录 `mods/1.7.10/`。它提供旧接口与四格装备视图，名称显示为「TC4 Modern: Baubles API compatibility」，版本 `1.0.1.10` 表示所兼容的 ABI；不包含原版 Baubles 代码、GUI 或素材。重新安装原版 Baubles 或移除 Curios 后，下次启动自动移除本项目生成的带标记兼容层；不会修改原版 JAR。Curios 和旧 Baubles 都不安装时无法运行 TC4。
 
 - 注册与旧版 Baubles 对应的现代 Curios 槽位：`amulet`（1 格）、`ring`（2 格）、`belt`（1 格），并授予玩家。
-- 通过 MFCL 公开 MLA API 读取旧版 `baubles.api.IBauble#getBaubleType`，把原版 TC4 饰品按类型归入上述槽位。
+- 扫描所有旧模组中实现 `baubles.api.IBauble` 的物品，包含 TC4 附属的腰带、戒指和护身符，不限制注册命名空间或实现类所在包。通过 MFCL 公开 MLA API，使用实际物品堆的 metadata/NBT 调用 `getBaubleType`，避免把同一物品 ID 的不同变种都判为默认槽位。
 - 原版 TC4 物品在 MFCL 现代注册表中使用非透明 ID（大写 `Thaumcraft:` 会编码为 `mfcl:legacy/<hex>`），无法用静态 `curios:` 物品标签引用，因此改用 Curios 谓词校验（`tc4modern:thaumcraft_bauble`）。
 - 揭示护目镜（`ItemGoggles`）可放入 Curios 自带的 `head` 槽：通过 MFCL 0.2.9 的装备来源 API（`LegacyEquipment`）在原版头盔槽为空时作为“佩戴的头盔”交给旧运行时，因此看节点、要素悬浮、神秘减耗等原版判断都会生效。原版头盔槽有头盔时以头盔为准。神秘头盔、虚空兜帽等真正的头盔不进入 Curios 槽。
-- 饰品（护身符/戒指/腰带）目前仅桥接现代侧的装备归属：旧运行时中的 Baubles 饰品背包与佩戴效果仍由原版逻辑处理，当前不与其同步。
+- 护身符、两格戒指、腰带通过 `LegacyEquipment.Source` 映射到旧 `BaublesApi.getBaubles`，TC4 与附属的装备判定可读取实际装备。旧逻辑修改/移除饰品会写回 Curios，保留旧物品 metadata/NBT 和现代侧标签。
+- Curios 负责存档、同步和死亡掉落；旧层只提供装备视图。佩戴 tick 通过 MFCL 的事件转发执行一次，穿脱回调与可穿脱检查调用原物品的 `IBauble`；饰品不能放入装饰槽，额外扩容不增加 TC4 可用格数。
 
-Curios is an optional, mutually exclusive alternative to the original Baubles slots: when Curios is installed it takes precedence and this mod no longer drives the legacy Baubles slots; when Curios is absent the mod does not intervene at all and no Curios class is loaded. Original TC4 hard-depends on Baubles, so both always coexist on the legacy runtime; the choice is only about which system provides the modern slots. Legacy TC4 item ids are opaque (`mfcl:legacy/<hex>`), so a Curios predicate is used instead of static item tags. Goggles of Revealing fit the Curios `head` slot and are handed to the legacy runtime as the worn helmet (MFCL 0.2.9 equipment sources) while the vanilla helmet slot is empty. For baubles only modern-side placement is bridged so far: the legacy Baubles inventory and worn-item effects are not synchronized.
+使用专用测试目录运行 `:tc4-modern:runClient -PgameDir=build/curios-smoke-game -PcuriosSmokeTest`，可验证四格映射、NBT、悬浮腰带每 tick 只生效一次、旧库存修改写回与 Curios 序列化。测试会创建世界，写入 `logs/tc4modern/curios-smoke.json` 后退出。只放原版 TC4 可验证无旧 Baubles 路径；加入原版 Baubles 可验证共存路径；再加 `-PwithCurios=false` 可验证回退启动。
+
+加 `-PcuriosSmokeFixture` 会构建并放入一个仅用于测试的旧附属，验证同一物品随 metadata/NBT 分别进入 ring、belt、amulet；该测试 JAR 不打入发布产物。测试目录另行放入本地 Tainted Magic 8.2.0 时，还会检查 Voidwalker Sash、Lumos Ring 的实际 Curios 槽位校验与旧 Baubles API 装备读取。
+
+Curios takes precedence when installed; original Baubles is then optional. An independently implemented embedded ABI provider satisfies TC4's old binary API when original Baubles is absent. Every legacy IBauble is supported across mod namespaces, including addons; slot type is queried from the actual stack to retain metadata/NBT-dependent variants. MFCL equipment sources mirror Curios amulet, two rings and belt into the old inventory, write back original mutations and forward worn effects exactly once. Curios owns persistence and drops. Without Curios, original Baubles is required and its path is left unchanged. The generated provider is removed on the next launch when original Baubles is installed or Curios is removed. Original TC4 and Baubles binaries/assets are not redistributed. Goggles in the Curios head slot retain the existing helmet fallback integration.
 
 ## 深板岩变体 / Deepslate variants
 

@@ -4,5 +4,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 public @interface Mod {
     String modid(); String name(); String version(); String acceptedMinecraftVersions();
+    String dependencies() default "";
     @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.METHOD) @interface EventHandler { }
 }

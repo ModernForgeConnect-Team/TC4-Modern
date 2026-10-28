@@ -58,7 +58,7 @@ final class Tc4CuriosGoggles implements LegacyEquipment.Source {
     private static int gogglesIndex(IDynamicStackHandler stacks) {
         for (int index = 0; index < stacks.getSlots(); index++) {
             ItemStack stack = stacks.getStackInSlot(index);
-            if (!stack.isEmpty() && Tc4CuriosCompat.HEAD.equals(Tc4CuriosCompat.slotOf(stack.getItem()))) return index;
+            if (!stack.isEmpty() && Tc4CuriosCompat.HEAD.equals(Tc4CuriosCompat.slotOf(stack))) return index;
         }
         return -1;
     }

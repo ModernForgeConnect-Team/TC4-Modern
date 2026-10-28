@@ -6,7 +6,7 @@ import github.com.gengyoubo.mfcl.api.LegacyEvents;
 import github.com.gengyoubo.mfcl.api.LegacyMappings;
 import github.com.gengyoubo.mfcl.api.LegacyObject;
 import github.com.gengyoubo.mfcl.api.LegacyRuntime;
-import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -21,10 +21,10 @@ final class Tc4CuriosBaubles implements LegacyEquipment.Source, ICurioItem {
     private final LegacyRuntime runtime;
     private Tc4CuriosBaubles(LegacyRuntime runtime) { this.runtime = runtime; }
 
-    static void install(LegacyRuntime runtime, Map<Item, String> items) {
+    static void install(LegacyRuntime runtime, Set<Item> items) {
         var bridge = new Tc4CuriosBaubles(runtime);
         runtime.equipment().register(10, bridge);
-        items.forEach((item, slot) -> { if (!slot.equals(Tc4CuriosCompat.HEAD)) CuriosApi.registerCurio(item, bridge); });
+        items.forEach(item -> CuriosApi.registerCurio(item, bridge));
         // Old Baubles (or our ABI provider) owns worn ticks through this event. MFCL excludes
         // those slots from its fallback ticks when the event is forwarded, avoiding double effects.
         runtime.events().forward(LegacyEvents.Kind.LIVING_UPDATE);
@@ -50,8 +50,8 @@ final class Tc4CuriosBaubles implements LegacyEquipment.Source, ICurioItem {
         int index = index(slot);
         if (stacks == null || index >= stacks.getSlots()) return ItemStack.EMPTY;
         ItemStack stack = stacks.getStackInSlot(index);
-        // Other mods can use these Curios slots too. Only expose original TC4 baubles to TC4.
-        return identifier(slot).equals(Tc4CuriosCompat.slotOf(stack.getItem())) ? stack : ItemStack.EMPTY;
+        // Modern-only Curios items stay with their own implementation; expose every old IBauble.
+        return identifier(slot).equals(Tc4CuriosCompat.slotOf(stack)) ? stack : ItemStack.EMPTY;
     }
 
     @Override public void changed(Object hostPlayer, LegacyEquipment.Slot slot, Object newHostStack) {
@@ -60,7 +60,7 @@ final class Tc4CuriosBaubles implements LegacyEquipment.Source, ICurioItem {
         int index = index(slot);
         if (stacks != null && index < stacks.getSlots()) {
             var current = stacks.getStackInSlot(index);
-            if (identifier(slot).equals(Tc4CuriosCompat.slotOf(current.getItem())))
+            if (identifier(slot).equals(Tc4CuriosCompat.slotOf(current)))
                 stacks.setStackInSlot(index, (ItemStack) newHostStack);
         }
     }
@@ -72,11 +72,12 @@ final class Tc4CuriosBaubles implements LegacyEquipment.Source, ICurioItem {
     }
 
     @Override public boolean canEquip(SlotContext context, ItemStack stack) {
-        if (context.cosmetic() || !context.identifier().equals(Tc4CuriosCompat.slotOf(stack.getItem()))) return false;
+        if (context.cosmetic() || !context.identifier().equals(Tc4CuriosCompat.slotOf(stack))) return false;
         if (context.index() < 0 || context.index() >= (context.identifier().equals("ring") ? 2 : 1)) return false;
         return invoke(context, stack, (item, args) -> item.canEquip(args.stack(), args.player()), false);
     }
     @Override public boolean canUnequip(SlotContext context, ItemStack stack) {
+        if (context.cosmetic()) return true;
         return invoke(context, stack, (item, args) -> item.canUnequip(args.stack(), args.player()), false);
     }
     @Override public void onEquip(SlotContext context, ItemStack previous, ItemStack stack) {
@@ -89,20 +90,30 @@ final class Tc4CuriosBaubles implements LegacyEquipment.Source, ICurioItem {
         invoke(context, stack, (item, args) -> { item.unequipped(args.stack(), args.player()); return true; }, false);
         runtime.equipment().invalidate(context.entity());
     }
-    private static boolean sameItem(ItemStack left, ItemStack right) {
-        return !left.isEmpty() && !right.isEmpty() && left.is(right.getItem());
+    private boolean sameItem(ItemStack left, ItemStack right) {
+        if (left.isEmpty() || right.isEmpty() || !left.is(right.getItem())) return false;
+        if (!java.util.Objects.equals(Tc4CuriosCompat.slotOf(left), Tc4CuriosCompat.slotOf(right))) return false;
+        // MFCL stores original metadata separately from modern item damage. Distinct old
+        // subtypes need their own equip cycle; ordinary charge/NBT updates do not.
+        try {
+            var a = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, left).orElse(null);
+            var b = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, right).orElse(null);
+            return a != null && b != null && runtime.snapshot(a).metadata() == runtime.snapshot(b).metadata();
+        } catch (RuntimeException unsupported) { return false; }
     }
     private record Arguments(LegacyObject stack, LegacyObject player) { }
     private <T> T invoke(SlotContext context, ItemStack stack,
             BiFunction<Tc4BaubleAccessors.Bauble, Arguments, T> operation, T fallback) {
         if (!(context.entity() instanceof Player player) || stack.isEmpty()) return fallback;
         // Only MFCL's local client actor is mapped; remote players are server authoritative.
+        if (player.level().isClientSide && !Tc4CuriosClient.local(player)) return fallback;
         try {
             var action = (java.util.function.Function<LegacyObject, T>) actor -> {
                 var old = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, stack).orElse(null);
                 if (old == null) return fallback;
-                var item = runtime.accessor(Tc4BaubleAccessors.Stack.class, old).item();
-                T result = operation.apply(runtime.accessor(Tc4BaubleAccessors.Bauble.class, item), new Arguments(old, actor));
+                var item = Tc4CuriosCompat.baubleOf(stack.getItem());
+                if (item == null) return fallback;
+                T result = operation.apply(item, new Arguments(old, actor));
                 if (!player.level().isClientSide) {
                     // Equip callbacks may change the supplied stack too; preserve host-owned tags/capabilities.
                     ItemStack updated = runtime.mappings().applyTo(LegacyMappings.ITEM_STACK, stack, old);

@@ -79,6 +79,7 @@ sourceSets {
     legacyBaublesStubs
     legacyBaubles
     legacyBaublesTest
+    legacyBaublesFixture
 }
 dependencies {
     legacyBaublesCompileOnly sourceSets.legacyBaublesStubs.output
@@ -87,9 +88,17 @@ dependencies {
     legacyBaublesTestImplementation platform('org.junit:junit-bom:5.11.4')
     legacyBaublesTestImplementation 'org.junit.jupiter:junit-jupiter'
     legacyBaublesTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    legacyBaublesFixtureCompileOnly sourceSets.legacyBaublesStubs.output
+    legacyBaublesFixtureCompileOnly sourceSets.legacyBaubles.output
 }
 tasks.named('compileLegacyBaublesJava', JavaCompile) { options.release = 8 }
 tasks.named('compileLegacyBaublesStubsJava', JavaCompile) { options.release = 8 }
+tasks.named('compileLegacyBaublesFixtureJava', JavaCompile) { options.release = 8 }
+tasks.register('legacyBaublesFixtureJar', Jar) {
+    archiveFileName = 'tc4modern-bauble-fixture-1.7.10.jar'
+    destinationDirectory = layout.buildDirectory.dir('fixtures')
+    from sourceSets.legacyBaublesFixture.output
+}
 tasks.register('legacyBaublesJar', Jar) {
     archiveFileName = 'tc4modern-baubles-bridge-1.7.10.jar'
     destinationDirectory = layout.buildDirectory.dir('legacy')
@@ -127,6 +136,9 @@ minecraft {
             if (providers.gradleProperty('cinnabarSmokeTest').isPresent()) {
                 property 'tc4modern.cinnabarSmokeTest', 'true'
             }
+            if (providers.gradleProperty('curiosSmokeTest').isPresent()) {
+                property 'tc4modern.curiosSmokeTest', 'true'
+            }
             if (providers.gradleProperty('formedPreviewSmokeTest').isPresent()) {
                 property 'tc4modern.formedPreviewSmokeTest', 'true'
             }
@@ -149,6 +161,18 @@ minecraft {
 }
 tasks.matching { it.name in ['runClient', 'runServer'] }.configureEach {
     dependsOn project(':tc-modern-lib').tasks.named('classes')
+}
+// Test fixture is opt-in and is never bundled with either production mod.
+tasks.matching { it.name == 'runClient' }.configureEach {
+    if (providers.gradleProperty('curiosSmokeFixture').isPresent()) {
+        dependsOn tasks.named('legacyBaublesFixtureJar')
+        doFirst {
+            copy {
+                from tasks.named('legacyBaublesFixtureJar')
+                into rootProject.file(rootProject.devProperty('gameDir').getOrElse('run') + '/mods/1.7.10')
+            }
+        }
+    }
 }
 // ForgeGradle resolves source-set task names in the launching project. Lib's
 // main output already includes its API; build foreign resources explicitly too.
