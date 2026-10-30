@@ -44,6 +44,8 @@ public final class Tc4Modern {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
+        if (ModList.get().isLoaded("ftbquests"))
+            event.enqueueWork(github.com.gengyoubo.tcmodern.tc4.compat.ftbquests.Tc4FtbQuests::register);
         // Curios takes precedence over the original Baubles slots. Without Curios this mod does
         // not touch the legacy slot system at all; Curios classes are never loaded.
         if (!ModList.get().isLoaded("curios")) {

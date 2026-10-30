@@ -1,4 +1,13 @@
 {
+  "ftbquests.task.tc4modern.research": "魔导笔记研究",
+  "ftbquests.task.tc4modern.aspect": "研究要素",
+  "ftbquests.reward.tc4modern.aspect": "研究要素",
+  "ftbquests.tc4modern.research_key": "选择研究",
+  "ftbquests.tc4modern.aspect_tag": "选择要素",
+  "ftbquests.tc4modern.select": "请选择…",
+  "ftbquests.tc4modern.amount": "要素数量",
+  "ftbquests.tc4modern.consume": "提交时消耗要素",
+  "ftbquests.tc4modern.reward_failed": "要素奖励发放失败，请检查任务配置后重试。",
   "jei.tc4modern.arcane": "奥术合成",
   "jei.tc4modern.crucible": "坩埚炼金",
   "jei.tc4modern.infusion": "注魔",

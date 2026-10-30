@@ -146,6 +146,18 @@ bash gradlew build
 `publishToMavenLocal` 可发布本地开发产物；独立 API 坐标为 `github.com.gengyoubo.tcmodern:tc-modern-api:0.1.0-SNAPSHOT`，使用者还需显式添加 MFCL API 的 `compileOnly` 依赖。
 目前没有配置公共 Maven 发布服务。
 
+## FTB Quests 兼容 / FTB Quests integration
+
+可选安装 Forge 1.20.1 的 FTB Quests `2001.4.22` 及其前置。在任务编辑器中新增：
+
+- **魔导笔记研究**（`tc4modern:research`）：从可搜索的图标列表选择研究，玩家真正解锁该研究后完成。仅持有研究笔记不算完成。
+- **研究要素任务**（`tc4modern:aspect`）：选择要素和数量，可设置是否消耗。不消耗时每秒检查持有量；消耗时点击提交，数量足够才一次扣除，重复点击已完成任务不重复扣除。
+- **研究要素奖励**（`tc4modern:aspect`）：选择要素和数量，发给实际领奖玩家。图标读取原版／附属注册表的纹理与颜色，列表显示本地化名称。
+
+这里的要素是玩家研究点池，不是法杖 Vis、源质容器或物品要素。数量范围为 `1..32767`，发奖总量受原版点池上限限制。任务进度与奖励领取规则沿用 FTB 的队伍设置；扣除针对提交者，发放针对领奖者，均经 MFCL 服务端玩家事务保存和同步。一个任务配置一种要素，需要多种时添加多个任务。
+
+开发时使用 `-PwithFtbQuests=true` 加载可选前置；验收说明与 SNBT 示例见 [FTB Quests 集成](docs/ftb-quests.md)。
+
 ## JEI 兼容 / JEI integration
 
 JEI 是可选的客户端集成，当前固定开发版本为 `15.20.0.106`（Minecraft 1.20.1 / Forge）。完整 JEI 不打入项目 JAR；未安装 JEI 时，公共模组入口不加载 JEI 插件类。
@@ -253,6 +265,10 @@ Lib 将新版方块、物品和实体映射为 MFCL 的独立只读旧版身份�
 需要包含 `LegacyRuntime.hostRepresentations()` 及只读身份查询桥接的 MFCL 构建；本地开发配置指向重新构建的 MFCL 运行时和 API JAR。现代扫描规则在登录及数据包重载时由服务端同步，实际扫描完成仍使用 TC4 原包经 MFCL 转发，并由服务端重新检查目标。
 
 执行 `:tc4-modern:runClient -PgameDir=run-modern-scanner-smoke -PmodernScannerSmokeTest`，可在独立测试世界验证原版探测仪扫描新版方块、掉落物和实体，以及重复扫描和存档重载。结果写入 `logs/tc4modern/modern-scanner-smoke.json`；应以其中的 `status: PASS` 判断成功，客户端正常退出本身不代表测试通过。
+
+## 研究台 / Research table
+
+研究台采用现代客户端渲染，保留原版布局、提示、交互和服务端规则，不增加额外信息或快捷操作。该实现需要带 `client-screens` 公开接口的本地 MFCL 构建；依赖配置、原版行为对照与独立验收命令见 [原生研究台 GUI](docs/native-research-gui.md)。
 
 ## 元素练习册 / Element Workbook
 

@@ -1,6 +1,14 @@
 base { archivesName = 'tc4-modern' }
 
 repositories {
+    maven {
+        url = 'https://maven.ftb.dev/releases'
+        content { includeGroup 'dev.ftb.mods' }
+    }
+    maven {
+        url = 'https://maven.architectury.dev'
+        content { includeGroup 'dev.architectury' }
+    }
     if (rootProject.devProperty('mfclRuntimeJar').isPresent()) {
         flatDir {
             dirs rootProject.file(rootProject.devProperty('mfclRuntimeJar').get()).parentFile
@@ -41,6 +49,13 @@ repositories {
 
 dependencies {
     implementation project(':tc-modern-lib')
+    implementation fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
+    implementation fg.deobf('dev.ftb.mods:ftb-library-forge:2001.2.9')
+    implementation fg.deobf('dev.ftb.mods:ftb-teams-forge:2001.3.0')
+    implementation fg.deobf('dev.architectury:architectury-forge:9.1.12')
+    testImplementation fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
+    // Opt in for integration testing; FTB Quests remains optional in production.
+    runtimeOnly fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
     compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge-api:${rootProject.jei_version}")
     // Optional in production. Disable in development with -PwithJei=false.
@@ -138,6 +153,12 @@ minecraft {
             }
             if (providers.gradleProperty('workbookSmokeTest').isPresent()) {
                 property 'tc4modern.workbookSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('nativeResearchSmokeTest').isPresent()) {
+                property 'tc4modern.nativeResearchSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('ftbQuestsSmokeTest').isPresent()) {
+                property 'tc4modern.ftbQuestsSmokeTest', 'true'
             }
             if (providers.gradleProperty('curiosSmokeTest').isPresent()) {
                 property 'tc4modern.curiosSmokeTest', 'true'

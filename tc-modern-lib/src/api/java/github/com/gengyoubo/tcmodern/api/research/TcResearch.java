@@ -13,6 +13,14 @@ import static github.com.gengyoubo.tcmodern.api.research.TcResearchAccessors.*;
 public final class TcResearch {
     private TcResearch() { }
 
+    /** Checks the original player's unlocked research on the owning server thread. Unknown keys never pass. */
+    public static boolean isComplete(LegacyRuntime runtime, Object hostPlayer, String key) {
+        require(runtime);
+        if (key == null || key.isBlank() || runtime.accessor(Categories.class).find(key) == null) return false;
+        return runtime.withPlayer(hostPlayer, player -> runtime.accessor(Progress.class).complete(
+                runtime.accessor(Player.class, player).name(), key));
+    }
+
     /** Every registered research key, by category in registration order. Empty when the runtime is closed or Thaumcraft is absent. */
     public static List<String> keys(LegacyRuntime runtime) {
         if (!available(runtime)) return List.of();

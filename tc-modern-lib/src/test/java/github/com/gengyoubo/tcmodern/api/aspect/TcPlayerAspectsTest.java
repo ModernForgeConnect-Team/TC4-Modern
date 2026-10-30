@@ -11,6 +11,23 @@ class TcPlayerAspectsTest {
     private record Handle(String typeName, String tag) implements LegacyObject { }
 
     @Test
+    void checksAndConsumesExactAmountWithoutOverdrawingOrChangingOtherAspects() {
+        var runtime = new Fixture();
+        TcPlayerAspects.give(runtime, "host", Map.of("terra", 7, "ignis", 3));
+        assertEquals(7, TcPlayerAspects.pool(runtime, "host", "terra"));
+        assertFalse(TcPlayerAspects.consume(runtime, "host", "terra", 8));
+        assertEquals(7, TcPlayerAspects.pool(runtime, "host", "terra"));
+        assertTrue(TcPlayerAspects.consume(runtime, "host", "terra", 7));
+        assertFalse(TcPlayerAspects.consume(runtime, "host", "terra", 7));
+        assertEquals(0, TcPlayerAspects.pool(runtime, "host", "terra"));
+        assertEquals(3, TcPlayerAspects.pool(runtime, "host", "ignis"));
+        assertFalse(TcPlayerAspects.consume(runtime, "host", "missing", 1));
+        assertEquals(0, TcPlayerAspects.pool(runtime, "host", "missing"));
+        assertThrows(IllegalArgumentException.class, () -> TcPlayerAspects.consume(runtime, "host", "terra", -1));
+        assertThrows(IllegalArgumentException.class, () -> TcPlayerAspects.consume(runtime, "host", "terra", 32768));
+    }
+
+    @Test
     void addsToThePoolOfTheTransactionPlayerAndCapsAtShortRange() {
         var runtime = new Fixture();
         var totals = TcPlayerAspects.give(runtime, "host", new LinkedHashMap<>(Map.of("terra", 5)));

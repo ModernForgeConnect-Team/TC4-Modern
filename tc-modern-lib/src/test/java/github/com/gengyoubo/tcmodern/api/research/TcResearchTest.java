@@ -12,6 +12,18 @@ class TcResearchTest {
     private record Research(String[] parents, String[] hidden, String[] siblings) { }
 
     @Test
+    void detectsOnlyUnlockedKnownResearchWithoutUnlockingAnything() {
+        var runtime = new Fixture();
+        assertFalse(TcResearch.isComplete(runtime, "host", "NITOR"));
+        runtime.completed.add("NITOR");
+        assertTrue(TcResearch.isComplete(runtime, "host", "NITOR"));
+        assertFalse(TcResearch.isComplete(runtime, "host", "ALCHEMY"));
+        assertFalse(TcResearch.isComplete(runtime, "host", ""));
+        assertFalse(TcResearch.isComplete(runtime, "host", "NONEXISTENT"));
+        assertEquals(Set.of("NITOR"), runtime.completed);
+    }
+
+    @Test
     void listsKeysByCategoryInRegistrationOrder() {
         assertEquals(List.of("ALCHEMY", "CRUCIBLE", "NITOR", "THAUMIUM", "WARDED"), TcResearch.keys(new Fixture()));
         var closed = new Fixture();

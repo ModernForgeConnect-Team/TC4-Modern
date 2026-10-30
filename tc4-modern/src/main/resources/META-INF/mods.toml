@@ -17,6 +17,13 @@ ordering="AFTER"
 side="CLIENT"
 
 [[dependencies.tc4modern]]
+modId="ftbquests"
+mandatory=false
+versionRange="[2001.4.22,2002)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.tc4modern]]
 modId="jade"
 mandatory=false
 versionRange="[11.13,12)"
@@ -40,7 +47,7 @@ side="BOTH"
 [[dependencies.tc4modern]]
 modId="tcmodernlib"
 mandatory=true
-versionRange="[${version}]"
+versionRange="[0.1.2,)"
 ordering="AFTER"
 side="BOTH"
 

@@ -1,4 +1,13 @@
 {
+  "ftbquests.task.tc4modern.research": "Thaumonomicon Research",
+  "ftbquests.task.tc4modern.aspect": "Research Aspects",
+  "ftbquests.reward.tc4modern.aspect": "Research Aspects",
+  "ftbquests.tc4modern.research_key": "Select Research",
+  "ftbquests.tc4modern.aspect_tag": "Select Aspect",
+  "ftbquests.tc4modern.select": "Select…",
+  "ftbquests.tc4modern.amount": "Aspect amount",
+  "ftbquests.tc4modern.consume": "Consume aspects on submission",
+  "ftbquests.tc4modern.reward_failed": "Could not grant aspect reward. Check the quest configuration and try again.",
   "jei.tc4modern.arcane": "Arcane Crafting",
   "jei.tc4modern.crucible": "Crucible Alchemy",
   "jei.tc4modern.infusion": "Infusion",
