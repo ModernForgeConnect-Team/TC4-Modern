@@ -158,11 +158,12 @@ JEI 是可选的客户端集成，当前固定开发版本为 `15.20.0.106`（Mi
 - 材料保留数量、metadata、原始 NBT 与矿物词典候选；通配 metadata 从 JEI 已知物品变体展开，无法映射的必需材料或产物会使该配方跳过。
 - 页面显示基础魔力／源质消耗、研究 key，以及注魔不稳定性。基础魔力消耗未计算法杖减免。
 - 注册实际旧工作台、坩埚和注魔矩阵的工作站入口，并为 TC4 物品注册 metadata／原始 NBT 子类型身份。
+- 六种多方块结构提供搭建材料、魔力消耗、研究要求和成型前后预览；对成型结构的代表方块按 R、对材料按 U 可查询搭建方式。结果槽只是结构入口，不会将多方块作为物品合成出来。缸中节点忽略节点自身的要素和 ID，以便携带不同节点数据的物品也能查询同一搭建配方。
 - 仅展示配方，不提供自动填充，不绕过研究，不注册可执行的现代 TC4 特殊配方。普通工作台配方继续由 MFCL 提供，避免重复添加。
 
 当前仅支持 TC4 `4.2.3.5` 的标准静态配方类。动态注魔附魔、修改输入 NBT 的配方、自定义配方子类及无法无损映射的内容不推断为静态配方。
 单页支持至多 16 种要素和 16 个注魔周边材料。跳过数量会写入 `TC4 JEI` 日志摘要，具体原因在 debug 日志中。
-NBT 子类型目前保留完整的原始 NBT；充能等状态也可能区分为不同的 JEI 身份，尚未实现所有物品的语义化 NBT 匹配。
+除缸中节点仅按结构类型查询外，NBT 子类型目前保留完整的原始 NBT；充能等状态也可能区分为不同的 JEI 身份，尚未实现所有物品的语义化 NBT 匹配。
 
 JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafting, crucible alchemy, and static infusion recipes through public MFCL accessors. Ingredients retain metadata, original NBT, counts, and ore alternatives. Pages show base aspect costs, research keys, and infusion instability. Recipe viewing does not unlock research or implement crafting/recipe transfer. Dynamic recipes, custom subclasses, and unrepresentable required ingredients/outputs are omitted with diagnostics. Full original NBT currently participates in subtype identity, including state such as stored charge.
 
@@ -174,7 +175,15 @@ JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafti
 .\gradlew.bat :tc4-modern:runClient '-PmfclRuntimeJar=C:/path/to/mfcl-0.1.0.jar' '-PgameDir=C:/path/to/test-game' -PjeiSmokeTest
 ```
 
-该选项会新建独立测试世界，检查三类配方及浴盐流体转换的 JEI 注册、布局和查询，保存各页面截图到测试游戏目录 `screenshots/`，生成 `logs/tc4modern/jei-smoke.json`，然后退出测试客户端。仅在专用测试游戏目录使用。
+该选项会新建独立测试世界，检查三类配方、浴盐流体转换及六种多方块结构的 JEI 注册、布局和查询（包括携带节点 NBT 的缸中节点），保存各页面截图到测试游戏目录 `screenshots/`，生成 `logs/tc4modern/jei-smoke.json`，然后退出测试客户端。仅在专用测试游戏目录使用。
+
+多方块功能验收（测试目录须准备原始 TC4 与饰品前置）：
+
+```powershell
+.\gradlew.bat :tc4-modern:runClient '-PgameDir=build/multiblock-smoke-game' -PmultiblockSmokeTest -PjeiSmokeTest
+```
+
+`-PmultiblockSmokeTest` 在新建生存测试世界中完成研究，通过玩家右键成型六种结构，逐项检查研究台库存/界面、完整静态注魔、炼狱熔炉烧炼出料、荒古炼金炉消耗内部魔力并产出源质、炼金塔库存/界面/原始坩埚配方出料及缸中节点要素保留。机器更新使用方块的现代 ticker，经过 MFCL 的掉落、同步和持久化流程。每种结构单独记录结果，一种失败仍会测试其余结构，报告为 `logs/tc4modern/multiblock-smoke.json`。荒古炼金炉的内部魔力和炼金塔的内部源质由测试提供，不涵盖充能节点网络与外部管道供给。两个选项一起使用时先完成多方块验收，再新建 JEI 验收世界。
 
 多方块页面可切换“成型后”，用 MFCL 0.2.9-dev3 的预览场景（`LegacyFeatures.SCENES`）显示原版成型代码生成的结构；成型前视图中的原版方块（符文矩阵、台桌等由 TESR 绘制的方块）也通过预览场景绘制。看向只存在于成型结构中的方块时，Jade 图标显示整个成型结构。`-PformedPreviewSmokeTest` 会在测试世界中绘制全部成型结构和几个 TESR 单方块，截图为 `screenshots/tc4modern-formed-previews.png`，报告为 `logs/tc4modern/formed-preview-smoke.json`。
 

@@ -73,8 +73,8 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
      * @param tools    the wands, or the scribing tools, that build it
      */
     record Recipe(String id, String research, List<Placed> blocks, int sizeX, int sizeY, int sizeZ, List<Material> materials,
-                  List<ItemStack> tools, List<JeiAspect> cost) {
-        Recipe { blocks = List.copyOf(blocks); materials = List.copyOf(materials); tools = List.copyOf(tools); cost = List.copyOf(cost); }
+                  List<ItemStack> tools, List<JeiAspect> cost, List<ItemStack> results) {
+        Recipe { blocks = List.copyOf(blocks); materials = List.copyOf(materials); tools = List.copyOf(tools); cost = List.copyOf(cost); results = results.stream().map(ItemStack::copy).toList(); }
     }
 
     static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "multiblock", Recipe.class);
@@ -100,6 +100,9 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, Recipe recipe, IFocusGroup focuses) {
         builder.addSlot(RecipeIngredientRole.CATALYST, SIDE_X, TOOL_Y).addItemStacks(recipe.tools());
+        // These are representatives of the formed device, not items granted by forming it.
+        builder.addSlot(RecipeIngredientRole.OUTPUT, SIDE_X + 24, TOOL_Y).addItemStacks(recipe.results())
+                .addRichTooltipCallback((slot, tooltip) -> tooltip.add(Component.translatable("jei.tc4modern.multiblock.result")));
         var vis = Component.translatable("jei.tc4modern.vis");
         for (int i = 0; i < recipe.cost().size(); i++) {
             builder.addSlot(RecipeIngredientRole.INPUT, SIDE_X + i % 2 * 24, COST_Y + i / 2 * 18)
@@ -112,7 +115,8 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
             var stacks = material.part().items().stream().map(stack -> stack.copyWithCount(material.count())).toList();
             var slot = builder.addSlot(RecipeIngredientRole.INPUT, 1 + column++ * 18, MATERIAL_Y).addItemStacks(stacks);
             if (material.part().trigger()) slot.addRichTooltipCallback((view, tooltip) ->
-                    tooltip.add(Component.translatable("jei.tc4modern.multiblock.trigger").withStyle(ChatFormatting.GOLD)));
+                    tooltip.add(Component.translatable(recipe.id().equals("research_table")
+                            ? "jei.tc4modern.multiblock.trigger.ink" : "jei.tc4modern.multiblock.trigger").withStyle(ChatFormatting.GOLD)));
         }
     }
 
@@ -127,6 +131,7 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
     public void draw(Recipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         var font = Minecraft.getInstance().font;
         frame(graphics, SIDE_X, TOOL_Y);
+        frame(graphics, SIDE_X + 24, TOOL_Y);
         for (int i = 0; i < recipe.materials().stream().filter(material -> !material.part().items().isEmpty()).count(); i++)
             frame(graphics, 1 + i * 18, MATERIAL_Y);
         graphics.drawString(font, font.plainSubstrByWidth(Component.translatable(name(recipe)).getString(), VIEW_W), 0, 2, INK, false);

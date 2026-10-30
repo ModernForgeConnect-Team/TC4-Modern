@@ -81,7 +81,7 @@ public final class WorkbookSmokeProbe {
                 stage = 4;
             } else if (stage == 4 && ++frames > 15) {
                 var screen = (ElementWorkbookScreen) mc.screen;
-                click(mc, screen, 14 + (level - 1) * 30 + 14, 41, 0);
+                click(screen, ElementWorkbookScreen.LEVEL_X + (level - 1) * ElementWorkbookScreen.CELL + 10, ElementWorkbookScreen.LEVEL_Y + 9, 0);
                 require(screen.puzzle() != null && screen.puzzle().level() == level, "Level selection failed");
                 exerciseInput(mc, screen);
                 frames = 0;
@@ -91,7 +91,7 @@ public final class WorkbookSmokeProbe {
                 if (level++ < 7) { frames = 0; stage = 4; }
                 else {
                     var screen = (ElementWorkbookScreen) mc.screen;
-                    for (int i = 0; i < screen.puzzle().cells().size() && !screen.puzzle().solved(); i++) click(mc, screen, 257, 235, 0);
+                    for (int i = 0; i < screen.puzzle().cells().size() && !screen.puzzle().solved(); i++) clickAction(screen, 1);
                     require(screen.puzzle().solved(), "Hint button did not reach a solution");
                     frames = 0;
                     stage = 6;
@@ -129,23 +129,26 @@ public final class WorkbookSmokeProbe {
     private void exerciseInput(Minecraft mc, ElementWorkbookScreen screen) {
         var puzzle = screen.puzzle();
         var editable = puzzle.cells().stream().filter(h -> !puzzle.anchors().containsKey(h)).findFirst().orElseThrow();
-        int x = 255 + (int) Math.round(Math.sqrt(3) * 12 * (editable.q() + editable.r() / 2.0));
-        int y = 151 + 18 * editable.r();
-        click(mc, screen, 20, 96, 0);
-        click(mc, screen, x, y, 0);
+        int x = ElementWorkbookScreen.centerX(editable), y = ElementWorkbookScreen.centerY(editable);
+        click(screen, ElementWorkbookScreen.PALETTE_X + 10, ElementWorkbookScreen.PALETTE_Y + 10, 0);
+        click(screen, x, y, 0);
         require(puzzle.placed().containsKey(editable), "Left click did not place aspect");
-        click(mc, screen, x, y, 1);
+        click(screen, x, y, 1);
         require(!puzzle.placed().containsKey(editable), "Right click did not erase aspect");
-        click(mc, screen, 257, 235, 0);
+        clickAction(screen, 1);
         require(puzzle.placed().size() > puzzle.anchors().size(), "Hint did not fill a cell");
-        click(mc, screen, 197, 235, 0);
+        clickAction(screen, 0);
         require(puzzle.placed().equals(puzzle.anchors()), "Clear did not preserve fixed aspects");
     }
 
-    private static void click(Minecraft mc, ElementWorkbookScreen screen, int x, int y, int button) {
-        int width = mc.getWindow().getGuiScaledWidth(), height = mc.getWindow().getGuiScaledHeight();
-        float scale = Math.min(1.5F, Math.min((width - 8F) / 360, (height - 8F) / 280));
-        double px = (width - 360 * scale) / 2 + x * scale, py = (height - 280 * scale) / 2 + y * scale;
+    /** Clear, hint and new, left to right along the bottom of the right page. */
+    private static void clickAction(ElementWorkbookScreen screen, int index) {
+        click(screen, ElementWorkbookScreen.ACTION_X + index * (ElementWorkbookScreen.ACTION_WIDTH + 4)
+                + ElementWorkbookScreen.ACTION_WIDTH / 2, ElementWorkbookScreen.ACTION_Y + 7, 0);
+    }
+
+    private static void click(ElementWorkbookScreen screen, int x, int y, int button) {
+        double px = screen.screenX(x), py = screen.screenY(y);
         screen.mouseClicked(px, py, button);
         screen.mouseReleased(px, py, button);
     }

@@ -145,6 +145,9 @@ minecraft {
             if (providers.gradleProperty('formedPreviewSmokeTest').isPresent()) {
                 property 'tc4modern.formedPreviewSmokeTest', 'true'
             }
+            if (providers.gradleProperty('multiblockSmokeTest').isPresent()) {
+                property 'tc4modern.multiblockSmokeTest', 'true'
+            }
             if (providers.gradleProperty('modernScannerSmokeTest').isPresent()) {
                 property 'tc4modern.modernScannerSmokeTest', 'true'
             }

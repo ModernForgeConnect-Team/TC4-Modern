@@ -31,7 +31,7 @@ public final class JeiSmokeProbe {
     private static volatile IntUnaryOperator showCategory;
     private final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(5);
     private final Map<String, Object> proof = new LinkedHashMap<>();
-    private final String[] categories = {"arcane", "crucible", "infusion", "item_in_fluid"};
+    private final String[] categories = {"arcane", "crucible", "infusion", "item_in_fluid", "multiblock"};
     private int stage, category, frames;
     private java.util.concurrent.CompletableFuture<Map<String, Integer>> command;
 
@@ -46,6 +46,7 @@ public final class JeiSmokeProbe {
 
     private void tick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == 99) return;
+        if (Boolean.getBoolean("tc4modern.multiblockSmokeTest") && !MultiblockSmokeProbe.completed) return;
         var mc = Minecraft.getInstance();
         try {
             if (System.nanoTime() > deadline) throw new IllegalStateException("JEI smoke timed out at " + stage);

@@ -107,7 +107,20 @@ final class Tc4Multiblocks {
         // Primals in their original order, so every structure lists them alike.
         var aspects = List.of("aer", "ignis", "aqua", "terra", "ordo", "perditio").stream().filter(cost::containsKey)
                 .map(tag -> JeiAspect.of(tag).withAmount(cost.get(tag))).toList();
-        return new MultiblockCategory.Recipe(id, research, blocks, sizeX, layers.length, sizeZ, materials, tools, aspects);
+        var results = switch (id) {
+            case "research_table" -> results("blockTable", 2, 3, 4, 5, 6, 7, 8, 9);
+            case "infusion_altar" -> results("blockStoneDevice", 2, 3, 4);
+            case "infernal_furnace" -> results("blockArcaneFurnace", 0);
+            case "advanced_alchemy_furnace" -> results("blockAlchemyFurnace", 0, 1, 2, 3, 4);
+            case "thaumatorium" -> results("blockMetalDevice", 10, 11);
+            case "node_jar" -> results("blockJar", 2);
+            default -> throw new IllegalArgumentException("Unknown multiblock " + id);
+        };
+        return new MultiblockCategory.Recipe(id, research, blocks, sizeX, layers.length, sizeZ, materials, tools, aspects, results);
+    }
+
+    private List<ItemStack> results(String key, int... metadata) {
+        return java.util.Arrays.stream(metadata).mapToObj(meta -> item(key, meta)).filter(stack -> !stack.isEmpty()).toList();
     }
 
     private ItemStack item(String name, int meta) { return converter.map(new LegacyStack(TC + name, meta, 1, "")).orElse(ItemStack.EMPTY); }

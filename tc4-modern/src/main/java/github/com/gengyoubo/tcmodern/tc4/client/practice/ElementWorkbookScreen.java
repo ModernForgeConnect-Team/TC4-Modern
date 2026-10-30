@@ -1,5 +1,6 @@
 package github.com.gengyoubo.tcmodern.tc4.client.practice;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
@@ -8,24 +9,40 @@ import github.com.gengyoubo.tcmodern.tc4.practice.PracticeAspects;
 import github.com.gengyoubo.tcmodern.tc4.practice.PracticePuzzle;
 import github.com.gengyoubo.tcmodern.tc4.practice.PracticePuzzle.Hex;
 import java.util.*;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
-/** Free, client-local practice: no research unlocks, resource use or server mutations. */
+/**
+ * Free, client-local practice: no research unlocks, resource use or server mutations.
+ * Drawn on the original Thaumonomicon spread with TC4's own hexes and page ornaments when Thaumcraft's
+ * textures are loaded, and on a hand-drawn imitation of it otherwise.
+ */
 public final class ElementWorkbookScreen extends Screen {
-    private static final int WIDTH = 360, HEIGHT = 280, COLUMNS = 5, ROWS = 6, PAGE_SIZE = COLUMNS * ROWS;
+    private static final ResourceLocation BOOK = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/gui/gui_researchbook.png");
+    private static final ResourceLocation HEX = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/gui/hex1.png");
+    private static final ResourceLocation GOLD_HEX = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/gui/hex2.png");
+    private static final String[] NUMERALS = {"I", "II", "III", "IV", "V", "VI", "VII"};
+    private static final int INK = 0x3B2414, TEXT = 0x4F3B24, FAINT = 0x8A7458, RED = 0x8B1A10, GREEN = 0x2F6B3A;
+    // The book is the original 256x181 spread at 1.5x; each page's writable area and centre line follow it.
+    static final int WIDTH = 384, HEIGHT = 272, LEFT_PAGE = 104, RIGHT_PAGE = 280;
+    static final int COLUMNS = 6, ROWS = 5, PAGE_SIZE = COLUMNS * ROWS, CELL = 20;
+    static final int PALETTE_X = LEFT_PAGE - COLUMNS * CELL / 2, PALETTE_Y = 102, LEVEL_X = RIGHT_PAGE - 70, LEVEL_Y = 14;
+    static final int ACTION_X = 207, ACTION_Y = 222, ACTION_WIDTH = 46, BOARD_Y = 128, HEX_SIZE = 12;
     private final PracticeAspects aspects;
     private final Random random = new Random();
-    private final List<Button> levels = new ArrayList<>();
+    private final List<PageButton> levels = new ArrayList<>();
     private PracticePuzzle puzzle;
     private List<TcAspect> palette = List.of();
     private String selected;
     private int level = 1, page;
     private float scale, left, top;
-    private Button previous, next, reset, hint;
+    private boolean art;
+    private PageButton previous, next, reset, hint;
     private Hex lastHint;
 
     public ElementWorkbookScreen(PracticeAspects aspects) {
@@ -55,31 +72,33 @@ public final class ElementWorkbookScreen extends Screen {
 
     PracticePuzzle puzzle() { return puzzle; }
 
+    /** Canvas to GUI coordinates, for the smoke probe's clicks. */
+    double screenX(double x) { return left + x * scale; }
+    double screenY(double y) { return top + y * scale; }
+
     @Override protected void init() {
         scale = Math.min(1.5F, Math.min((width - 8F) / WIDTH, (height - 8F) / HEIGHT));
         left = (width - WIDTH * scale) / 2;
         top = (height - HEIGHT * scale) / 2;
+        var resources = Minecraft.getInstance().getResourceManager();
+        art = resources.getResource(BOOK).isPresent() && resources.getResource(HEX).isPresent()
+                && resources.getResource(GOLD_HEX).isPresent();
         levels.clear();
         for (int i = 1; i <= 7; i++) {
             int requested = i;
-            levels.add(addRenderableWidget(Button.builder(Component.translatable("workbook.tc4modern.level", i),
-                    button -> generate(requested)).bounds(14 + (i - 1) * 30, 32, 28, 18).build()));
+            levels.add(addRenderableWidget(new PageButton(LEVEL_X + (i - 1) * CELL, LEVEL_Y, CELL, 18,
+                    Component.literal(NUMERALS[i - 1]), Kind.HEX, b -> generate(requested))));
         }
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-                .bounds(288, 12, 58, 18).build());
-        previous = addRenderableWidget(Button.builder(Component.literal("<"), button -> changePage(-1))
-                .bounds(14, 226, 24, 18).build());
-        next = addRenderableWidget(Button.builder(Component.literal(">"), button -> changePage(1))
-                .bounds(99, 226, 24, 18).build());
-        reset = addRenderableWidget(Button.builder(Component.translatable("workbook.tc4modern.reset"), button -> {
-            puzzle.reset(); lastHint = null; updateButtons();
-        }).bounds(170, 226, 54, 18).build());
-        hint = addRenderableWidget(Button.builder(Component.translatable("workbook.tc4modern.hint"), button -> {
-            lastHint = puzzle.hint().orElse(null); updateButtons();
-        }).bounds(230, 226, 54, 18).build());
-        addRenderableWidget(Button.builder(Component.translatable("workbook.tc4modern.new"), button -> generate(level))
-                .bounds(290, 226, 54, 18).build());
+        previous = addRenderableWidget(new PageButton(LEFT_PAGE - 56, 207, 18, 12, Component.literal("<"), Kind.PREVIOUS, b -> changePage(-1)));
+        next = addRenderableWidget(new PageButton(LEFT_PAGE + 38, 207, 18, 12, Component.literal(">"), Kind.NEXT, b -> changePage(1)));
+        reset = addRenderableWidget(action(0, "workbook.tc4modern.reset", b -> { puzzle.reset(); lastHint = null; updateButtons(); }));
+        hint = addRenderableWidget(action(1, "workbook.tc4modern.hint", b -> { lastHint = puzzle.hint().orElse(null); updateButtons(); }));
+        addRenderableWidget(action(2, "workbook.tc4modern.new", b -> generate(level)));
         updateButtons();
+    }
+
+    private PageButton action(int index, String key, Button.OnPress press) {
+        return new PageButton(ACTION_X + index * (ACTION_WIDTH + 4), ACTION_Y, ACTION_WIDTH, 14, Component.translatable(key), Kind.TEXT, press);
     }
 
     private void updateButtons() {
@@ -96,8 +115,9 @@ public final class ElementWorkbookScreen extends Screen {
         updateButtons();
     }
 
-    private static int centerX(Hex h) { return 255 + (int) Math.round(Math.sqrt(3) * 12 * (h.q() + h.r() / 2.0)); }
-    private static int centerY(Hex h) { return 151 + 18 * h.r(); }
+    // Flat-topped hexes, as on TC4 research notes.
+    static int centerX(Hex h) { return RIGHT_PAGE + Math.round(1.5F * HEX_SIZE * h.q()); }
+    static int centerY(Hex h) { return BOARD_Y + (int) Math.round(Math.sqrt(3) * HEX_SIZE * (h.r() + h.q() / 2.0)); }
     private double localX(double x) { return (x - left) / scale; }
     private double localY(double y) { return (y - top) / scale; }
 
@@ -105,14 +125,15 @@ public final class ElementWorkbookScreen extends Screen {
         if (puzzle == null) return null;
         for (var cell : puzzle.cells()) {
             double dx = Math.abs(x - centerX(cell)), dy = Math.abs(y - centerY(cell));
-            if (dx <= 10 && dy <= 12 - dx / Math.sqrt(3)) return cell;
+            if (dy <= HEX_SIZE * Math.sqrt(3) / 2 - 0.5 && dy <= Math.sqrt(3) * (HEX_SIZE - 0.5 - dx)) return cell;
         }
         return null;
     }
 
     private TcAspect paletteAt(double x, double y) {
-        int column = (int) Math.floor((x - 14) / 22), row = (int) Math.floor((y - 90) / 22);
-        if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS || x >= 124 || y >= 222) return null;
+        if (x < PALETTE_X || y < PALETTE_Y) return null;
+        int column = (int) ((x - PALETTE_X) / CELL), row = (int) ((y - PALETTE_Y) / CELL);
+        if (column >= COLUMNS || row >= ROWS) return null;
         int index = page * PAGE_SIZE + row * COLUMNS + column;
         return index < palette.size() ? palette.get(index) : null;
     }
@@ -142,11 +163,12 @@ public final class ElementWorkbookScreen extends Screen {
     }
 
     @Override public boolean mouseScrolled(double x, double y, double delta) {
-        if (localX(x) >= 14 && localX(x) < 124 && localY(y) >= 90 && localY(y) < 222) {
+        double lx = localX(x), ly = localY(y);
+        if (lx >= PALETTE_X && lx < PALETTE_X + COLUMNS * CELL && ly >= PALETTE_Y && ly < PALETTE_Y + ROWS * CELL) {
             changePage(delta > 0 ? -1 : 1);
             return true;
         }
-        return super.mouseScrolled(localX(x), localY(y), delta);
+        return super.mouseScrolled(lx, ly, delta);
     }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -155,86 +177,205 @@ public final class ElementWorkbookScreen extends Screen {
         graphics.pose().pushPose();
         graphics.pose().translate(left, top, 0);
         graphics.pose().scale(scale, scale, 1);
-        graphics.fill(0, 0, WIDTH, HEIGHT, 0xFF302937);
-        graphics.fill(3, 3, WIDTH - 3, HEIGHT - 3, 0xFFF0E4C7);
-        graphics.drawString(font, title, 14, 13, 0x493852, false);
-        graphics.drawString(font, Component.translatable("workbook.tc4modern.rules"), 14, 59, 0x554838, false);
-        graphics.drawString(font, Component.translatable("workbook.tc4modern.controls"), 14, 71, 0x77634B, false);
-        graphics.fill(10, 85, 128, 222, 0xFFDAC9A8);
-        graphics.fill(136, 85, 348, 222, 0xFFE5D5B5);
-        graphics.drawCenteredString(font, Component.translatable("workbook.tc4modern.page", page + 1,
-                Math.max(1, (palette.size() + PAGE_SIZE - 1) / PAGE_SIZE)), 68, 231, 0x554838);
-        for (int i = page * PAGE_SIZE; i < Math.min(palette.size(), (page + 1) * PAGE_SIZE); i++) {
-            var aspect = palette.get(i);
-            int px = 14 + (i % PAGE_SIZE % COLUMNS) * 22, py = 90 + (i % PAGE_SIZE / COLUMNS) * 22;
-            if (aspect.tag().equals(selected)) graphics.fill(px, py, px + 21, py + 21, 0xFF9C814B);
-            AspectIcons.render(graphics, aspect, px + 2, py + 2);
+        renderBook(graphics);
+
+        graphics.drawCenteredString(font, title, LEFT_PAGE, 15, INK);
+        ornament(graphics, LEFT_PAGE, 26);
+        int textY = 35;
+        for (var line : font.split(Component.translatable("workbook.tc4modern.rules"), 148))
+            graphics.drawString(font, line, LEFT_PAGE - 74, (textY += 9) - 9, TEXT, false);
+        textY += 3;
+        for (var line : font.split(Component.translatable("workbook.tc4modern.controls"), 148))
+            graphics.drawString(font, line, LEFT_PAGE - 74, (textY += 9) - 9, FAINT, false);
+        renderPalette(graphics, x, y);
+        int pages = Math.max(1, (palette.size() + PAGE_SIZE - 1) / PAGE_SIZE);
+        centered(graphics, Component.translatable("workbook.tc4modern.page", page + 1, pages), LEFT_PAGE, 209, TEXT);
+        if (selected != null) {
+            String name = font.plainSubstrByWidth(AspectIcons.name(selected), 120);
+            int nameX = LEFT_PAGE - (font.width(name) + 20) / 2;
+            AspectIcons.render(graphics, aspects.aspect(selected), nameX, 224);
+            graphics.drawString(font, name, nameX + 20, 228, INK, false);
         }
-        if (puzzle != null) renderBoard(graphics, x, y);
-        else graphics.drawWordWrap(font, Component.translatable("workbook.tc4modern.unavailable"), 155, 132, 176, 0x884444);
+
+        ornament(graphics, RIGHT_PAGE, 36);
         if (puzzle != null) {
+            renderBoard(graphics, x, y);
             long count = puzzle.anchors().keySet().stream().filter(puzzle.connected()::contains).count();
-            graphics.drawCenteredString(font, puzzle.solved() ? Component.translatable("workbook.tc4modern.solved")
+            centered(graphics, puzzle.solved() ? Component.translatable("workbook.tc4modern.solved")
                     : Component.translatable("workbook.tc4modern.progress", count, puzzle.anchors().size()),
-                    242, 251, puzzle.solved() ? 0x337342 : 0x554838);
+                    RIGHT_PAGE, 207, puzzle.solved() ? GREEN : TEXT);
+        } else {
+            int lineY = 110;
+            for (var line : font.split(Component.translatable("workbook.tc4modern.unavailable"), 140))
+                graphics.drawString(font, line, RIGHT_PAGE - font.width(line) / 2, (lineY += 10) - 10, RED, false);
         }
-        if (selected != null) graphics.drawString(font, font.plainSubstrByWidth(AspectIcons.name(selected), 110), 14, 251, 0x554838, false);
         super.render(graphics, x, y, partialTick);
+        graphics.pose().popPose();
+
         var hovered = paletteAt(x, y);
         var cell = cellAt(x, y);
         if (hovered == null && cell != null) hovered = aspects.aspect(puzzle.placed().get(cell));
-        if (hovered != null) renderAspectTooltip(graphics, hovered, x, y, cell != null && puzzle.anchors().containsKey(cell));
-        graphics.pose().popPose();
+        if (hovered != null) graphics.renderComponentTooltip(font, tooltip(hovered, cell != null && puzzle.anchors().containsKey(cell)), mouseX, mouseY);
+        // Widget tooltips would be placed in canvas coordinates, so level names are drawn here instead.
+        for (int i = 0; i < levels.size(); i++)
+            if (levels.get(i).isMouseOver(x, y)) graphics.renderTooltip(font, Component.translatable("workbook.tc4modern.level", i + 1), mouseX, mouseY);
+    }
+
+    private void centered(GuiGraphics graphics, Component text, int x, int y, int color) {
+        graphics.drawString(font, text, x - font.width(text) / 2, y, color, false);
+    }
+
+    private void renderBook(GuiGraphics graphics) {
+        if (art) {
+            blit(graphics, BOOK, 0, 0, WIDTH, HEIGHT, 0, 0, 512, 362, 512, 0xFFFFFFFF);
+            return;
+        }
+        // Leather boards, two parchment pages and a shaded gutter, after gui_researchbook.png.
+        graphics.fill(4, 2, WIDTH - 4, HEIGHT - 2, 0xFF3A160C);
+        graphics.fill(6, 4, WIDTH - 6, HEIGHT - 4, 0xFF6E2A18);
+        graphics.fill(18, 8, 188, 258, 0xFFD9C8A0);
+        graphics.fill(196, 8, 366, 258, 0xFFD9C8A0);
+        graphics.fill(20, 10, 186, 256, 0xFFF0E4C6);
+        graphics.fill(198, 10, 364, 256, 0xFFF0E4C6);
+        graphics.fill(184, 10, 188, 256, 0x40503018);
+        graphics.fill(196, 10, 200, 256, 0x40503018);
+    }
+
+    /** TC4's page divider, or a plain rule without the original art. */
+    private void ornament(GuiGraphics graphics, int x, int y) {
+        if (art) blit(graphics, BOOK, x - 68, y, 135, 7, 57, 366, 180, 10, 512, 0xFFFFFFFF);
+        else graphics.fill(x - 60, y + 3, x + 60, y + 4, 0xFF6B4A2B);
+    }
+
+    private void renderPalette(GuiGraphics graphics, int mouseX, int mouseY) {
+        var hovered = paletteAt(mouseX, mouseY);
+        for (int i = page * PAGE_SIZE; i < Math.min(palette.size(), (page + 1) * PAGE_SIZE); i++) {
+            var aspect = palette.get(i);
+            int px = PALETTE_X + i % PAGE_SIZE % COLUMNS * CELL, py = PALETTE_Y + i % PAGE_SIZE / COLUMNS * CELL;
+            if (aspect.tag().equals(selected)) {
+                // Larger than the cell so the gold rim shows around the 16 px icon.
+                hex(graphics, px + CELL / 2, py + CELL / 2, CELL / 2 + 1, 0x60E0B040);
+                hexArt(graphics, true, px + CELL / 2, py + CELL / 2, CELL + 4, 0xFFFFFFFF);
+            }
+            else if (aspect == hovered) hexArt(graphics, false, px + CELL / 2, py + CELL / 2, CELL, 0x80FFFFFF);
+            AspectIcons.render(graphics, aspect, px + 2, py + 2);
+        }
     }
 
     private void renderBoard(GuiGraphics graphics, int mouseX, int mouseY) {
         var hovered = cellAt(mouseX, mouseY);
         var connected = puzzle.connected();
         for (var cell : puzzle.cells()) {
-            int color = puzzle.anchors().containsKey(cell) ? 0xFFAE8642 : 0xFFBAA887;
-            if (cell.equals(hovered)) color = 0xFF80718D;
-            if (cell.equals(lastHint)) color = 0xFF4F9E9B;
-            hex(graphics, centerX(cell), centerY(cell), 12, color);
-            hex(graphics, centerX(cell), centerY(cell), 10, 0xFFF5EACC);
+            int x = centerX(cell), y = centerY(cell);
+            boolean anchor = puzzle.anchors().containsKey(cell);
+            if (!art) {
+                hex(graphics, x, y, HEX_SIZE, anchor ? 0xFFB07A1E : 0xFF6B4A2B);
+                hex(graphics, x, y, HEX_SIZE - 1, 0xFFF0E4C6);
+            }
+            if (anchor) hex(graphics, x, y, HEX_SIZE - 1, 0x30E0B040);
+            if (cell.equals(lastHint)) hex(graphics, x, y, HEX_SIZE - 1, 0x704FA0C8);
+            else if (cell.equals(hovered) && !puzzle.solved()) hex(graphics, x, y, HEX_SIZE - 1, 0x306B4A2B);
         }
         for (var cell : puzzle.cells()) for (var neighbor : cell.neighbors()) {
             if (cell.q() > neighbor.q() || cell.q() == neighbor.q() && cell.r() >= neighbor.r()) continue;
             if (aspects.connects(puzzle.placed().get(cell), puzzle.placed().get(neighbor)))
                 line(graphics, centerX(cell), centerY(cell), centerX(neighbor), centerY(neighbor),
-                        connected.contains(cell) ? 0xFF64AC82 : 0xFFB8AAA3);
+                        connected.contains(cell) ? 0xC07A4FB0 : 0x90A08C6C);
+        }
+        if (art) for (var cell : puzzle.cells()) {
+            boolean anchor = puzzle.anchors().containsKey(cell);
+            hexArt(graphics, anchor, centerX(cell), centerY(cell), 2 * HEX_SIZE, anchor ? 0xFFFFFFFF : 0x90FFFFFF);
         }
         for (var entry : puzzle.placed().entrySet())
             AspectIcons.render(graphics, aspects.aspect(entry.getValue()), centerX(entry.getKey()) - 8, centerY(entry.getKey()) - 8);
     }
 
-    private static void hex(GuiGraphics graphics, int x, int y, int size, int color) {
-        for (int dy = -size; dy <= size; dy++) {
-            int half = (int) Math.floor(Math.min(size * Math.sqrt(3) / 2, (size - Math.abs(dy)) * Math.sqrt(3)));
-            graphics.fill(x - half, y + dy, x + half + 1, y + dy + 1, color);
+    /** One of TC4's research-note hexes (hex2 is the gold one) centred on a point, or a drawn outline without the art. */
+    private void hexArt(GuiGraphics graphics, boolean gold, int x, int y, int size, int color) {
+        if (art) {
+            blit(graphics, gold ? GOLD_HEX : HEX, x - size / 2, y - size / 2, size, size, 0, 0, 32, 32, 32, color);
+        } else {
+            int alpha = color >>> 24;
+            hex(graphics, x, y, size / 2, alpha << 24 | (gold ? 0xB07A1E : 0x6B4A2B));
+            hex(graphics, x, y, size / 2 - 1, alpha << 24 | (gold ? 0xF1D88A : 0xE3D2A8));
         }
     }
 
+    private static void blit(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height,
+                             int u, int v, int uWidth, int vHeight, int textureSize, int color) {
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        graphics.setColor((color >> 16 & 255) / 255F, (color >> 8 & 255) / 255F, (color & 255) / 255F, (color >>> 24) / 255F);
+        graphics.blit(texture, x, y, width, height, u, v, uWidth, vHeight, textureSize, textureSize);
+        graphics.setColor(1, 1, 1, 1);
+        RenderSystem.disableBlend();
+    }
+
+    /** Filled flat-topped hexagon of circumradius {@code size}, one column at a time so translucent fills stay even. */
+    private static void hex(GuiGraphics graphics, int x, int y, int size, int color) {
+        for (int dx = -size; dx <= size; dx++) {
+            int half = (int) Math.floor(Math.min(size * Math.sqrt(3) / 2, (size - Math.abs(dx)) * Math.sqrt(3)));
+            graphics.fill(x + dx, y - half, x + dx + 1, y + half + 1, color);
+        }
+    }
+
+    /** One pixel wide, each pixel once, so translucent links do not darken where steps would overlap. */
     private static void line(GuiGraphics graphics, int x1, int y1, int x2, int y2, int color) {
         int steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
         for (int i = 0; i <= steps; i++) {
             int x = x1 + (x2 - x1) * i / steps, y = y1 + (y2 - y1) * i / steps;
-            graphics.fill(x, y, x + 2, y + 2, color);
+            graphics.fill(x, y, x + 1, y + 1, color);
         }
     }
 
-    private void renderAspectTooltip(GuiGraphics graphics, TcAspect aspect, int x, int y, boolean fixed) {
+    private List<Component> tooltip(TcAspect aspect, boolean fixed) {
         var lines = new ArrayList<Component>();
         lines.add(Component.literal(AspectIcons.name(aspect.tag())));
-        lines.add(Component.translatable("workbook.tc4modern.tier", aspects.tier(aspect.tag())));
-        if (!aspect.primal()) lines.add(Component.literal(String.join(" + ", aspect.components().stream().map(AspectIcons::name).toList())));
-        if (fixed) lines.add(Component.translatable("workbook.tc4modern.fixed"));
-        // Keep tooltip layout inside the logical canvas even when the GUI is scaled down.
-        int tooltipWidth = lines.stream().mapToInt(font::width).max().orElse(0);
-        int tx = Math.max(6, Math.min(x + 10, WIDTH - tooltipWidth - 10));
-        int ty = Math.max(6, Math.min(y + 12, HEIGHT - lines.size() * 11 - 8));
-        graphics.fill(tx - 4, ty - 4, tx + tooltipWidth + 4, ty + lines.size() * 11 + 2, 0xF020182A);
-        for (int i = 0; i < lines.size(); i++) graphics.drawString(font, lines.get(i), tx, ty + i * 11, 0xFFF0E4C7, false);
+        lines.add(Component.translatable("workbook.tc4modern.tier", aspects.tier(aspect.tag())).withStyle(ChatFormatting.GRAY));
+        if (!aspect.primal()) lines.add(Component.literal(String.join(" + ", aspect.components().stream().map(AspectIcons::name).toList()))
+                .withStyle(ChatFormatting.DARK_PURPLE));
+        if (fixed) lines.add(Component.translatable("workbook.tc4modern.fixed").withStyle(ChatFormatting.GOLD));
+        return lines;
     }
 
     @Override public boolean isPauseScreen() { return false; }
+
+    private enum Kind { TEXT, HEX, PREVIOUS, NEXT }
+
+    /** Buttons inked onto the page instead of vanilla stone slabs; arrows are TC4's page-turn curls. */
+    private final class PageButton extends Button {
+        private final Kind kind;
+
+        PageButton(int x, int y, int width, int height, Component label, Kind kind, OnPress press) {
+            super(x, y, width, height, label, press, DEFAULT_NARRATION);
+            this.kind = kind;
+        }
+
+        @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            boolean hot = active && isHovered();
+            int x = getX(), y = getY(), cx = x + width / 2;
+            switch (kind) {
+                case HEX -> {
+                    // The current level is the inactive one and wears the gold hex.
+                    hexArt(graphics, !active, cx, y + height / 2, width, !active || hot ? 0xFFFFFFFF : 0x80FFFFFF);
+                    centered(graphics, getMessage(), cx, y + (height - 8) / 2, !active ? INK : hot ? RED : FAINT);
+                }
+                case PREVIOUS, NEXT -> {
+                    if (!active) return;
+                    if (art) blit(graphics, BOOK, x, y, width, height, kind == Kind.PREVIOUS ? 0 : 24, 368, 24, 16, 512,
+                            hot ? 0xFFFFFFFF : 0xFFC8B8B8);
+                    else centered(graphics, getMessage(), cx, y + 2, hot ? RED : INK);
+                }
+                case TEXT -> {
+                    int frame = active ? 0xFF9C7C52 : 0x609C7C52;
+                    graphics.fill(x, y, x + width, y + height, hot ? 0x406B4A2B : 0x186B4A2B);
+                    graphics.fill(x + 1, y, x + width - 1, y + 1, frame);
+                    graphics.fill(x + 1, y + height - 1, x + width - 1, y + height, frame);
+                    graphics.fill(x, y + 1, x + 1, y + height - 1, frame);
+                    graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, frame);
+                    centered(graphics, getMessage(), cx, y + (height - 8) / 2, !active ? FAINT : hot ? RED : INK);
+                }
+            }
+        }
+    }
 }

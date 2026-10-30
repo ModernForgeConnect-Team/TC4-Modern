@@ -48,6 +48,7 @@ public final class Tc4JeiPlugin implements IModPlugin {
         if (Boolean.getBoolean("tc4modern.jeiSmokeTest")) {
             github.com.gengyoubo.tcmodern.tc4.client.testing.JeiSmokeProbe.ready(index -> {
                 if (index == 3) return checkItemInFluid(runtime);
+                if (index == 4) return checkMultiblocks(runtime);
                 var type = List.of(ARCANE, CRUCIBLE, INFUSION).get(index);
                 var manager = runtime.getRecipeManager();
                 var recipes = manager.createRecipeLookup(type).get().toList();
@@ -118,7 +119,11 @@ public final class Tc4JeiPlugin implements IModPlugin {
                     clean.getTag().remove("RepairCost");
                 }
                 return runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, clean).map(runtime::snapshot)
-                        .map(old -> (stack.isDamageableItem() ? 0 : old.metadata()) + ":" + old.snbt())
+                        .map(old -> {
+                            // Every captured node has different aspects/id. All use the same jar-building recipe.
+                            if (old.key().equals("Thaumcraft:blockJar") && old.metadata() == 2) return "2:node_jar";
+                            return (stack.isDamageableItem() ? 0 : old.metadata()) + ":" + old.snbt();
+                        })
                         .orElse(IIngredientSubtypeInterpreter.NONE);
             } catch (RuntimeException unsupported) {
                 return IIngredientSubtypeInterpreter.NONE;
@@ -232,6 +237,47 @@ public final class Tc4JeiPlugin implements IModPlugin {
         for (var focus : List.of(output, salt, bucket, water)) {
             if (manager.createRecipeLookup(type).limitFocus(List.of(focus)).get().noneMatch(recipe::equals))
                 throw new IllegalStateException("JEI bath salts lookup failed for " + focus);
+        }
+        runtime.getRecipesGui().showTypes(List.of(type));
+        return recipes.size();
+    }
+
+    private static int checkMultiblocks(IJeiRuntime runtime) {
+        var manager = runtime.getRecipeManager();
+        var type = MultiblockCategory.TYPE;
+        var recipes = manager.createRecipeLookup(type).get().toList();
+        var expected = Set.of("research_table", "infusion_altar", "infernal_furnace", "advanced_alchemy_furnace", "thaumatorium", "node_jar");
+        if (recipes.size() != 6 || !recipes.stream().map(MultiblockCategory.Recipe::id).collect(Collectors.toSet()).equals(expected))
+            throw new IllegalStateException("Expected all six TC4 multiblocks");
+        var factory = runtime.getJeiHelpers().getFocusFactory();
+        for (var recipe : recipes) {
+            if (recipe.tools().isEmpty() || recipe.results().isEmpty() || recipe.materials().stream().anyMatch(material -> material.part().items().isEmpty()))
+                throw new IllegalStateException("Missing multiblock ingredients: " + recipe.id());
+            if (manager.createRecipeLayoutDrawable(manager.getRecipeCategory(type), recipe, factory.getEmptyFocusGroup()).isEmpty())
+                throw new IllegalStateException("Cannot create multiblock layout: " + recipe.id());
+            for (var result : recipe.results()) {
+                var focus = factory.createFocus(RecipeIngredientRole.OUTPUT, VanillaTypes.ITEM_STACK, result);
+                if (manager.createRecipeLookup(type).limitFocus(List.of(focus)).get().noneMatch(recipe::equals))
+                    throw new IllegalStateException("Multiblock recipe lookup failed: " + recipe.id());
+            }
+            for (var material : recipe.materials()) for (var stack : material.part().items()) {
+                var focus = factory.createFocus(RecipeIngredientRole.INPUT, VanillaTypes.ITEM_STACK, stack);
+                if (manager.createRecipeLookup(type).limitFocus(List.of(focus)).get().noneMatch(recipe::equals))
+                    throw new IllegalStateException("Multiblock material lookup failed: " + recipe.id());
+            }
+            for (var aspect : recipe.cost()) {
+                var focus = factory.createFocus(RecipeIngredientRole.INPUT, JeiAspect.TYPE, aspect);
+                if (manager.createRecipeLookup(type).limitFocus(List.of(focus)).get().noneMatch(recipe::equals))
+                    throw new IllegalStateException("Multiblock vis lookup failed: " + recipe.id());
+            }
+            if (recipe.id().equals("node_jar")) {
+                var api = TcModernApi.runtime().orElseThrow();
+                var captured = new JeiRecipeConverter(api, List.of(), Set.of()).map(new LegacyStack("Thaumcraft:blockJar", 2, 1,
+                        "{nodeAspects:[{key:\"aer\",amount:20}],nodeId:\"jei-smoke\"}")).orElseThrow();
+                var focus = factory.createFocus(RecipeIngredientRole.OUTPUT, VanillaTypes.ITEM_STACK, captured);
+                if (manager.createRecipeLookup(type).limitFocus(List.of(focus)).get().noneMatch(recipe::equals))
+                    throw new IllegalStateException("Captured-node NBT prevented the jar recipe lookup");
+            }
         }
         runtime.getRecipesGui().showTypes(List.of(type));
         return recipes.size();
