@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "tc4modern:research_desk",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "tc4modern:research_desk",
+              "properties": {
+                "half": "main"
+              }
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
+}

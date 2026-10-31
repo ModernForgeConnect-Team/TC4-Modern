@@ -173,6 +173,9 @@ minecraft {
             if (providers.gradleProperty('modernScannerSmokeTest').isPresent()) {
                 property 'tc4modern.modernScannerSmokeTest', 'true'
             }
+            if (providers.gradleProperty('researchDeskSmokeTest').isPresent()) {
+                property 'tc4modern.researchDeskSmokeTest', 'true'
+            }
             if (rootProject.devProperty('legacyRuntimeDir').isPresent()) {
                 property 'mfcl.legacyRuntimeDir', rootProject.file(rootProject.devProperty('legacyRuntimeDir').get()).absolutePath
             }

@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,half=main": {
+      "model": "tc4modern:block/research_desk_main"
+    },
+    "facing=north,half=side": {
+      "model": "tc4modern:block/research_desk_side"
+    },
+    "facing=east,half=main": {
+      "model": "tc4modern:block/research_desk_main",
+      "y": 90
+    },
+    "facing=east,half=side": {
+      "model": "tc4modern:block/research_desk_side",
+      "y": 90
+    },
+    "facing=south,half=main": {
+      "model": "tc4modern:block/research_desk_main",
+      "y": 180
+    },
+    "facing=south,half=side": {
+      "model": "tc4modern:block/research_desk_side",
+      "y": 180
+    },
+    "facing=west,half=main": {
+      "model": "tc4modern:block/research_desk_main",
+      "y": 270
+    },
+    "facing=west,half=side": {
+      "model": "tc4modern:block/research_desk_side",
+      "y": 270
+    }
+  }
+}

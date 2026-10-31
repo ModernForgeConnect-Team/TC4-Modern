@@ -1,7 +1,10 @@
 package github.com.gengyoubo.tcmodern.tc4.init;
 
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
+import github.com.gengyoubo.tcmodern.tc4.content.ArchiveCabinetBlock;
 import github.com.gengyoubo.tcmodern.tc4.content.DeepslateLegacyOreBlock;
+import github.com.gengyoubo.tcmodern.tc4.content.ResearchDeskBlock;
+import java.util.function.Supplier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -11,9 +14,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * Modern-only deepslate variants of the original Thaumcraft ores and elemental infused stones.
- * The blocks are independently registered under {@code tc4modern}; drops map back to the original
- * TC4 items through MFCL at runtime.
+ * Modern-only deepslate variants of the original Thaumcraft ores and elemental infused stones, plus the
+ * modern research desk and its archive cabinets. The blocks are independently registered under
+ * {@code tc4modern}; ore drops map back to the original TC4 items through MFCL at runtime.
  */
 public final class Tc4Blocks {
     private static final DeferredRegister<Block> BLOCKS =
@@ -35,10 +38,18 @@ public final class Tc4Blocks {
             ore("deepslate_entropy_infused_stone", DeepslateLegacyOreBlock.Drop.INFUSED, 5);
     public static final RegistryObject<Block> DEEPSLATE_AMBER_BEARING_STONE =
             ore("deepslate_amber_bearing_stone", DeepslateLegacyOreBlock.Drop.AMBER, 6);
+    public static final RegistryObject<Block> RESEARCH_DESK = withItem("research_desk", ResearchDeskBlock::new);
+    public static final RegistryObject<Block> ARCHIVE_CABINET = withItem("archive_cabinet", ArchiveCabinetBlock::new);
 
     private Tc4Blocks() { }
 
     public static void register(IEventBus modBus) { BLOCKS.register(modBus); }
+
+    private static RegistryObject<Block> withItem(String id, Supplier<Block> factory) {
+        RegistryObject<Block> block = BLOCKS.register(id, factory);
+        Tc4Items.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
+        return block;
+    }
 
     /** Registers the block together with its item; the item also lands in the creative tab. */
     private static RegistryObject<Block> ore(String id, DeepslateLegacyOreBlock.Drop drop, int metadata) {

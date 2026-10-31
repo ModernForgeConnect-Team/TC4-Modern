@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "tc4modern:block/archive_cabinet"
+    },
+    "facing=east": {
+      "model": "tc4modern:block/archive_cabinet",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "tc4modern:block/archive_cabinet",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "tc4modern:block/archive_cabinet",
+      "y": 270
+    }
+  }
+}
