@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.recipe;
+package github.com.gengyoubo.tcmodern.lib.json;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -17,15 +17,15 @@ import java.util.Map;
  * {@code metadata} with {@code "*"} for any, {@code nbt} in 1.7.10 SNBT) or host ({@code item}: a modern item id,
  * {@code nbt} in modern SNBT); ingredients may instead be an ore dictionary name ({@code ore}).
  */
-final class Tc4RecipeJson {
+public final class RecipeJson {
     static final int WILDCARD = 32767;
 
     /** Turns a modern item id, count and optional modern SNBT into the original stack MFCL represents it with. */
-    interface HostItems {
+    public interface HostItems {
         LegacyStack stack(String id, int count, String nbt);
     }
 
-    private Tc4RecipeJson() { }
+    private RecipeJson() { }
 
     static TcRecipeDefinition parse(JsonObject json, HostItems hostItems) {
         String type = string(json, "type");
@@ -75,6 +75,12 @@ final class Tc4RecipeJson {
         }
         return new Ingredient.Item(item(json, hostItems, false));
     }
+
+    /**
+     * One item in this format ({@code legacy_item}/{@code metadata}/{@code nbt} or {@code item}/{@code nbt}), as the
+     * original stack. {@code result} allows a count and forbids the metadata wildcard.
+     */
+    public static LegacyStack stack(JsonObject json, HostItems hostItems, boolean result) { return item(json, hostItems, result); }
 
     /** Results default to count 1 and accept a count; inputs are always single items, as the original matches them. */
     private static LegacyStack item(JsonObject json, HostItems hostItems, boolean result) {

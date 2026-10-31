@@ -2,7 +2,7 @@ package github.com.gengyoubo.tcmodern.tc4.compat.jei;
 
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipe;
-import github.com.gengyoubo.tcmodern.tc4.client.AspectIcons;
+import github.com.gengyoubo.tcmodern.lib.client.AspectIcons;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

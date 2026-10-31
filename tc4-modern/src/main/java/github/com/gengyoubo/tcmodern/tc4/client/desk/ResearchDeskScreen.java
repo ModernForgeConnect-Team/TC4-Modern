@@ -4,7 +4,7 @@ import github.com.gengyoubo.mfcl.api.LegacyMappings;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
-import github.com.gengyoubo.tcmodern.tc4.client.AspectIcons;
+import github.com.gengyoubo.tcmodern.lib.client.AspectIcons;
 import github.com.gengyoubo.tcmodern.tc4.content.ResearchDeskBlockEntity;
 import github.com.gengyoubo.tcmodern.tc4.menu.ResearchDeskMenu;
 import github.com.gengyoubo.tcmodern.tc4.network.DeskNetwork;
@@ -24,7 +24,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
-import static github.com.gengyoubo.tcmodern.tc4.client.desk.ModernUi.*;
+import static github.com.gengyoubo.tcmodern.lib.client.ModernUi.*;
 
 /**
  * Modern research desk view. Everything shown comes from the server snapshot and the menu slots; clicks only

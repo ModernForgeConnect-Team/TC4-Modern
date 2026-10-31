@@ -4,7 +4,7 @@ import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
-import github.com.gengyoubo.tcmodern.tc4.client.AspectIcons;
+import github.com.gengyoubo.tcmodern.lib.client.AspectIcons;
 import github.com.gengyoubo.tcmodern.tc4.client.FormedStructures;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.client;
+package github.com.gengyoubo.tcmodern.lib.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;

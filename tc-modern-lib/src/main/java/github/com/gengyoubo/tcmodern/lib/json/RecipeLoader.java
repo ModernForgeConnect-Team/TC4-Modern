@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.recipe;
+package github.com.gengyoubo.tcmodern.lib.json;
 
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import net.minecraft.nbt.TagParser;
@@ -29,25 +30,23 @@ import net.minecraftforge.registries.ForgeRegistries;
  * same id) to the original TC4 recipe list, once at load completion on each physical side. Not a datapack: recipes
  * are fixed for the session and must be identical on client and server. A broken file is logged and skipped.
  */
-public final class Tc4RecipeLoader {
+public final class RecipeLoader {
     private static final String FOLDER = "tc4_recipes";
 
-    private Tc4RecipeLoader() { }
+    private RecipeLoader() { }
 
     public static void load(LegacyRuntime runtime) {
         if (!runtime.supports(LegacyFeatures.MLA_OBJECT_ARGUMENTS)) {
             LogUtils.getLogger().warn("TC4 recipes: this MFCL build cannot pass recipe inputs to the original; JSON recipes are not loaded.");
             return;
         }
-        var files = new TreeMap<String, Path>();
-        for (var info : ModList.get().getModFiles()) collect(info.getFile().findResource("data"), true, files);
-        collect(FMLPaths.CONFIGDIR.get().resolve("tc4modern").resolve(FOLDER), false, files);
+        var files = files(FOLDER);
         HostItemsFromRuntime hostItems = new HostItemsFromRuntime(runtime);
         int added = 0;
         for (Map.Entry<String, Path> file : files.entrySet()) {
             try {
                 var json = JsonParser.parseString(Files.readString(file.getValue(), StandardCharsets.UTF_8)).getAsJsonObject();
-                TcRecipeRegistrar.register(runtime, Tc4RecipeJson.parse(json, hostItems));
+                TcRecipeRegistrar.register(runtime, RecipeJson.parse(json, hostItems));
                 added++;
             } catch (IOException | RuntimeException failure) {
                 LogUtils.getLogger().error("TC4 recipes: skipped {} ({}): {}", file.getKey(), file.getValue(), failure.toString());
@@ -57,14 +56,29 @@ public final class Tc4RecipeLoader {
     }
 
     /**
+     * Every {@code data/<namespace>/<folder>/**.json} in the mod JARs and {@code config/tc4modern/<folder>/<namespace>/**.json},
+     * by {@code namespace:path} id in id order; a config file replaces a JAR file of the same id.
+     */
+    public static SortedMap<String, Path> files(String folder) {
+        var files = new TreeMap<String, Path>();
+        for (var info : ModList.get().getModFiles()) collect(info.getFile().findResource("data"), true, folder, files);
+        // The folder predates the move into the library; existing modpacks keep their files where they are.
+        collect(FMLPaths.CONFIGDIR.get().resolve("tc4modern").resolve(folder), false, folder, files);
+        return files;
+    }
+
+    /** Turns modern item ids into the original stacks MFCL represents them with. */
+    public static RecipeJson.HostItems hostItems(LegacyRuntime runtime) { return new HostItemsFromRuntime(runtime); }
+
+    /**
      * {@code root} is a {@code data} folder ({@code <namespace>/tc4_recipes/...}) or the config folder
      * ({@code <namespace>/...}); ids are {@code namespace:path} without {@code .json}.
      */
-    private static void collect(Path root, boolean data, Map<String, Path> files) {
+    private static void collect(Path root, boolean data, String folder, Map<String, Path> files) {
         if (root == null || !Files.isDirectory(root)) return;
         try (Stream<Path> namespaces = Files.list(root)) {
             for (Path namespace : namespaces.filter(Files::isDirectory).toList()) {
-                Path recipes = data ? namespace.resolve(FOLDER) : namespace;
+                Path recipes = data ? namespace.resolve(folder) : namespace;
                 if (!Files.isDirectory(recipes)) continue;
                 try (Stream<Path> walk = Files.walk(recipes)) {
                     for (Path file : walk.filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".json")).toList()) {
@@ -81,7 +95,7 @@ public final class Tc4RecipeLoader {
     }
 
     /** Modern items cross as the original identity MFCL gives them, keeping count and NBT. */
-    private record HostItemsFromRuntime(LegacyRuntime runtime) implements Tc4RecipeJson.HostItems {
+    private record HostItemsFromRuntime(LegacyRuntime runtime) implements RecipeJson.HostItems {
         @Override
         public LegacyStack stack(String id, int count, String nbt) {
             var location = ResourceLocation.tryParse(id);

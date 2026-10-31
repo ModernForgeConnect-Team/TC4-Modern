@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
-import github.com.gengyoubo.tcmodern.tc4.client.AspectIcons;
+import github.com.gengyoubo.tcmodern.lib.client.AspectIcons;
 import github.com.gengyoubo.tcmodern.tc4.practice.PracticeAspects;
 import github.com.gengyoubo.tcmodern.tc4.practice.PracticePuzzle;
 import github.com.gengyoubo.tcmodern.tc4.practice.PracticePuzzle.Hex;

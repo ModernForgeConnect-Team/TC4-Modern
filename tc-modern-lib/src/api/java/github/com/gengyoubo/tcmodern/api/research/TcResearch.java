@@ -5,6 +5,7 @@ import github.com.gengyoubo.mfcl.api.LegacyRuntime;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import static github.com.gengyoubo.tcmodern.api.research.TcResearchAccessors.*;
@@ -75,6 +76,58 @@ public final class TcResearch {
             for (var item : items(runtime)) unlock.complete(runtime.accessor(Item.class, item).key());
             return unlock.completed;
         });
+    }
+
+    /**
+     * Completes exactly the given research, without parents or siblings, as a debugging tool does. Warp applies as
+     * in the original. Call on the owning server thread; the player's research list is resent afterwards.
+     *
+     * @return how many were newly completed; unknown keys are skipped
+     */
+    public static int completeOnly(LegacyRuntime runtime, Object hostPlayer, Collection<String> keys) {
+        require(runtime);
+        var categories = runtime.accessor(Categories.class);
+        return runtime.withPlayer(hostPlayer, player -> {
+            var unlock = new Unlock(runtime, player);
+            for (String key : keys) if (key != null && categories.find(key) != null) unlock.complete(key);
+            sync(runtime, player);
+            return unlock.completed;
+        });
+    }
+
+    /**
+     * Takes research back from a player, together with the discovery marker of hidden research ({@code "@KEY"}), so
+     * hidden entries hide again. The original has no such operation; warp already given stays. Call on the owning
+     * server thread; the player's research list is resent and saved afterwards.
+     *
+     * @return how many research keys were removed
+     */
+    public static int revoke(LegacyRuntime runtime, Object hostPlayer, Collection<String> keys) {
+        require(runtime);
+        var remove = new HashSet<String>();
+        for (String key : keys) if (key != null) { remove.add(key); remove.add("@" + key); }
+        return runtime.withPlayer(hostPlayer, player -> {
+            String name = runtime.accessor(Player.class, player).name();
+            var list = runtime.accessor(TcBookAccessors.Progress.class).completed(name);
+            int before = runtime.values().size(list);
+            runtime.values().removeIf(list, value -> value instanceof String key && remove.contains(key) && !key.startsWith("@"));
+            int removed = before - runtime.values().size(list);
+            runtime.values().removeIf(list, value -> value instanceof String key && remove.contains(key));
+            sync(runtime, player);
+            return removed;
+        });
+    }
+
+    /** Saves and resends the player's whole research list with the original's own sync packet. */
+    private static void sync(LegacyRuntime runtime, LegacyObject player) {
+        var progress = runtime.accessor(TcBookAccessors.Progress.class);
+        progress.save(player);
+        try {
+            var packet = runtime.accessor(TcBookAccessors.SyncPacket.class).create(player);
+            runtime.accessor(TcBookAccessors.Channel.class, runtime.accessor(TcBookAccessors.Network.class).channel()).sendTo(packet, player);
+        } catch (RuntimeException unsupported) {
+            // MFCL still resynchronizes the research list after the scoped player transaction.
+        }
     }
 
     private static List<LegacyObject> items(LegacyRuntime runtime) {

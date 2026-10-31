@@ -324,7 +324,7 @@ public final class ResearchDeskSmokeProbe {
         clickSort(screen, 0);
         require(ResearchDeskScreen.mode == AspectOrder.Mode.ORIGINAL, "Sort did not cycle back");
         click(screen, left + ResearchDeskScreen.GRID_X + 20, top + ResearchDeskScreen.SEARCH_Y + 5, 0);
-        String name = github.com.gengyoubo.tcmodern.tc4.client.AspectIcons.name("lux");
+        String name = github.com.gengyoubo.tcmodern.lib.client.AspectIcons.name("lux");
         for (char c : name.toCharArray()) screen.charTyped(c, 0);
         var found = screen.palette();
         require(found.contains("lux") && found.size() < original.size(), "Search by localized name '" + name + "' failed: " + found);

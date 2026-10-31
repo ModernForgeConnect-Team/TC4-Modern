@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import static github.com.gengyoubo.tcmodern.tc4.client.desk.ModernUi.*;
+import static github.com.gengyoubo.tcmodern.lib.client.ModernUi.*;
 
 /** Three drawers in the same glass style as the research desk. */
 public final class ArchiveCabinetScreen extends AbstractContainerScreen<ArchiveCabinetMenu> {

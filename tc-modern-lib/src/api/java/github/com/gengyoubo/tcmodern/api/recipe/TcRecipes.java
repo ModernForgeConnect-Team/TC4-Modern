@@ -37,6 +37,19 @@ public final class TcRecipes {
         return new TcRecipeSnapshot(List.copyOf(recipes.values()), issues);
     }
 
+    /**
+     * The display form of one original recipe object, as {@link #snapshot} reads each entry of the registry; wand
+     * recipes expand to one display per cap and rod. Empty for a recipe with no static display.
+     */
+    public static List<TcRecipe> read(LegacyRuntime runtime, LegacyObject recipe) {
+        if (recipe == null) return List.of();
+        try {
+            return new Reader(runtime).read(recipe);
+        } catch (RuntimeException unsupported) {
+            return List.of();
+        }
+    }
+
     private static final class Reader {
         private final LegacyRuntime runtime;
         Reader(LegacyRuntime runtime) { this.runtime = runtime; }

@@ -1,7 +1,7 @@
 package github.com.gengyoubo.tcmodern.tc4.compat.jade;
 
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
-import github.com.gengyoubo.tcmodern.tc4.client.AspectIcons;
+import github.com.gengyoubo.tcmodern.lib.client.AspectIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.phys.Vec2;

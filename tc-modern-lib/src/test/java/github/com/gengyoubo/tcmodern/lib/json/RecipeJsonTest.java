@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.recipe;
+package github.com.gengyoubo.tcmodern.lib.json;
 
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -10,12 +10,12 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class Tc4RecipeJsonTest {
+class RecipeJsonTest {
     /** Modern items become a fixed original identity carrying their count and NBT. */
-    private static final Tc4RecipeJson.HostItems HOST = (id, count, nbt) -> new LegacyStack("mfcl:host/" + id, 0, count, nbt == null ? "" : nbt);
+    private static final RecipeJson.HostItems HOST = (id, count, nbt) -> new LegacyStack("mfcl:host/" + id, 0, count, nbt == null ? "" : nbt);
 
     private static TcRecipeDefinition parse(String json) {
-        return Tc4RecipeJson.parse(JsonParser.parseString(json).getAsJsonObject(), HOST);
+        return RecipeJson.parse(JsonParser.parseString(json).getAsJsonObject(), HOST);
     }
 
     @Test
@@ -26,7 +26,7 @@ class Tc4RecipeJsonTest {
                  "aspects":{"aer":5,"ordo":3},"result":{"legacy_item":"Thaumcraft:ItemResource","metadata":2,"count":4},"mirrored":false}""");
         assertEquals(List.of("G G", " I "), recipe.pattern());
         assertEquals(new Ingredient.Ore("blockGlass"), recipe.key().get('G'));
-        assertEquals(new Ingredient.Item(new LegacyStack("Thaumcraft:ItemResource", Tc4RecipeJson.WILDCARD, 1, "")), recipe.key().get('I'));
+        assertEquals(new Ingredient.Item(new LegacyStack("Thaumcraft:ItemResource", RecipeJson.WILDCARD, 1, "")), recipe.key().get('I'));
         assertEquals(Map.of("aer", 5, "ordo", 3), recipe.aspects());
         assertEquals(new LegacyStack("Thaumcraft:ItemResource", 2, 4, ""), recipe.result());
         assertFalse(recipe.mirrored());
