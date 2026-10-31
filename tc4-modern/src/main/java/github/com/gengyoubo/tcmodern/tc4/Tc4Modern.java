@@ -26,6 +26,7 @@ public final class Tc4Modern {
 
     public Tc4Modern(FMLJavaModLoadingContext context) {
         github.com.gengyoubo.mfcl.api.LegacyBlockProviders.register(new github.com.gengyoubo.tcmodern.tc4.compat.Tc4NativeBlocks());
+        github.com.gengyoubo.mfcl.api.LegacyItemProviders.register(new github.com.gengyoubo.tcmodern.tc4.compat.Tc4ItemSplits());
         var modBus = context.getModEventBus();
         Tc4Blocks.register(modBus);
         Tc4Items.register(modBus);

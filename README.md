@@ -177,11 +177,11 @@ JEI 是可选的客户端集成，当前固定开发版本为 `15.20.0.106`（Mi
 - 六种多方块结构提供搭建材料、魔力消耗、研究要求和成型前后预览；对成型结构的代表方块按 R、对材料按 U 可查询搭建方式。结果槽只是结构入口，不会将多方块作为物品合成出来。缸中节点忽略节点自身的要素和 ID，以便携带不同节点数据的物品也能查询同一搭建配方。
 - 仅展示配方，不提供自动填充，不绕过研究，不注册可执行的现代 TC4 特殊配方。普通工作台配方继续由 MFCL 提供，避免重复添加。
 
-当前仅支持 TC4 `4.2.3.5` 的标准静态配方类。动态注魔附魔、修改输入 NBT 的配方、自定义配方子类及无法无损映射的内容不推断为静态配方。
+当前仅支持 TC4 `4.2.3.5` 的标准静态配方类；动态的法杖／权杖配方按已注册的杖端与杖芯逐一展开为静态页面。动态注魔附魔、修改输入 NBT 的配方、自定义配方子类及无法无损映射的内容不推断为静态配方。
 单页支持至多 16 种要素和 16 个注魔周边材料。跳过数量会写入 `TC4 JEI` 日志摘要，具体原因在 debug 日志中。
-除缸中节点仅按结构类型查询外，NBT 子类型目前保留完整的原始 NBT；充能等状态也可能区分为不同的 JEI 身份，尚未实现所有物品的语义化 NBT 匹配。
+TC4 物品通过 MFCL 的 `LegacyItemProvider` 拆分为独立的现代物品：不可损坏的多 metadata 物品按 metadata 拆分（如 `thaumcraft:item_resource/meta_2`），法杖、长杖与权杖按杖芯、杖端与是否权杖拆分（如 `thaumcraft:wand_casting/greatwood_gold_sceptre`，忽略 metadata 与储存的要素）。旧侧仍是同一个原版物品。除缸中节点仅按结构类型查询外，NBT 子类型目前保留完整的原始 NBT；充能等状态也可能区分为不同的 JEI 身份，尚未实现所有物品的语义化 NBT 匹配。
 
-JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafting, crucible alchemy, and static infusion recipes through public MFCL accessors. Ingredients retain metadata, original NBT, counts, and ore alternatives. Pages show base aspect costs, research keys, and infusion instability. Recipe viewing does not unlock research or implement crafting/recipe transfer. Dynamic recipes, custom subclasses, and unrepresentable required ingredients/outputs are omitted with diagnostics. Full original NBT currently participates in subtype identity, including state such as stored charge.
+JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafting, crucible alchemy, and static infusion recipes through public MFCL accessors. Ingredients retain metadata, original NBT, counts, and ore alternatives. Pages show base aspect costs, research keys, and infusion instability. Recipe viewing does not unlock research or implement crafting/recipe transfer. The dynamic wand and sceptre recipes are expanded into one static page per registered cap and rod. Other dynamic recipes, custom subclasses, and unrepresentable required ingredients/outputs are omitted with diagnostics. Full original NBT currently participates in subtype identity, including state such as stored charge, except for node jars (by structure only) and wands, staves and sceptres (by cap, rod and sceptre only; metadata and stored vis are ignored). Through MFCL's `LegacyItemProvider`, every non-damageable TC4 item with several metadata subtypes is its own host item (`thaumcraft:item_resource/meta_2`), and every wand, staff and sceptre build is its own host item (`thaumcraft:wand_casting/greatwood_gold_sceptre`); old code still sees the single original item.
 
 默认开发客户端包含 JEI。可通过 `-PwithJei=false` 关闭开发运行时依赖；实际安装时自行放入 JEI 模组 JAR。
 

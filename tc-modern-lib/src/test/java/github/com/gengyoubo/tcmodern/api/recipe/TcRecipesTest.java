@@ -87,6 +87,46 @@ class TcRecipesTest {
     }
 
     @Test
+    void wandAndSceptreRecipesExpandToEveryCapAndRodLikeTheOriginal() {
+        var runtime = new Fixture();
+        var ironCap = stack("Thaumcraft:WandCap", 0, 1, "");
+        var goldCap = stack("Thaumcraft:WandCap", 1, 1, "");
+        var stick = stack("minecraft:stick", 0, 1, "");
+        var greatwood = stack("Thaumcraft:WandRod", 0, 1, "");
+        runtime.caps = map(Map.of("iron", part("iron", 1, ironCap, ""), "gold", part("gold", 3, goldCap, "CAP_gold"),
+                "uncraftable", part("uncraftable", 1, null, "")));
+        runtime.rods = map(Map.of("wood", part("wood", 1, stick, ""), "greatwood", part("greatwood", 3, greatwood, "ROD_greatwood")));
+        var primals = new LegacyObject[6];
+        for (int i = 0; i < primals.length; i++)
+            primals[i] = ((LegacyObject[]) aspects(List.of("aer", "terra", "ignis", "aqua", "ordo", "perditio").get(i), 1).members().get("values"))[0];
+        runtime.primals = collection(primals);
+        runtime.recipes = collection(handle("thaumcraft.common.lib.crafting.ArcaneWandRecipe", Map.of()),
+                handle("thaumcraft.common.lib.crafting.ArcaneSceptreRecipe", Map.of()));
+        var snapshot = TcRecipes.snapshot(runtime);
+        assertTrue(snapshot.issues().isEmpty(), snapshot.issues().toString());
+        // Wands: every pair but the iron-capped wooden wand. Sceptres: all four pairs.
+        assertEquals(3 + 4, snapshot.recipes().size());
+
+        var gold = snapshot.recipes().stream().filter(recipe -> recipe.output().snbt().equals("{cap:\"gold\",rod:\"greatwood\"}")).findFirst().orElseThrow();
+        assertEquals(new LegacyStack("Thaumcraft:WandCasting", 9, 1, "{cap:\"gold\",rod:\"greatwood\"}"), gold.output());
+        assertEquals(TcRecipe.Kind.ARCANE_SHAPED, gold.kind());
+        assertEquals("ROD_greatwood", gold.research());
+        assertEquals(List.of(List.of(), List.of(), List.of(snap(goldCap)), List.of(), List.of(snap(greatwood)), List.of(),
+                List.of(snap(goldCap)), List.of(), List.of()), gold.inputs());
+        assertEquals(6, gold.aspects().size());
+        assertTrue(gold.aspects().stream().allMatch(cost -> cost.amount() == 9));
+
+        var sceptre = snapshot.recipes().stream().filter(recipe -> recipe.output().snbt().equals("{cap:\"gold\",rod:\"greatwood\",sceptre:1b}")).findFirst().orElseThrow();
+        assertEquals(13, sceptre.output().metadata());
+        assertEquals("SCEPTRE", sceptre.research());
+        var charm = new LegacyStack("Thaumcraft:ItemResource", 15, 1, "");
+        assertEquals(List.of(List.of(), List.of(snap(goldCap)), List.of(charm), List.of(), List.of(snap(greatwood)), List.of(snap(goldCap)),
+                List.of(snap(goldCap)), List.of(), List.of()), sceptre.inputs());
+        assertTrue(sceptre.aspects().stream().allMatch(cost -> cost.amount() == 13));
+        assertTrue(snapshot.recipes().stream().anyMatch(recipe -> recipe.output().snbt().equals("{cap:\"iron\",rod:\"wood\",sceptre:1b}")));
+    }
+
+    @Test
     void snapshotsAreImmutableAndSurviveRuntimeShutdown() {
         var runtime = new Fixture();
         runtime.recipes = collection(shaped(1, 1, new LegacyObject[]{stack("minecraft:glass", 0, 1, "")},
@@ -118,6 +158,13 @@ class TcRecipesTest {
     private record Handle(String typeName, Map<String, Object> members) implements LegacyObject { }
     private static Handle handle(String type, Map<String, Object> members) { return new Handle(type, members); }
     private static Handle collection(LegacyObject... values) { return handle("java.util.ArrayList", Map.of("elements", values)); }
+    private static Handle map(Map<String, Object> entries) { return handle("java.util.LinkedHashMap", Map.of("entries", new TreeMap<>(entries))); }
+    private static Handle part(String tag, int cost, LegacyObject item, String research) {
+        var members = new HashMap<String, Object>(Map.of("tag", tag, "craftCost", cost, "research", research));
+        members.put("item", item);
+        return handle("thaumcraft.api.wands.Part", members);
+    }
+    private static LegacyStack snap(Handle stack) { return (LegacyStack) stack.members().get("snapshot"); }
     private static Handle stack(String key, int metadata, int count, String snbt) {
         return handle("net.minecraft.item.ItemStack", Map.of("snapshot", new LegacyStack(key, metadata, count, snbt)));
     }
@@ -135,7 +182,7 @@ class TcRecipesTest {
         boolean open = true, registryFailure;
         int binds;
         Set<String> mods = Set.of("Thaumcraft");
-        Handle recipes = collection();
+        Handle recipes = collection(), caps = map(Map.of()), rods = map(Map.of()), primals = collection();
         @Override public boolean isOpen() { return open; }
         @Override public Set<String> loadedMods() { return mods; }
         @Override public String sourceVersion() { return "1.7.10"; }
@@ -145,6 +192,9 @@ class TcRecipesTest {
             if (registryFailure) throw new IllegalStateException("fixture registry failure");
             return contract.cast(Proxy.newProxyInstance(contract.getClassLoader(), new Class<?>[]{contract}, (proxy, method, args) -> {
                 if (contract == TcRecipeAccessors.Registry.class) return recipes;
+                if (contract == TcRecipeAccessors.Caps.class) return caps;
+                if (contract == TcRecipeAccessors.Rods.class) return rods;
+                if (contract == TcRecipeAccessors.Primals.class) return primals;
                 var members = ((Handle) receiver).members();
                 if (!members.containsKey(method.getName())) throw new IllegalArgumentException("Missing fixture member " + method);
                 return members.get(method.getName());
@@ -152,6 +202,7 @@ class TcRecipesTest {
         }
         @Override public LegacyValues values() {
             return (LegacyValues) Proxy.newProxyInstance(LegacyValues.class.getClassLoader(), new Class<?>[]{LegacyValues.class}, (proxy, method, args) -> {
+                if (method.getName().equals("map")) return Collections.unmodifiableMap((Map<?, ?>) ((Handle) args[0]).members().get("entries"));
                 if (!method.getName().equals("list")) throw new UnsupportedOperationException(method.getName());
                 var elements = ((Handle) args[0]).members().get("elements");
                 if (elements == null) throw new IllegalArgumentException("Not an old Iterable or array");

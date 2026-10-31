@@ -27,7 +27,7 @@ public final class ArcaneWorkbenchGui implements LegacyClientScreens.Controller 
     private ArcaneWorkbenchState state=ArcaneWorkbenchState.EMPTY;
     private final AbstractContainerScreen<?> host;
     private boolean closed,failed;
-    static AutoCloseable install(LegacyRuntime runtime){return runtime.clientScreens().register("thaumcraft.client.gui.GuiArcaneWorkbench",ArcaneWorkbenchGui::new);}
+    public static AutoCloseable install(LegacyRuntime runtime){return runtime.clientScreens().register("thaumcraft.client.gui.GuiArcaneWorkbench",ArcaneWorkbenchGui::new);}
     ArcaneWorkbenchGui(LegacyClientScreens.Context context){
         this.context=context;host=context.hostScreen(AbstractContainerScreen.class);
         for(var aspect:TcAspects.snapshot(context.runtime()))aspects.put(aspect.tag(),aspect);

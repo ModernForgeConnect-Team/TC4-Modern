@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
@@ -30,6 +31,7 @@ import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
@@ -100,15 +102,28 @@ public final class Tc4JeiPlugin implements IModPlugin {
     public void registerItemSubtypes(ISubtypeRegistration registration) {
         TcModernApi.runtime().ifPresent(runtime -> {
             Set<Item> registered = new HashSet<>();
+            Set<ResourceLocation> originals = new HashSet<>();
             var converter = new JeiRecipeConverter(runtime, List.of(), Set.of());
             for (String key : runtime.registryKeys(LegacyRuntime.Registry.ITEM)) {
                 if (!key.startsWith(TcModernApi.LEGACY_MOD_ID + ":")) continue;
                 converter.map(new LegacyStack(key, 0, 1, "")).ifPresent(stack -> {
-                    if (registered.add(stack.getItem())) registration.registerSubtypeInterpreter(stack.getItem(),
-                            (ingredient, context) -> subtype(ingredient));
+                    if (!registered.add(stack.getItem())) return;
+                    registration.registerSubtypeInterpreter(stack.getItem(), (ingredient, context) -> subtype(ingredient));
+                    originals.add(original(BuiltInRegistries.ITEM.getKey(stack.getItem())));
                 });
             }
+            // MFCL registers each split of an original item as <original id>/<variant>; metadata 0 reaches only one of them.
+            for (var item : BuiltInRegistries.ITEM) {
+                if (originals.contains(original(BuiltInRegistries.ITEM.getKey(item))) && registered.add(item))
+                    registration.registerSubtypeInterpreter(item, (ingredient, context) -> subtype(ingredient));
+            }
         });
+    }
+
+    /** The original host item ID of a split item ({@code thaumcraft:item_resource/meta_2}); other IDs unchanged. */
+    static ResourceLocation original(ResourceLocation id) {
+        int slash = id.getPath().indexOf('/');
+        return slash < 0 ? id : ResourceLocation.fromNamespaceAndPath(id.getNamespace(), id.getPath().substring(0, slash));
     }
 
     private static String subtype(ItemStack stack) {
@@ -124,6 +139,7 @@ public final class Tc4JeiPlugin implements IModPlugin {
                         .map(old -> {
                             // Every captured node has different aspects/id. All use the same jar-building recipe.
                             if (old.key().equals("Thaumcraft:blockJar") && old.metadata() == 2) return "2:node_jar";
+                            if (old.key().equals(WAND)) return wandSubtype(old.snbt());
                             return (stack.isDamageableItem() ? 0 : old.metadata()) + ":" + old.snbt();
                         })
                         .orElse(IIngredientSubtypeInterpreter.NONE);
@@ -131,6 +147,26 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 return IIngredientSubtypeInterpreter.NONE;
             }
         }).orElse(IIngredientSubtypeInterpreter.NONE);
+    }
+
+    private static final Pattern WAND_PART = Pattern.compile("[{,]\\s*(cap|rod|sceptre)\\s*:\\s*\"?([^\",}]*)");
+
+    /**
+     * Wands are split into one host item per build ({@code Tc4ItemSplits}); a build no split covers stays on the original
+     * host item. Either way the damage (the craft cost the wand recipes store), stored vis and focus are not identity.
+     */
+    static String wandSubtype(String snbt) {
+        String cap = "", rod = "";
+        boolean sceptre = false;
+        var parts = WAND_PART.matcher(snbt);
+        while (parts.find()) {
+            switch (parts.group(1)) {
+                case "cap" -> cap = parts.group(2);
+                case "rod" -> rod = parts.group(2);
+                default -> sceptre = !parts.group(2).matches("0[bB]?");
+            }
+        }
+        return "wand:" + cap + "/" + rod + (sceptre ? "/sceptre" : "");
     }
 
     @Override

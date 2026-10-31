@@ -103,6 +103,42 @@ public final class TcRecipeAccessors {
         @LegacyMethod(name = "add", descriptor = "(Lthaumcraft/api/aspects/Aspect;I)Lthaumcraft/api/aspects/AspectList;") LegacyObject add(LegacyObject aspect, int amount);
     }
 
+    /** The registries that {@code ArcaneWandRecipe} and {@code ArcaneSceptreRecipe} match against; read with {@code LegacyValues#map}. */
+    @LegacyType("thaumcraft.api.wands.WandCap")
+    public interface Caps {
+        @LegacyField(name = "caps", descriptor = "Ljava/util/LinkedHashMap;", isStatic = true) LegacyObject all();
+    }
+
+    @LegacyType("thaumcraft.api.wands.WandRod")
+    public interface Rods {
+        @LegacyField(name = "rods", descriptor = "Ljava/util/LinkedHashMap;", isStatic = true) LegacyObject all();
+    }
+
+    @LegacyType("thaumcraft.api.wands.WandCap")
+    public interface Cap {
+        @LegacyMethod(name = "getTag", descriptor = "()Ljava/lang/String;") String tag();
+        @LegacyMethod(name = "getCraftCost", descriptor = "()I") int craftCost();
+        /** Null for a cap that cannot be crafted. */
+        @LegacyMethod(name = "getItem", descriptor = "()Lnet/minecraft/item/ItemStack;") LegacyObject item();
+        @LegacyMethod(name = "getResearch", descriptor = "()Ljava/lang/String;") String research();
+    }
+
+    /** Also every {@code StaffRod}: staves are crafted by the same wand recipe. */
+    @LegacyType("thaumcraft.api.wands.WandRod")
+    public interface Rod {
+        @LegacyMethod(name = "getTag", descriptor = "()Ljava/lang/String;") String tag();
+        @LegacyMethod(name = "getCraftCost", descriptor = "()I") int craftCost();
+        /** Null for a rod that cannot be crafted. */
+        @LegacyMethod(name = "getItem", descriptor = "()Lnet/minecraft/item/ItemStack;") LegacyObject item();
+        @LegacyMethod(name = "getResearch", descriptor = "()Ljava/lang/String;") String research();
+    }
+
+    @LegacyType("thaumcraft.api.aspects.Aspect")
+    public interface Primals {
+        /** Registration order: aer, terra, ignis, aqua, ordo, perditio. */
+        @LegacyMethod(name = "getPrimalAspects", descriptor = "()Ljava/util/ArrayList;", isStatic = true) LegacyObject all();
+    }
+
     @LegacyType("thaumcraft.api.aspects.Aspect")
     public interface Aspect {
         @LegacyMethod(name = "getTag", descriptor = "()Ljava/lang/String;") String tag();

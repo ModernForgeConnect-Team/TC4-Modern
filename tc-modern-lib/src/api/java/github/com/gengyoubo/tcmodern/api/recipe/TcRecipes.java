@@ -6,6 +6,7 @@ import github.com.gengyoubo.mfcl.api.LegacyStack;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import static github.com.gengyoubo.tcmodern.api.recipe.TcRecipeAccessors.*;
@@ -28,8 +29,7 @@ public final class TcRecipes {
         }
         for (LegacyObject original : originals) {
             try {
-                var recipe = reader.read(original);
-                recipes.putIfAbsent(recipe.id(), recipe);
+                for (var recipe : reader.read(original)) recipes.putIfAbsent(recipe.id(), recipe);
             } catch (RuntimeException failure) {
                 issues.add(new TcRecipeSnapshot.Issue(original == null ? "null" : original.typeName(), failure.toString()));
             }
@@ -45,7 +45,15 @@ public final class TcRecipes {
             return runtime.values().list(collection).stream().map(LegacyObject.class::cast).toArray(LegacyObject[]::new);
         }
 
-        TcRecipe read(LegacyObject original) {
+        List<TcRecipe> read(LegacyObject original) {
+            return switch (original.typeName()) {
+                case "thaumcraft.common.lib.crafting.ArcaneWandRecipe" -> wands(false);
+                case "thaumcraft.common.lib.crafting.ArcaneSceptreRecipe" -> wands(true);
+                default -> List.of(single(original));
+            };
+        }
+
+        TcRecipe single(LegacyObject original) {
             return switch (original.typeName()) {
                 case "thaumcraft.api.crafting.ShapedArcaneRecipe" -> {
                     var shaped = runtime.accessor(Shaped.class, original);
@@ -79,6 +87,48 @@ public final class TcRecipes {
             };
         }
 
+        /**
+         * The wand recipes have no fixed output: they accept every registered cap and rod. One shaped display per pair,
+         * laid out, costed and named as the original computes it ({@code getCraftingResult}/{@code getAspects}).
+         */
+        List<TcRecipe> wands(boolean sceptre) {
+            var primals = list(runtime.accessor(Primals.class).all());
+            var caps = runtime.values().map(runtime.accessor(Caps.class).all()).values();
+            var rods = runtime.values().map(runtime.accessor(Rods.class).all()).values();
+            var charm = List.of(new LegacyStack("Thaumcraft:ItemResource", 15, 1, ""));
+            var result = new ArrayList<TcRecipe>();
+            for (Object capValue : caps) {
+                var cap = runtime.accessor(Cap.class, (LegacyObject) capValue);
+                if (cap.item() == null) continue;
+                var capStack = List.of(stack(cap.item()));
+                for (Object rodValue : rods) {
+                    var rod = runtime.accessor(Rod.class, (LegacyObject) rodValue);
+                    // The iron-capped wooden wand is a plain crafting table recipe; ArcaneWandRecipe refuses it.
+                    if (rod.item() == null || !sceptre && cap.tag().equals("iron") && rod.tag().equals("wood")) continue;
+                    int cost = cap.craftCost() * rod.craftCost();
+                    if (sceptre) cost = (int) (cost * 1.5F);
+                    if (cost <= 0) continue;
+                    var rodStack = List.of(stack(rod.item()));
+                    List<List<LegacyStack>> grid = new ArrayList<>(Collections.nCopies(9, List.of()));
+                    grid.set(4, rodStack);
+                    grid.set(6, capStack);
+                    grid.set(2, sceptre ? charm : capStack);
+                    if (sceptre) {
+                        grid.set(1, capStack);
+                        grid.set(5, capStack);
+                    }
+                    var costs = new ArrayList<TcRecipe.AspectCost>();
+                    for (var primal : primals) costs.add(cost(primal, cost));
+                    // The crafted stack's damage is its cost; the original NBT is exactly setCap, setRod and "sceptre".
+                    var output = new LegacyStack("Thaumcraft:WandCasting", cost, 1, "{cap:\"" + cap.tag() + "\",rod:\""
+                            + rod.tag() + "\"" + (sceptre ? ",sceptre:1b" : "") + "}");
+                    String research = sceptre ? "SCEPTRE" : rod.research().isEmpty() ? cap.research() : rod.research();
+                    result.add(new TcRecipe(TcRecipe.Kind.ARCANE_SHAPED, research, 3, 3, grid, output, costs, 0));
+                }
+            }
+            return result;
+        }
+
         LegacyStack stack(LegacyObject value) {
             if (value == null || !value.typeName().equals("net.minecraft.item.ItemStack"))
                 throw new UnsupportedOperationException("Expected a concrete legacy ItemStack");
@@ -107,17 +157,20 @@ public final class TcRecipes {
             var result = new ArrayList<TcRecipe.AspectCost>();
             for (var aspect : list.values()) {
                 int amount = list.amount(aspect);
-                if (amount == 0) continue;
-                var detail = runtime.accessor(Aspect.class, aspect);
-                var image = detail.image();
-                String texture = "";
-                if (image != null) {
-                    var resource = runtime.accessor(Resource.class, image);
-                    texture = resource.namespace() + ":" + resource.path();
-                }
-                result.add(new TcRecipe.AspectCost(detail.tag(), detail.color(), amount, texture));
+                if (amount != 0) result.add(cost(aspect, amount));
             }
             return result;
+        }
+
+        TcRecipe.AspectCost cost(LegacyObject aspect, int amount) {
+            var detail = runtime.accessor(Aspect.class, aspect);
+            var image = detail.image();
+            String texture = "";
+            if (image != null) {
+                var resource = runtime.accessor(Resource.class, image);
+                texture = resource.namespace() + ":" + resource.path();
+            }
+            return new TcRecipe.AspectCost(detail.tag(), detail.color(), amount, texture);
         }
     }
 }
