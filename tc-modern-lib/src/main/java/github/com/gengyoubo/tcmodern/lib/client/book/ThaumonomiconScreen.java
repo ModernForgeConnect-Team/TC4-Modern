@@ -74,6 +74,7 @@ public final class ThaumonomiconScreen extends Screen {
     private TcResearchEntry pressed;
     /** Editing mode: the JSON research being dragged to a new slot. */
     private boolean movingNode;
+    private Screen originalBook;
 
     private record MenuItem(Component label, Runnable action, boolean danger) {}
     private record Menu(int x, int y, List<MenuItem> items) {
@@ -84,6 +85,13 @@ public final class ThaumonomiconScreen extends Screen {
         super(Component.translatable("book.tcmodernlib.title"));
         runtime = TcModernApi.runtime().orElse(null);
         if (runtime != null) for (var aspect : TcAspects.snapshot(runtime)) aspects.put(aspect.tag(), aspect);
+    }
+
+    /** The original hosted book remains the parent while the operator edits its registry. */
+    ThaumonomiconScreen(Screen originalBook) {
+        this();
+        this.originalBook = originalBook;
+        cheat = true;
     }
 
     // ---- Data -------------------------------------------------------------------------------------------------
@@ -315,7 +323,10 @@ public final class ThaumonomiconScreen extends Screen {
 
     private void control(String id) {
         switch (id) {
-            case "toggle" -> { cheat = !cheat; refresh(); sound("cameraclack", 0.4F, 0); }
+            case "toggle" -> {
+                if (originalBook != null && cheat) { onClose(); return; }
+                cheat = !cheat; refresh(); sound("cameraclack", 0.4F, 0);
+            }
             case "reload" -> { BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.RELOAD, "", false)); sound("cameraclack", 0.4F, 0); }
             case "all_complete" -> confirm(Component.translatable("book.tcmodernlib.cheat.all_complete"),
                     () -> BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.ALL_COMPLETE, "", false)));
@@ -352,17 +363,17 @@ public final class ThaumonomiconScreen extends Screen {
     }
 
     private void renderHeader(GuiGraphics g, int mouseX, int mouseY) {
-        g.blit(BookArt.tc("textures/items/thaumonomicon.png"), left + INSET, top + 12, 16, 16, 0F, 0F, 1, 1, 1, 1);
-        text(g, font, title, left + INSET + 22, top + 16, TEXT);
+        bookIcon(g, left + INSET, top + 15);
+        text(g, font, title, left + INSET + 22, top + 19, TEXT);
         var c = current();
         if (c != null && runtime != null)
-            text(g, font, "- " + TcThaumonomicon.categoryName(runtime, c.key()), left + INSET + 26 + font.width(title), top + 16, FAINT);
+            text(g, font, "- " + TcThaumonomicon.categoryName(runtime, c.key()), left + INSET + 26 + font.width(title), top + 19, FAINT);
         for (var control : controls()) {
-            boolean hot = menu == null && inside(mouseX, mouseY, control.x(), 12, control.w(), 15);
+            boolean hot = menu == null && inside(mouseX, mouseY, control.x(), 15, control.w(), 13);
             float lift = animate("control:" + control.id(), hot);
             boolean warn = cheat && control.id().equals("toggle");
-            plate(g, left + control.x(), top + 12, control.w(), 15, lift, warn);
-            text(g, font, control.label(), left + control.x() + 6, top + 16, warn ? 0xFFFFB3A8 : TEXT);
+            plate(g, left + control.x(), top + 15, control.w(), 13, lift, warn);
+            text(g, font, control.label(), left + control.x() + 6, top + 18, warn ? 0xFFFFB3A8 : TEXT);
         }
     }
 
@@ -494,7 +505,7 @@ public final class ThaumonomiconScreen extends Screen {
     }
 
     private void renderReader(GuiGraphics g, int mouseX, int mouseY) {
-        round(g, left + 4, top + HEADER + 2, WIDTH - 8, HEIGHT - HEADER - 6, 8, 0xF0101118);
+        starfield(g, left + INSET - 4, top + HEADER, WIDTH - 2 * INSET + 8, HEIGHT - HEADER - INSET + 4, 0, 0);
         int leftPage = (WIDTH - 2 * PAGE_W - 40) / 2 + 10, rightPage = leftPage + PAGE_W + 40;
         reader.hoveredItem = ItemStack.EMPTY;
         reader.hoveredAspect = null;
@@ -502,12 +513,12 @@ public final class ThaumonomiconScreen extends Screen {
         reader.renderSide(g, spread * 2 + 1, left + rightPage, top + PAGE_Y, mouseX, mouseY);
         // Back, previous and next.
         var back = Component.translatable("book.tcmodernlib.back");
-        int bw = font.width(back) + 18;
-        float hot = animate("back", inside(mouseX, mouseY, 10, HEADER + 6, bw, 15));
-        round(g, left + 10, top + HEADER + 6, bw, 15, 7.5F, mix(0x1FFFFFFF, 0x33FFFFFF, hot));
-        text(g, font, back, left + 19, top + HEADER + 10, TEXT);
-        if (spread > 0) arrow(g, left + 14, top + PAGE_Y + PAGE_H / 2, -1, inside(mouseX, mouseY, 6, PAGE_Y + PAGE_H / 2 - 12, 20, 24));
-        if ((spread + 1) * 2 < reader.sides()) arrow(g, left + WIDTH - 14, top + PAGE_Y + PAGE_H / 2, 1, inside(mouseX, mouseY, WIDTH - 26, PAGE_Y + PAGE_H / 2 - 12, 20, 24));
+        int bw = font.width(back) + 14;
+        float hot = animate("back", inside(mouseX, mouseY, INSET, 15, bw, 13));
+        plate(g, left + INSET, top + 15, bw, 13, hot, false);
+        text(g, font, back, left + INSET + 7, top + 18, TEXT);
+        if (spread > 0) arrow(g, left + 30, top + PAGE_Y + PAGE_H / 2, -1, inside(mouseX, mouseY, 22, PAGE_Y + PAGE_H / 2 - 12, 20, 24));
+        if ((spread + 1) * 2 < reader.sides()) arrow(g, left + WIDTH - 30, top + PAGE_Y + PAGE_H / 2, 1, inside(mouseX, mouseY, WIDTH - 42, PAGE_Y + PAGE_H / 2 - 12, 20, 24));
     }
 
     private void arrow(GuiGraphics g, float x, float y, int direction, boolean hot) {
@@ -520,14 +531,12 @@ public final class ThaumonomiconScreen extends Screen {
         int w = menu.width(font), h = menu.items().size() * 16 + 6, x = left + Math.min(menu.x(), WIDTH - w - 4), y = top + Math.min(menu.y(), HEIGHT - h - 4);
         g.pose().pushPose();
         g.pose().translate(0, 0, 300);
-        shadow(g, x, y, w, h, 6, 4, 0.4F);
-        round(g, x, y, w, h, 6, 0xF51A1C26);
-        ring(g, x, y, w, h, 6, 1, HIGHLIGHT);
+        panel(g, x, y, w, h, PANEL);
         for (int i = 0; i < menu.items().size(); i++) {
             var item = menu.items().get(i);
             int iy = y + 3 + i * 16;
             boolean hot = mouseX >= x && mouseX < x + w && mouseY >= iy && mouseY < iy + 16;
-            if (hot) round(g, x + 3, iy, w - 6, 16, 4, item.danger() ? alpha(WARN, 0.25F) : alpha(ACCENT, 0.3F));
+            if (hot) g.fill(x + 3, iy, x + w - 3, iy + 16, item.danger() ? alpha(WARN, 0.35F) : alpha(ACCENT, 0.4F));
             g.drawString(font, item.label(), x + 10, iy + 4, item.danger() ? 0xFFFFB3A8 : TEXT, false);
         }
         g.pose().popPose();
@@ -541,7 +550,7 @@ public final class ThaumonomiconScreen extends Screen {
         int w = font.width(toast) + 20, x = left + (WIDTH - w) / 2, y = top + HEIGHT - 28;
         g.pose().pushPose();
         g.pose().translate(0, 0, 350);
-        round(g, x, y, w, 16, 8, alpha(0xF0202230, fade));
+        panel(g, x, y, w, 16, alpha(PLATE, fade));
         g.drawString(font, toast, x + 10, y + 4, alpha(TEXT, fade), false);
         g.pose().popPose();
     }
@@ -687,12 +696,12 @@ public final class ThaumonomiconScreen extends Screen {
             return true;
         }
         for (var control : controls())
-            if (inside(x, y, control.x(), 8, control.w(), 15)) { control(control.id()); return true; }
+            if (inside(x, y, control.x(), 15, control.w(), 13)) { control(control.id()); return true; }
         if (reader != null) {
             var back = Component.translatable("book.tcmodernlib.back");
-            if (inside(x, y, 10, HEADER + 6, font.width(back) + 18, 15)) { reader = null; sound("page", 0.5F, 0.1F); return true; }
-            if (spread > 0 && inside(x, y, 6, PAGE_Y + PAGE_H / 2 - 12, 20, 24)) { spread--; sound("page", 0.6F, 0.1F); return true; }
-            if ((spread + 1) * 2 < reader.sides() && inside(x, y, WIDTH - 26, PAGE_Y + PAGE_H / 2 - 12, 20, 24)) { spread++; sound("page", 0.6F, 0.1F); return true; }
+        if (inside(x, y, INSET, 15, font.width(back) + 14, 13)) { reader = null; sound("page", 0.5F, 0.1F); return true; }
+        if (spread > 0 && inside(x, y, 22, PAGE_Y + PAGE_H / 2 - 12, 20, 24)) { spread--; sound("page", 0.6F, 0.1F); return true; }
+        if ((spread + 1) * 2 < reader.sides() && inside(x, y, WIDTH - 42, PAGE_Y + PAGE_H / 2 - 12, 20, 24)) { spread++; sound("page", 0.6F, 0.1F); return true; }
             return true;
         }
         String clickedCategory = categoryAt(x, y);
@@ -794,6 +803,12 @@ public final class ThaumonomiconScreen extends Screen {
 
     @Override public boolean isPauseScreen() { return false; }
 
+    @Override public void onClose() {
+        if (originalBook == null) { super.onClose(); return; }
+        cheat = false;
+        minecraft.setScreen(originalBook);
+    }
+
     // ---- Scripted access for the smoke test -------------------------------------------------------------------
 
     float canvasScale() { return scale; }
@@ -826,7 +841,7 @@ public final class ThaumonomiconScreen extends Screen {
 
     /** Canvas centre of a header control ({@code toggle}, {@code reload}, {@code all_complete}, {@code all_reset}), or null. */
     float[] controlPoint(String id) {
-        for (var control : controls()) if (control.id().equals(id)) return new float[]{left + control.x() + control.w() / 2F, top + 15};
+        for (var control : controls()) if (control.id().equals(id)) return new float[]{left + control.x() + control.w() / 2F, top + 21};
         return null;
     }
 

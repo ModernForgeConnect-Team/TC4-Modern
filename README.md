@@ -150,6 +150,12 @@ bash gradlew build
 
 两种树叶使用原生 `LeavesBlock`，沿用原方块 ID、物品、贴图和树苗。支持现代距离腐烂、玩家放置持久性与含水状态，兼容旧存档元数据；原树苗和现代世界生成都会放置同一实现。普通采集和自然消失按原版概率掉落树苗，剪刀／精准采集掉落对应树叶。需配套支持原生方块 SPI 的 MFCL `0.2.11-dev2`，详见 [树叶实现与验证](docs/native-leaves.md)。
 
+## 魔导手册 / Thaumonomicon
+
+右键原版魔导手册时，MFCL 显示 TC4 原版手册；研究、页面和解锁操作由原版处理。`TcThaumonomicon` 和 `data/<namespace>/tc4_research/` 的 JSON 内容注册到同一个原版研究表，因此也在手册中显示。服务端重载 JSON 后会同步给客户端。
+
+权限等级 2 以上的管理员可点击手册右上角的“编辑模式”，进入研究编辑界面；退出编辑模式返回原版手册。编辑器支持添加章节和研究、编辑或拖动 JSON 研究及重载数据；代码注册的条目不能直接改写。编辑结果保存在服务端的 `config/tc4modern/tc4_research/` 中，服务端再次校验操作权限。
+
 ## FTB Quests 兼容 / FTB Quests integration
 
 可选安装 Forge 1.20.1 的 FTB Quests `2001.4.22` 及其前置。在任务编辑器中新增：

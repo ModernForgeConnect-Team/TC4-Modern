@@ -20,11 +20,14 @@ import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraft.client.gui.screens.Screen;
+import github.com.gengyoubo.tcmodern.lib.book.BookLogic;
+import java.util.WeakHashMap;
 
 /**
- * Opens the modern Thaumonomicon in place of the original research browser, and keeps the book's snapshot of the
- * research registry current.
+ * Keeps the editor's research snapshot current and adds its entry point to the original hosted Thaumonomicon.
  */
 public final class BookClient {
     private static List<TcResearchCategory> book;
@@ -79,14 +82,16 @@ public final class BookClient {
     /**
      * The original book item still runs its own use on both sides (sibling research, the cheat sheet, the research
      * sync); only the screen it opens is replaced. MFCL shows that original browser in its own host screen, so the
-     * first such screen to open right after the item is used becomes the modern book.
+     * first hosted screen opened after use gets an operator-only entry to the editor. The hosted screen itself
+     * remains responsible for all ordinary browsing and research actions.
      */
     @Mod.EventBusSubscriber(modid = TcModernLib.MOD_ID, value = Dist.CLIENT)
     public static final class Opening {
-        private static final String THAUMONOMICON = "Thaumcraft:ItemThaumonomicon", HOST_PACKAGE = "github.com.gengyoubo.mfcl.";
+        private static final String THAUMONOMICON = "Thaumcraft:ItemThaumonomicon", HOST_SCREEN = "github.com.gengyoubo.mfcl.client.ClientContainerBridge$HostedScreen";
         private static final long WINDOW_MS = 1500;
         private static final Map<Item, Boolean> BOOKS = new ConcurrentHashMap<>();
         private static long expectUntil;
+        private static final Map<Screen, Boolean> HOSTS = new WeakHashMap<>();
 
         private Opening() {}
 
@@ -97,9 +102,32 @@ public final class BookClient {
         @SubscribeEvent public static void opening(ScreenEvent.Opening event) {
             var screen = event.getNewScreen();
             if (screen == null || screen instanceof ThaumonomiconScreen || System.currentTimeMillis() > expectUntil) return;
-            if (!screen.getClass().getName().startsWith(HOST_PACKAGE)) return;
+            if (!screen.getClass().getName().equals(HOST_SCREEN)) return;
             expectUntil = 0;
-            event.setNewScreen(new ThaumonomiconScreen());
+            HOSTS.put(screen, true);
+        }
+
+        private static boolean editable(Screen screen) {
+            var player = Minecraft.getInstance().player;
+            return HOSTS.containsKey(screen) && player != null && player.hasPermissions(BookLogic.CHEAT_PERMISSION);
+        }
+
+        @SubscribeEvent(priority = EventPriority.LOWEST) public static void render(ScreenEvent.Render.Post event) {
+            if (!editable(event.getScreen())) return;
+            var label = Component.translatable("book.tcmodernlib.cheat.off");
+            var font = Minecraft.getInstance().font;
+            int x = event.getScreen().width - font.width(label) - 18;
+            event.getGuiGraphics().fill(x, 4, event.getScreen().width - 4, 22, 0xD020182C);
+            event.getGuiGraphics().drawString(font, label, x + 7, 9, 0xFFFFFFFF);
+        }
+
+        @SubscribeEvent(priority = EventPriority.HIGHEST) public static void click(ScreenEvent.MouseButtonPressed.Pre event) {
+            var screen = event.getScreen();
+            if (!editable(screen) || event.getButton() != 0) return;
+            int x = screen.width - Minecraft.getInstance().font.width(Component.translatable("book.tcmodernlib.cheat.off")) - 18;
+            if (event.getMouseX() < x || event.getMouseX() >= screen.width - 4 || event.getMouseY() < 4 || event.getMouseY() >= 22) return;
+            event.setCanceled(true);
+            Minecraft.getInstance().setScreen(new ThaumonomiconScreen(screen));
         }
 
         /** The original Thaumonomicon, any metadata (the cheat sheet included); cached per host item. */

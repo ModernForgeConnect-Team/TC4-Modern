@@ -12,7 +12,7 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
-import static github.com.gengyoubo.tcmodern.lib.client.ModernUi.*;
+import static github.com.gengyoubo.tcmodern.lib.client.book.BookChrome.*;
 
 /**
  * One research laid out as pages of a two-page spread. Text keeps the original markup ({@code <BR>}, {@code <LINE>},

@@ -19,7 +19,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import static github.com.gengyoubo.tcmodern.lib.client.ModernUi.*;
+import static github.com.gengyoubo.tcmodern.lib.client.book.BookChrome.*;
 
 /**
  * Form editor for one JSON research, opened from the Thaumonomicon's editing mode. Saving validates with the same

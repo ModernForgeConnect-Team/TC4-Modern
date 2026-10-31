@@ -105,11 +105,22 @@ public final class BookSmokeProbe {
                 require(root.pages().size() == 6, "Root pages: " + root.pages());
                 proof.put("jsonCategoryAndResearchLoadedByDebugReload", true);
                 proof.put("rootPageKinds", root.pages().stream().map(p -> p.getClass().getSimpleName()).toList());
-                // Open through the original item: the hook must replace the original browser with the modern book.
+                // Open the original hosted book, then exercise its operator entry point.
                 mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                 stage = 5;
-            } else if (stage == 5 && mc.screen instanceof ThaumonomiconScreen && ++frames > WAIT) {
-                proof.put("originalBookItemOpensModernBook", true);
+            } else if (stage == 5 && mc.screen != null && mc.screen.getClass().getName().equals("github.com.gengyoubo.mfcl.client.ClientContainerBridge$HostedScreen") && ++frames > WAIT) {
+                var original = mc.screen;
+                int x = original.width - mc.font.width(net.minecraft.network.chat.Component.translatable("book.tcmodernlib.cheat.off")) - 10;
+                var click = new net.minecraftforge.client.event.ScreenEvent.MouseButtonPressed.Pre(original, x, 10, 0);
+                MinecraftForge.EVENT_BUS.post(click);
+                require(click.isCanceled() && mc.screen instanceof ThaumonomiconScreen, "Editor entry did not open");
+                mc.screen.onClose();
+                require(mc.screen == original, "Editor did not return to the original book");
+                proof.put("originalBookAndEditorEntry", true);
+                // Continue the existing isolated editor and action checks.
+                mc.setScreen(new ThaumonomiconScreen());
+                stage = 50;
+            } else if (stage == 50 && mc.screen instanceof ThaumonomiconScreen && ++frames > WAIT) {
                 var screen = book(mc);
                 screen.select(CATEGORY);
                 screen.refresh();
@@ -172,9 +183,9 @@ public final class BookSmokeProbe {
                 click(screen, screen.nodeCenter(ROOT), 1);
                 click(screen, screen.menuPoint(4), 0);
                 stage = 10;
-            } else if (stage == 10 && ++frames > WAIT) {
+            } else if (stage == 10 && ++frames > WAIT * 3) {
                 var screen = book(mc);
-                require(!screen.completedKeys().contains(ROOT) && !screen.completedKeys().contains(CHILD), "Revoke with dependents left research");
+                require(!screen.completedKeys().contains(ROOT) && !screen.completedKeys().contains(CHILD), "Revoke with dependents left research: " + screen.completedKeys());
                 proof.put("debugRevokeWithDependents", true);
                 click(screen, screen.categoryPoint(CATEGORY), 1);
                 click(screen, screen.menuPoint(0), 0);

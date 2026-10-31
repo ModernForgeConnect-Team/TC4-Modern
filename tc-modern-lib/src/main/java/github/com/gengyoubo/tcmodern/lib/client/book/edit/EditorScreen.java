@@ -10,14 +10,15 @@ import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
-import static github.com.gengyoubo.tcmodern.lib.client.ModernUi.*;
+import static github.com.gengyoubo.tcmodern.lib.client.book.BookChrome.*;
 
 /**
  * Shared frame of the Thaumonomicon editors: the same glass window and canvas scaling as the book, header buttons,
  * text fields drawn as rounded wells and a status line. Subclasses lay out widgets in {@link #build()}.
  */
 abstract class EditorScreen extends Screen {
-    static final int WIDTH = 460, HEIGHT = 280;
+    // The wooden frame takes 16 px on each side; the content is laid out inside it, from (left, top).
+    static final int WIDTH = 486, HEIGHT = 300, INNER_W = WIDTH - 32, INNER_H = HEIGHT - 32;
     protected final Screen parent;
     protected final LegacyRuntime runtime;
     protected int left, top;
@@ -38,8 +39,8 @@ abstract class EditorScreen extends Screen {
         scale = width < 64 || height < 64 ? 1 : Math.min(1F, Math.min((width - 4F) / WIDTH, (height - 4F) / HEIGHT));
         width = Math.round(width / scale);
         height = Math.round(height / scale);
-        left = (width - WIDTH) / 2;
-        top = (height - HEIGHT) / 2;
+        left = (width - WIDTH) / 2 + 16;
+        top = (height - HEIGHT) / 2 + 16;
         wells.clear();
         build();
     }
@@ -103,7 +104,7 @@ abstract class EditorScreen extends Screen {
 
     private List<Placed> placed() {
         var result = new ArrayList<Placed>();
-        int x = WIDTH - 12;
+        int x = INNER_W - 2;
         for (var button : buttons()) {
             int w = font.width(button.label()) + 18;
             x -= w;
@@ -118,10 +119,9 @@ abstract class EditorScreen extends Screen {
         g.pose().pushPose();
         g.pose().scale(scale, scale, 1);
         renderBackground(g);
-        window(g, left, top, WIDTH, HEIGHT);
-        hex(g, left + 18, top + 15, 6.5F, ACCENT_LIGHT, ACCENT_DEEP);
-        hex(g, left + 18, top + 15, 2.5F, 0xFF1A1630);
-        text(g, font, title, left + 30, top + 11, TEXT);
+        window(g, left - 16, top - 16, WIDTH, HEIGHT);
+        bookIcon(g, left, top + 2);
+        text(g, font, title, left + 22, top + 8, TEXT);
         for (var place : placed()) {
             boolean hot = x >= left + place.x() && x < left + place.x() + place.w() && y >= top + 8 && y < top + 23;
             if (place.button().primary()) round(g, left + place.x(), top + 8, place.w(), 15, 7.5F, hot ? ACCENT_LIGHT : ACCENT);
@@ -132,9 +132,9 @@ abstract class EditorScreen extends Screen {
         renderBody(g, x, y);
         super.render(g, x, y, partialTick);
         if (status != null) {
-            int w = Math.min(WIDTH - 24, font.width(status) + 16);
-            round(g, left + 12, top + HEIGHT - 22, w, 15, 7.5F, error ? alpha(WARN, 0.25F) : alpha(GOOD, 0.22F));
-            text(g, font, clip(font, status, w - 12), left + 20, top + HEIGHT - 18, error ? 0xFFFFB3A8 : GOOD);
+            int w = Math.min(INNER_W - 16, font.width(status) + 16);
+            panel(g, left, top + INNER_H - 22, w, 15, error ? alpha(WARN, 0.25F) : alpha(GOOD, 0.22F));
+            text(g, font, clip(font, status, w - 12), left + 8, top + INNER_H - 18, error ? 0xFFFFB3A8 : GOOD);
         }
         renderOverlay(g, x, y);
         g.pose().popPose();

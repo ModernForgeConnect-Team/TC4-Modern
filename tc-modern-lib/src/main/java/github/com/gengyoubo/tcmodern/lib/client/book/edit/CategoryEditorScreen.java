@@ -10,7 +10,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import static github.com.gengyoubo.tcmodern.lib.client.ModernUi.*;
+import static github.com.gengyoubo.tcmodern.lib.client.book.BookChrome.*;
 
 /** Form editor for one JSON category: key, tab icon, map background and names. */
 public final class CategoryEditorScreen extends EditorScreen {
