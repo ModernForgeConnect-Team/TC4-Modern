@@ -8,6 +8,7 @@ import dev.ftb.mods.ftbquests.quest.reward.RewardType;
 import dev.ftb.mods.ftblibrary.config.ConfigGroup;
 import dev.ftb.mods.ftblibrary.config.EnumConfig;
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton;
+import dev.ftb.mods.ftblibrary.util.TooltipList;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcPlayerAspects;
 import github.com.gengyoubo.tcmodern.api.research.TcResearch;
@@ -65,8 +66,30 @@ public final class FtbQuestsSmokeProbe {
                 stage = 2;
             } else if (stage == 2 && pending.isDone()) {
                 pending.join();
+                var fresh = new ConfigGroup("fresh");
+                new ResearchTask(0, researchTask.getQuest()).fillConfigGroup(fresh);
+                var unset = selector(fresh, "research");
+                unset.addInfo(new TooltipList());
+                require(unset.nameMap.defaultValue != null && unset.getDefaultValue() != null,
+                        "Unconfigured research has a null FTB default");
+                unset.setCurrentValue(unset.getDefaultValue()); unset.applyValue();
+                proof.put("unconfiguredResearchDefaultTooltipDoesNotCrash", true);
+                new dev.ftb.mods.ftblibrary.config.ui.EditConfigScreen(fresh).openGui();
+                stage = 5; frames = 0;
+            } else if (stage == 5 && ++frames > 4) {
+                var screen = (dev.ftb.mods.ftblibrary.ui.ScreenWrapper) mc.screen;
+                var entries = new ArrayList<dev.ftb.mods.ftblibrary.ui.Widget>();
+                configEntries(screen.getGui(), entries);
+                require(!entries.isEmpty(), "FTB editor did not create configuration buttons");
+                for (int i = 0; i < entries.size(); i++) {
+                    var entry = entries.get(i);
+                    screenshot(mc, "new-research-hover-" + i, entry.getX() + entry.getWidth() / 2,
+                            entry.getY() + entry.getHeight() / 2);
+                }
+                proof.put("ftbEditorHoverRendersForNewResearch", true);
                 var config = new ConfigGroup("smoke"); researchTask.fillConfigGroup(config);
                 var select = selector(config, "research");
+                select.addInfo(new TooltipList());
                 require(select.nameMap.getName("NITOR").equals("NITOR"), "Research selector changed case-sensitive keys");
                 require(!QuestChoices.research("NITOR").icon().isEmpty(), "Research icon missing");
                 select.onClicked(null, MouseButton.LEFT, accepted -> { });
@@ -75,6 +98,7 @@ public final class FtbQuestsSmokeProbe {
                 screenshot(mc, "research-selection");
                 var config = new ConfigGroup("smoke"); aspectTask.fillConfigGroup(config);
                 var select = selector(config, "aspect");
+                select.addInfo(new TooltipList());
                 require(select.nameMap.size() > 16 && !select.nameMap.getIcon("ignis").isEmpty(), "Aspect selector icons missing");
                 require(!select.nameMap.getDisplayName("ignis").getString().equals("tc.aspect.ignis"), "Aspect names are untranslated");
                 select.setCurrentValue("ignis"); select.applyValue();
@@ -174,7 +198,16 @@ public final class FtbQuestsSmokeProbe {
     private static EnumConfig<String> selector(ConfigGroup group, String field) {
         return (EnumConfig<String>) group.getValues().stream().filter(v -> v.id.equals(field)).findFirst().orElseThrow();
     }
+    private static void configEntries(dev.ftb.mods.ftblibrary.ui.Panel panel, List<dev.ftb.mods.ftblibrary.ui.Widget> entries) {
+        for (var widget : panel.getWidgets()) {
+            if (widget.getClass().getSimpleName().equals("ConfigEntryButton")) entries.add(widget);
+            if (widget instanceof dev.ftb.mods.ftblibrary.ui.Panel child) configEntries(child, entries);
+        }
+    }
     private static void screenshot(Minecraft mc, String name) throws Exception {
+        screenshot(mc, name, 0, 0);
+    }
+    private static void screenshot(Minecraft mc, String name, int mouseX, int mouseY) throws Exception {
         mc.getMainRenderTarget().bindWrite(true);
         com.mojang.blaze3d.systems.RenderSystem.backupProjectionMatrix();
         com.mojang.blaze3d.systems.RenderSystem.setProjectionMatrix(new org.joml.Matrix4f().setOrtho(0,
@@ -187,7 +220,7 @@ public final class FtbQuestsSmokeProbe {
             com.mojang.blaze3d.systems.RenderSystem.clear(256, Minecraft.ON_OSX);
             var graphics = new net.minecraft.client.gui.GuiGraphics(mc, mc.renderBuffers().bufferSource());
             graphics.fill(0, 0, mc.screen.width, mc.screen.height, 0xff303030); graphics.flush();
-            net.minecraftforge.client.ForgeHooksClient.drawScreen(mc.screen, graphics, 0, 0, 0); graphics.flush();
+            net.minecraftforge.client.ForgeHooksClient.drawScreen(mc.screen, graphics, mouseX, mouseY, 0); graphics.flush();
             var path = mc.gameDirectory.toPath().resolve("screenshots/ftb-" + name + ".png");
             Files.createDirectories(path.getParent());
             try (var image = net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget())) { image.writeToFile(path); }

@@ -146,6 +146,10 @@ bash gradlew build
 `publishToMavenLocal` 可发布本地开发产物；独立 API 坐标为 `github.com.gengyoubo.tcmodern:tc-modern-api:0.1.0-SNAPSHOT`，使用者还需显式添加 MFCL API 的 `compileOnly` 依赖。
 目前没有配置公共 Maven 发布服务。
 
+## 银树与宏伟之木树叶 / Magical leaves
+
+两种树叶使用原生 `LeavesBlock`，沿用原方块 ID、物品、贴图和树苗。支持现代距离腐烂、玩家放置持久性与含水状态，兼容旧存档元数据；原树苗和现代世界生成都会放置同一实现。普通采集和自然消失按原版概率掉落树苗，剪刀／精准采集掉落对应树叶。需配套支持原生方块 SPI 的 MFCL `0.2.11-dev2`，详见 [树叶实现与验证](docs/native-leaves.md)。
+
 ## FTB Quests 兼容 / FTB Quests integration
 
 可选安装 Forge 1.20.1 的 FTB Quests `2001.4.22` 及其前置。在任务编辑器中新增：
@@ -156,7 +160,7 @@ bash gradlew build
 
 这里的要素是玩家研究点池，不是法杖 Vis、源质容器或物品要素。数量范围为 `1..32767`，发奖总量受原版点池上限限制。任务进度与奖励领取规则沿用 FTB 的队伍设置；扣除针对提交者，发放针对领奖者，均经 MFCL 服务端玩家事务保存和同步。一个任务配置一种要素，需要多种时添加多个任务。
 
-开发时使用 `-PwithFtbQuests=true` 加载可选前置；验收说明与 SNBT 示例见 [FTB Quests 集成](docs/ftb-quests.md)。
+开发时默认加载可选前置，使用 `-PwithFtbQuests=false` 关闭；验收说明与 SNBT 示例见 [FTB Quests 集成](docs/ftb-quests.md)。
 
 ## JEI 兼容 / JEI integration
 

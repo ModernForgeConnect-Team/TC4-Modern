@@ -91,10 +91,22 @@ public final class QuestChoices {
                            List<Choice> choices, String nameKey) {
         var byId = new LinkedHashMap<String, Choice>();
         for (var choice : choices) byId.put(choice.id(), choice);
+        selected = Objects.requireNonNullElse(selected, "");
+        var unset = new Choice("", Component.translatable("ftbquests.tc4modern.select"), Icon.empty());
         // Preserve missing addon identifiers when editing an existing quest instead of silently changing its target.
-        byId.putIfAbsent(selected, new Choice(selected, selected.isBlank()
-                ? Component.translatable("ftbquests.tc4modern.select") : Component.literal(selected), Icon.empty()));
-        config.addEnum(field, selected, setter, NameMap.of(selected, new ArrayList<>(byId.keySet()))
-                .id(id -> id).name(id -> byId.get(id).name()).icon(id -> byId.get(id).icon()).create()).setNameKey(nameKey);
+        byId.putIfAbsent(selected, selected.isEmpty() ? unset : new Choice(selected, Component.literal(selected), Icon.empty()));
+        String uiSelected = selected;
+        // NameMap rejects empty IDs and IDs beginning with '-'. Using either as its default produces null,
+        // which FTB passes to the display provider when building the editor's default-value tooltip.
+        if (uiSelected.isEmpty() || uiSelected.startsWith("-")) {
+            String placeholder = "tc4modern:unselected";
+            while (byId.containsKey(placeholder)) placeholder += "_";
+            byId.put(placeholder, byId.remove(uiSelected));
+            uiSelected = placeholder;
+        }
+        config.addEnum(field, uiSelected, id -> setter.accept(byId.getOrDefault(id, unset).id()),
+                NameMap.of(uiSelected, new ArrayList<>(byId.keySet())).id(id -> id)
+                        .name(id -> byId.getOrDefault(id, unset).name())
+                        .icon(id -> byId.getOrDefault(id, unset).icon()).create()).setNameKey(nameKey);
     }
 }

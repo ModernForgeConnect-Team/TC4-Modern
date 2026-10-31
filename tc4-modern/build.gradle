@@ -49,13 +49,18 @@ repositories {
 
 dependencies {
     implementation project(':tc-modern-lib')
-    implementation fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
-    implementation fg.deobf('dev.ftb.mods:ftb-library-forge:2001.2.9')
-    implementation fg.deobf('dev.ftb.mods:ftb-teams-forge:2001.3.0')
-    implementation fg.deobf('dev.architectury:architectury-forge:9.1.12')
-    testImplementation fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
-    // Opt in for integration testing; FTB Quests remains optional in production.
-    runtimeOnly fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
+    compileOnly fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
+    compileOnly fg.deobf("dev.ftb.mods:ftb-library-forge:${rootProject.ftb_library_version}")
+    testImplementation fg.deobf("dev.ftb.mods:ftb-library-forge:${rootProject.ftb_library_version}")
+    compileOnly fg.deobf('dev.ftb.mods:ftb-teams-forge:2001.3.0')
+    compileOnly fg.deobf('dev.architectury:architectury-forge:9.1.12')
+    // Enabled in development by default, optional in production. Disable with -PwithFtbQuests=false.
+    if (rootProject.devProperty('withFtbQuests').getOrElse('true').toBoolean()) {
+        runtimeOnly fg.deobf("dev.ftb.mods:ftb-quests-forge:${rootProject.ftb_quests_version}")
+        runtimeOnly fg.deobf("dev.ftb.mods:ftb-library-forge:${rootProject.ftb_library_version}")
+        runtimeOnly fg.deobf('dev.ftb.mods:ftb-teams-forge:2001.3.0')
+        runtimeOnly fg.deobf('dev.architectury:architectury-forge:9.1.12')
+    }
     compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge-api:${rootProject.jei_version}")
     // Optional in production. Disable in development with -PwithJei=false.
@@ -73,14 +78,7 @@ dependencies {
     if (rootProject.devProperty('withJade').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("maven.modrinth:jade:${rootProject.jade_version}")
     }
-    // Full MFCL runtime (embedded legacy runtime + Developer API) from the MFCL Maven repository.
-    if (rootProject.devProperty('mfclRuntimeJar').isPresent()) {
-        def runtimeJar = rootProject.file(rootProject.devProperty('mfclRuntimeJar').get())
-        if (!runtimeJar.isFile() || !runtimeJar.name.endsWith('.jar')) throw new GradleException("Invalid mfclRuntimeJar: ${runtimeJar}")
-        runtimeOnly fg.deobf("local.mfcl:${runtimeJar.name[0..-5]}:local")
-    } else {
-        runtimeOnly fg.deobf("github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${rootProject.mfcl_version}")
-    }
+    implementation fg.deobf("github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${rootProject.mfcl_version}")
     testImplementation rootProject.mfclApiDependency
     testImplementation fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     testImplementation platform('org.junit:junit-bom:5.11.4')
@@ -159,6 +157,9 @@ minecraft {
             }
             if (providers.gradleProperty('ftbQuestsSmokeTest').isPresent()) {
                 property 'tc4modern.ftbQuestsSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('nativeLeavesSmokeTest').isPresent()) {
+                property 'tc4modern.nativeLeavesSmokeTest', 'true'
             }
             if (providers.gradleProperty('curiosSmokeTest').isPresent()) {
                 property 'tc4modern.curiosSmokeTest', 'true'

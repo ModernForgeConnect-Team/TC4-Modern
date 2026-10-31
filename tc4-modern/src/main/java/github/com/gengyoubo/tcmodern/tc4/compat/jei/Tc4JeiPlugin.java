@@ -27,9 +27,11 @@ import mezz.jei.api.registration.IModIngredientRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import mezz.jei.api.registration.IRecipeTransferRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -335,6 +337,20 @@ public final class Tc4JeiPlugin implements IModPlugin {
         converter.map(new LegacyStack("Thaumcraft:ItemThaumonomicon", 0, 1, "")).ifPresent(book ->
                 result.add(new WandConversionCategory.Recipe(new ItemStack(Items.BOOKSHELF), wands, book, "jei.tc4modern.wand.any")));
         return result;
+    }
+
+    /** MFCL's hosted device menu class, named only as JEI's lookup key; none of its members are used. */
+    private static final String DEVICE_MENU = "github.com.gengyoubo.mfcl.content.LegacyDeviceMenu";
+
+    @Override
+    public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
+        if (TcModernApi.runtime().isEmpty()) return;
+        try {
+            var menu = Class.forName(DEVICE_MENU, false, Tc4JeiPlugin.class.getClassLoader()).asSubclass(AbstractContainerMenu.class);
+            registration.addRecipeTransferHandler(new ArcaneTransferHandler(menu, registration.getTransferHelper()), ARCANE);
+        } catch (ClassNotFoundException | ClassCastException | LinkageError unavailable) {
+            LogUtils.getLogger().warn("TC4 JEI: MFCL device menu not found; arcane worktable recipe transfer is unavailable.");
+        }
     }
 
     @Override

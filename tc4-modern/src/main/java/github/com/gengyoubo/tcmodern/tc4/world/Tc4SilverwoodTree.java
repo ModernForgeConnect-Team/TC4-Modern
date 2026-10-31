@@ -34,12 +34,14 @@ final class Tc4SilverwoodTree {
         region.plantGrow(origin.below());
 
         int top = y + height + 3 + random.nextInt(3);
+        var foliage = new java.util.HashSet<BlockPos>();
         for (int yy = y + height - 5; yy <= top; yy++) {
             int core = Mth.clamp(yy, y + height - 3, y + height);
             for (int xx = x - 5; xx <= x + 5; xx++) for (int zz = z - 5; zz <= z + 5; zz++) {
                 double dx = xx - x, dy = yy - core, dz = zz - z;
                 var pos = new BlockPos(xx, yy, zz);
-                if (dx * dx + dy * dy + dz * dz < 10 + random.nextInt(8) && region.treeReplaceable(region.get(pos))) region.set(pos, blocks.silverwoodLeaves());
+                if (dx * dx + dy * dy + dz * dz < 10 + random.nextInt(8) && region.treeReplaceable(region.get(pos))
+                        && region.set(pos, blocks.silverwoodLeaves())) foliage.add(pos);
             }
         }
 
@@ -63,6 +65,7 @@ final class Tc4SilverwoodTree {
         corners(region, x, y + height - 4, z, log);
         for (int[] corner : CORNERS) if (random.nextInt(3) == 0) region.set(new BlockPos(x + corner[0], y + height - 5, z + corner[1]), log);
         roots(region, x, y + height - 4, z, eastWest, northSouth);
+        region.settleLeaves(foliage);
         Tc4CustomFlowers.place(region, random, origin, blocks.shimmerleaf());
         return true;
     }

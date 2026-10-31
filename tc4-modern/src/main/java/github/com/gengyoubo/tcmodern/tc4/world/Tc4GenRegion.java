@@ -54,4 +54,30 @@ final class Tc4GenRegion {
         for (Direction side : Direction.values()) if (test.test(get(pos.relative(side)))) return true;
         return false;
     }
+
+    /** Initialize native leaf distances after the complete trunk/branches have been placed. */
+    void settleLeaves(java.util.Set<BlockPos> candidates) {
+        var distances = new java.util.HashMap<BlockPos, Integer>();
+        var queue = new java.util.ArrayDeque<BlockPos>();
+        for (var pos : candidates) {
+            var state = get(pos);
+            if (leaves(state) && state.hasProperty(net.minecraft.world.level.block.LeavesBlock.DISTANCE) && touching(pos, this::log)) {
+                distances.put(pos, 1); queue.add(pos);
+            }
+        }
+        while (!queue.isEmpty()) {
+            var pos = queue.remove(); int nextDistance = distances.get(pos) + 1;
+            if (nextDistance >= net.minecraft.world.level.block.LeavesBlock.DECAY_DISTANCE) continue;
+            for (var side : Direction.values()) {
+                var next = pos.relative(side); var state = get(next);
+                if (candidates.contains(next) && leaves(state) && state.hasProperty(net.minecraft.world.level.block.LeavesBlock.DISTANCE)
+                        && distances.putIfAbsent(next, nextDistance) == null) queue.add(next);
+            }
+        }
+        for (var pos : candidates) {
+            var state = get(pos);
+            if (leaves(state) && state.hasProperty(net.minecraft.world.level.block.LeavesBlock.DISTANCE))
+                set(pos, state.setValue(net.minecraft.world.level.block.LeavesBlock.DISTANCE, distances.getOrDefault(pos, 7)));
+        }
+    }
 }

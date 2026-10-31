@@ -1,0 +1,13 @@
+# Native magical leaves
+
+Greatwood and silverwood use `MagicalLeavesBlock extends LeavesBlock`. MFCL's public `LegacyBlockProvider` SPI registers that implementation under the existing original host block ID `thaumcraft:block_magical_leaves`; the original block item and its metadata still identify both species. No replacement block/item registry IDs or original textures are distributed.
+
+Requires the accompanying MFCL 0.2.11-dev3 build with the native-block SPI. TC4-specific leaf logic stays in TC4: Modern. MFCL only supplies registration and bidirectional state mapping for non-tile native implementations, preserving original item placement and metadata writes. Its other mirrored blocks keep their original implementations.
+
+The block adds vanilla `distance`, `persistent` and `waterlogged` alongside the existing `legacy_meta` property. The legacy species bit and player-placement bit remain readable by original TC4 code. Original metadata writes preserve native waterlogging and cached support distance. Existing saved leaves that only have `legacy_meta` keep their species; old player-placement metadata is recognized before decay, and a pending decay checks actual nearby support while an old canopy's new distance cache initializes.
+
+Native log/leaf tags include the existing magical log and leaf IDs. Original sapling generators consequently place the native leaves through MFCL; modern configured tree features resolve the same states. Greatwood's existing post-generation distance pass applies to these states, and silverwood initializes distances after all trunk/branch blocks have been placed.
+
+Shears and Silk Touch return one original leaf item of the correct species. Ordinary harvesting and natural decay use the original saplings at probabilities 1/200 (greatwood) and 1/250 (silverwood), without requiring the old pending-decay flag. Fortune does not change those original probabilities. Leaves placed by players remain persistent; they can still be harvested. Original ambient leaf effects and all artwork are read through the installed original mod.
+
+The opt-in `-PnativeLeavesSmokeTest` creates a disposable flat world and writes `logs/tc4modern/native-leaves-smoke.json` and `screenshots/native-magical-leaves.png` in the supplied game directory. It exercises all 16 legacy metadata values, native support distance, natural decay, an old supported canopy, legacy player persistence, waterlogged metadata updates, state NBT round trips, shears/Silk Touch, ordinary sapling drops, actual player harvesting, both original sapling generators and both modern configured tree features.

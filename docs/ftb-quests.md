@@ -1,6 +1,6 @@
 # FTB Quests integration
 
-Targets Forge 1.20.1 and FTB Quests 2001.4.22, FTB Library 2001.2.9, FTB Teams 2001.3.0 and Architectury 9.1.12. These dependencies are optional and are not bundled. Enable the development runtime with `-PwithFtbQuests=true`.
+Targets Forge 1.20.1 and FTB Quests 2001.4.22, FTB Library 2001.2.13, FTB Teams 2001.3.0 and Architectury 9.1.12. These dependencies are optional and are not bundled. They are enabled in the development runtime by default; disable them with `-PwithFtbQuests=false`.
 
 The editor uses FTB Library's searchable icon list, populated from the installed original research and aspect registries, including addons. Research uses its original name and item/texture icon. Aspects use localized names and original textures tinted with their registered colors. The selected identifiers are saved unchanged, including case-sensitive research keys; unavailable addon identifiers are retained when editing existing quests. Catalogs are cached per runtime/language to avoid repeatedly converting every research icon.
 
@@ -36,5 +36,7 @@ All original player reads/writes use public MFCL `withPlayer` transactions on th
 ## Validation
 
 Library unit tests cover checking unlocked research without changing it, exact pool consumption, insufficient balances, unknown tags, invalid amounts and grant caps.
+
+Selector regression tests use FTB's real `EnumConfig.addInfo` tooltip path. They cover unconfigured research, an empty registry, missing addon targets, restoring defaults and absent display values. Empty or leading-dash research IDs use a separate valid UI identifier because FTB's `NameMap` rejects these IDs as defaults; applying that UI choice preserves the original stored research key. This prevents the default-tooltip null pointer reported with FTB Library 2001.2.13.
 
 The opt-in `-PftbQuestsSmokeTest` client probe creates a disposable flat world. With `-PwithFtbQuests=true` it exercises real FTB task/reward registration, original research completion, consuming/non-consuming tasks, locked teams, insufficient/unknown aspects, duplicate submissions/claims, configuration network round trips and the actual searchable selection screens. Reports are written to `logs/tc4modern/ftb-quests-smoke.json` and selection screenshots to `screenshots/ftb-*-selection.png` under the specified game directory. Without FTB, the probe only checks successful startup to the title screen.
