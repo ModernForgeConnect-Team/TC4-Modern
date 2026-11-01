@@ -620,9 +620,8 @@ public final class ThaumonomiconScreen extends Screen {
         String source = ResearchLoader.source(key);
         if (source != null) {
             items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.edit"), () -> edit(source), false));
-            if (ResearchLoader.inConfig(source))
-                items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.delete"), () -> confirm(Component.translatable("book.tcmodernlib.menu.delete_named", key),
-                        () -> BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.DELETE, source, false))), true));
+            items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.delete"), () -> confirm(Component.translatable("book.tcmodernlib.menu.delete_named", key),
+                    () -> BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.DELETE, source, false))), true));
         } else items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.code"), () -> show(Component.translatable("book.tcmodernlib.toast.code")), false));
         menu = new Menu(x - left, y - top, items);
     }
@@ -635,9 +634,8 @@ public final class ThaumonomiconScreen extends Screen {
         String source = ResearchLoader.source(key);
         if (source != null) {
             items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.edit_category"), () -> edit(source), false));
-            if (ResearchLoader.inConfig(source))
-                items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.delete_category"), () -> confirm(Component.translatable("book.tcmodernlib.menu.delete_named", key),
-                        () -> BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.DELETE, source, false))), true));
+            items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.delete_category"), () -> confirm(Component.translatable("book.tcmodernlib.menu.delete_named", key),
+                    () -> BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.DELETE, source, false))), true));
         }
         menu = new Menu(x - left, y - top, items);
     }

@@ -454,6 +454,18 @@ public final class BookSmokeProbe {
                 require(screen.snapshot().stream().anyMatch(c -> c.key().equals("TESTCAT2")), "New category missing");
                 require("游戏内新建章节".equals(TcThaumonomicon.categoryName(api(), "TESTCAT2")), "New category name missing");
                 proof.put("editCreateCategory", true);
+                for (int i = 0; i < 100 && screen.categoryPoint("TESTCAT2") == null; i++)
+                    screen.mouseScrolled((screen.canvasLeft() + ThaumonomiconScreen.SIDE_X + 10) * screen.canvasScale(),
+                            (screen.canvasTop() + ThaumonomiconScreen.SIDE_Y + 40) * screen.canvasScale(), -1);
+                click(screen, screen.categoryPoint("TESTCAT2"), 1);
+                click(screen, screen.menuPoint(4), 0);
+                click(screen, screen.menuPoint(0), 0);
+                stage = 21;
+            } else if (stage == 21 && ++frames > WAIT * 2) {
+                var screen = book(mc);
+                require(screen.snapshot().stream().noneMatch(c -> c.key().equals("TESTCAT2")), "Deleted category is still present");
+                require(!Files.exists(ResearchLoader.configPath("custom:category_testcat2")), "Deleted category file still exists");
+                proof.put("editDeleteCategory", true);
                 screen.select(CATEGORY);
                 screenshot(mc, "edit-map", 0, 0);
                 finish(mc, null);

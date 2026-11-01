@@ -83,6 +83,8 @@
   "book.tcmodernlib.edit.deleted": "已删除：%s",
   "book.tcmodernlib.edit.moved": "已移动：%s",
   "book.tcmodernlib.edit.failed": "编辑未完成：%s",
+  "book.tcmodernlib.edit.delete_builtin": "%s 由模组提供，不能在这里删除。",
+  "book.tcmodernlib.edit.category_not_empty": "章节 %s 中还有研究，请先删除或移动其中的研究。",
   "book.tcmodernlib.editor.new_research": "新建研究",
   "book.tcmodernlib.editor.research": "编辑研究：%s",
   "book.tcmodernlib.editor.new_category": "新建章节",

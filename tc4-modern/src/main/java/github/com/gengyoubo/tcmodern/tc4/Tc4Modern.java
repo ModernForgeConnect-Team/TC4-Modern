@@ -24,7 +24,6 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 @Mod(Tc4Modern.MOD_ID)
 public final class Tc4Modern {
     public static final String MOD_ID = "tc4modern";
-
     public Tc4Modern(FMLJavaModLoadingContext context) {
         github.com.gengyoubo.mfcl.api.LegacyBlockProviders.register(new github.com.gengyoubo.tcmodern.tc4.compat.Tc4NativeBlocks());
         github.com.gengyoubo.mfcl.api.LegacyItemProviders.register(new github.com.gengyoubo.tcmodern.tc4.compat.Tc4ItemSplits());

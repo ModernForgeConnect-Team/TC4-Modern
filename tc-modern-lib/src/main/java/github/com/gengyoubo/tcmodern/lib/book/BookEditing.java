@@ -61,13 +61,19 @@ final class BookEditing {
     private static void delete(LegacyRuntime runtime, ServerPlayer player, String id) throws IOException {
         var text = ResearchLoader.json(id);
         if (text == null) throw new IllegalArgumentException("No JSON research file " + id);
-        if (!ResearchLoader.inConfig(id)) throw new IllegalArgumentException(id + " comes from a mod JAR; edit it to override it instead");
+        if (!ResearchLoader.inConfig(id)) {
+            fail(player, Component.translatable("book.tcmodernlib.edit.delete_builtin", id));
+            return;
+        }
         var json = JsonParser.parseString(text).getAsJsonObject();
         String key = json.has("key") ? json.get("key").getAsString() : id;
         if ("tc4modern:category".equals(json.has("type") ? json.get("type").getAsString() : "")
                 && TcThaumonomicon.snapshot(runtime).stream().filter(c -> c.key().equals(key)).anyMatch(c -> !c.entries().isEmpty()))
-            throw new IllegalArgumentException("Category " + key + " still has research; delete or move it first");
-        ResearchLoader.delete(id);
+        {
+            fail(player, Component.translatable("book.tcmodernlib.edit.category_not_empty", key));
+            return;
+        }
+        if (!ResearchLoader.delete(id)) throw new IllegalArgumentException("No JSON research file " + id);
         reload(runtime, player, null, "book.tcmodernlib.edit.deleted", key);
     }
 
@@ -117,6 +123,10 @@ final class BookEditing {
     }
 
     private static void fail(ServerPlayer player, String reason) {
-        player.displayClientMessage(Component.translatable("book.tcmodernlib.edit.failed", String.valueOf(reason)).withStyle(ChatFormatting.RED), false);
+        fail(player, Component.literal(String.valueOf(reason)));
+    }
+
+    private static void fail(ServerPlayer player, Component reason) {
+        player.displayClientMessage(Component.translatable("book.tcmodernlib.edit.failed", reason).withStyle(ChatFormatting.RED), false);
     }
 }

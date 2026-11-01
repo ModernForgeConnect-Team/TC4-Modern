@@ -83,6 +83,8 @@
   "book.tcmodernlib.edit.deleted": "Deleted %s",
   "book.tcmodernlib.edit.moved": "Moved %s",
   "book.tcmodernlib.edit.failed": "Edit refused: %s",
+  "book.tcmodernlib.edit.delete_builtin": "%s is provided by a mod and cannot be deleted here.",
+  "book.tcmodernlib.edit.category_not_empty": "Category %s still contains research. Delete or move its research first.",
   "book.tcmodernlib.editor.new_research": "New research",
   "book.tcmodernlib.editor.research": "Edit research: %s",
   "book.tcmodernlib.editor.new_category": "New category",
