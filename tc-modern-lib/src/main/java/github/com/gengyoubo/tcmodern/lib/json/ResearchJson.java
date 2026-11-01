@@ -140,7 +140,8 @@ public final class ResearchJson {
     /** {@code zh_cn} and {@code zh_CN} both become the original's {@code zh_CN}. */
     static String language(String code) {
         int underscore = code.indexOf('_');
-        if (underscore <= 0 || underscore == code.length() - 1) throw new JsonParseException("Language codes look like en_US: " + code);
+        if (!code.matches("[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*")) throw new JsonParseException("Invalid language code: " + code);
+        if (underscore < 0) return code.toLowerCase(Locale.ROOT);
         return code.substring(0, underscore).toLowerCase(Locale.ROOT) + "_" + code.substring(underscore + 1).toUpperCase(Locale.ROOT);
     }
 

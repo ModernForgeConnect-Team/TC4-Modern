@@ -100,11 +100,11 @@ public final class BookLogic {
         int changed = switch (action.kind()) {
             case COMPLETE -> action.cascade() ? TcResearch.complete(runtime, player, action.key())
                     : TcResearch.completeOnly(runtime, player, List.of(action.key()));
-            case REVOKE -> TcResearch.revoke(runtime, player, action.cascade() ? dependents(book, action.key()) : List.of(action.key()));
+            case REVOKE -> revoke(runtime, player, action.cascade() ? dependents(book, action.key()) : List.of(action.key()));
             case CATEGORY_COMPLETE -> TcResearch.completeOnly(runtime, player, category(book, action.key()));
-            case CATEGORY_RESET -> TcResearch.revoke(runtime, player, category(book, action.key()));
+            case CATEGORY_RESET -> revoke(runtime, player, category(book, action.key()));
             case ALL_COMPLETE -> TcResearch.completeAll(runtime, player);
-            case ALL_RESET -> TcResearch.revoke(runtime, player, book.stream().flatMap(c -> c.entries().stream()).map(TcResearchEntry::key).toList());
+            case ALL_RESET -> revoke(runtime, player, book.stream().flatMap(c -> c.entries().stream()).map(TcResearchEntry::key).toList());
             case RELOAD -> {
                 var result = ResearchLoader.reload(runtime);
                 BookNetwork.reloaded(player.server, result);
@@ -114,6 +114,12 @@ public final class BookLogic {
         };
         player.displayClientMessage(Component.translatable("book.tcmodernlib.cheat.done." + action.kind().name().toLowerCase(Locale.ROOT), changed), true);
         if (action.kind() == BookNetwork.Kind.COMPLETE || action.kind() == BookNetwork.Kind.CATEGORY_COMPLETE) learn(player);
+    }
+
+    private static int revoke(github.com.gengyoubo.mfcl.api.LegacyRuntime runtime, ServerPlayer player, Collection<String> keys) {
+        var result = TcResearch.revokeAndSnapshot(runtime, player, keys);
+        BookNetwork.research(player, result.completed());
+        return result.removed();
     }
 
     /** The research and everything that needs it, directly or through other research. */

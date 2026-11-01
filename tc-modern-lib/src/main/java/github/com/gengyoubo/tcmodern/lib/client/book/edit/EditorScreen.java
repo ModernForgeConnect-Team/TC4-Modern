@@ -147,6 +147,13 @@ abstract class EditorScreen extends Screen {
         g.drawString(font, Component.translatable(key), left + x, top + y, MUTED, false);
     }
 
+    protected void languageButton(GuiGraphics g, int mouseX, int mouseY, int x, int y, int w, String code) {
+        var info = minecraft.getLanguageManager().getLanguage(code);
+        String name = info == null ? code : info.toComponent().getString() + " (" + code + ")";
+        round(g, left + x, top + y, w, 14, 7, inside(mouseX, mouseY, x, y, w, 14) ? 0x33FFFFFF : 0x1FFFFFFF);
+        text(g, font, clip(font, name + " ⟳", w - 12), left + x + 6, top + y + 3, TEXT);
+    }
+
     // ---- Input ------------------------------------------------------------------------------------------------
 
     protected boolean inside(double x, double y, int bx, int by, int w, int h) {

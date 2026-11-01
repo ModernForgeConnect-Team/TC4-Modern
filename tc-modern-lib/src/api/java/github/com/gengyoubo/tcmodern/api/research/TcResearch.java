@@ -95,14 +95,23 @@ public final class TcResearch {
         });
     }
 
+    /** Number revoked and the server's remaining research, captured in the same transaction. */
+    public record Revocation(int removed, List<String> completed) { }
+
     /**
      * Takes research back from a player, together with the discovery marker of hidden research ({@code "@KEY"}), so
      * hidden entries hide again. The original has no such operation; warp already given stays. Call on the owning
-     * server thread; the player's research list is resent and saved afterwards.
+     * server thread. TC4's own sync is additive: integrations that display client progress must also send the exact
+     * remaining list returned by {@link #revokeAndSnapshot} and replace the client's research list.
      *
      * @return how many research keys were removed
      */
     public static int revoke(LegacyRuntime runtime, Object hostPlayer, Collection<String> keys) {
+        return revokeAndSnapshot(runtime, hostPlayer, keys).removed();
+    }
+
+    /** Revokes keys and captures the exact remaining list inside the same server-side player transaction. */
+    public static Revocation revokeAndSnapshot(LegacyRuntime runtime, Object hostPlayer, Collection<String> keys) {
         require(runtime);
         var remove = new HashSet<String>();
         for (String key : keys) if (key != null) { remove.add(key); remove.add("@" + key); }
@@ -114,7 +123,9 @@ public final class TcResearch {
             int removed = before - runtime.values().size(list);
             runtime.values().removeIf(list, value -> value instanceof String key && remove.contains(key));
             sync(runtime, player);
-            return removed;
+            var remaining = new ArrayList<String>();
+            for (Object value : runtime.values().list(list)) if (value instanceof String key) remaining.add(key);
+            return new Revocation(removed, List.copyOf(remaining));
         });
     }
 

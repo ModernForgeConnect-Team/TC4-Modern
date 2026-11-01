@@ -202,6 +202,12 @@ public final class TcBookAccessors {
         LegacyObject note(LegacyObject world, LegacyObject player, String key);
     }
 
+    /** The original client browser caches a separate research list for each player. */
+    @LegacyType("thaumcraft.client.gui.GuiResearchBrowser")
+    public interface BrowserProgress {
+        @LegacyField(name = "completedResearch", descriptor = "Ljava/util/HashMap;", isStatic = true) LegacyObject completed();
+    }
+
     /** The hidden-research and clue caches, rebuilt lazily when cleared. */
     @LegacyType("thaumcraft.common.lib.research.ResearchManager")
     public interface Caches {

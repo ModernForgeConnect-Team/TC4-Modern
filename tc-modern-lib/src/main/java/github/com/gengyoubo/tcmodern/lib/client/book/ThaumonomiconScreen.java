@@ -608,7 +608,6 @@ public final class ThaumonomiconScreen extends Screen {
     private void researchMenu(TcResearchEntry entry, int x, int y) {
         var items = new ArrayList<MenuItem>();
         String key = entry.key();
-        items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.open"), () -> open(entry), false));
         items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.complete"), () -> action(BookNetwork.Kind.COMPLETE, key, false), false));
         items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.complete_parents"), () -> action(BookNetwork.Kind.COMPLETE, key, true), false));
         items.add(new MenuItem(Component.translatable("book.tcmodernlib.menu.revoke"), () -> action(BookNetwork.Kind.REVOKE, key, false), true));

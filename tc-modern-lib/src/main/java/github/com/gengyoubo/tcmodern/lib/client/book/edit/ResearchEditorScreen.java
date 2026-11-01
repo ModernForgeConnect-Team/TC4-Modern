@@ -14,7 +14,6 @@ import github.com.gengyoubo.tcmodern.lib.json.ResearchJson;
 import java.util.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -27,17 +26,15 @@ import static github.com.gengyoubo.tcmodern.lib.client.book.BookChrome.*;
  */
 public final class ResearchEditorScreen extends EditorScreen {
     private static final int LEFT_X = 10, MID_X = 156, RIGHT_X = 310, COLUMN_W = 140, MID_W = 148, ROW_STEP = 25;
-    private static final int LIST_Y = 46, LIST_ROW = 13, LIST_ROWS = 5, PAGE_Y = 116;
 
     private final String id;
     private ResearchForm form;
     private final Map<String, TcAspect> aspects = new HashMap<>();
     private final Map<String, ItemStack> previews = new HashMap<>();
-    private int selected, listScroll;
+    private int selected;
+    private String language = net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
     // Widgets of the current layout.
-    private EditBox key, column, row, icon, warp, nameZh, nameEn, subZh, subEn, aspectBox, parents, hidden, siblings;
-    private EditBox requires, image, captionZh, captionEn, pageAspects, item;
-    private MultiLineEditBox textZh, textEn;
+    private EditBox key, column, row, icon, warp, name, subtitle, aspectBox, parents, hidden, siblings;
 
     /** {@code id} is the file id, or empty for a new research. */
     public ResearchEditorScreen(Screen parent, String id, ResearchForm form) {
@@ -65,32 +62,13 @@ public final class ResearchEditorScreen extends EditorScreen {
         row = field(LEFT_X + 74, rowY(2) + 9, 66, String.valueOf(form.row), "0");
         icon = field(LEFT_X, rowY(4) + 9, COLUMN_W - 20, form.icon, "minecraft:book");
         warp = field(LEFT_X, rowY(5) + 9, 60, String.valueOf(form.warp), "0");
-        nameZh = field(MID_X, rowY(0) + 9, MID_W, form.name.zh, "中文名称");
-        nameEn = field(MID_X, rowY(1) + 9, MID_W, form.name.en, "English name");
-        subZh = field(MID_X, rowY(2) + 9, MID_W, form.subtitle.zh, "中文副标题");
-        subEn = field(MID_X, rowY(3) + 9, MID_W, form.subtitle.en, "English subtitle");
-        aspectBox = field(MID_X, rowY(4) + 9, MID_W, form.aspects, "cognitio:3 ordo:1");
+        name = field(MID_X, rowY(1) + 9, MID_W, form.name.get(language), "");
+        subtitle = field(MID_X, rowY(2) + 9, MID_W, form.subtitle.get(language), "");
+        aspectBox = field(MID_X, rowY(4) + 9, MID_W - 20, form.aspects, "cognitio:3 ordo:1");
         parents = field(MID_X, 172 + 9, MID_W, form.parents, "KEY, KEY");
         hidden = field(MID_X, 197 + 9, MID_W, form.hiddenParents, "KEY, KEY");
         siblings = field(MID_X, 222 + 9, MID_W, form.siblings, "KEY, KEY");
-        requires = image = captionZh = captionEn = pageAspects = item = null;
-        textZh = textEn = null;
-        if (form.pages.isEmpty()) return;
-        var page = form.pages.get(selected);
-        switch (page.type) {
-            case "text" -> {
-                textZh = area(RIGHT_X, PAGE_Y + 27, COLUMN_W, 40, page.text.zh, "中文");
-                textEn = area(RIGHT_X, PAGE_Y + 79, COLUMN_W, 30, page.text.en, "English");
-                requires = field(RIGHT_X, PAGE_Y + 121, COLUMN_W, page.requires, "KEY");
-            }
-            case "image" -> {
-                image = field(RIGHT_X, PAGE_Y + 27, COLUMN_W, page.image, "ns:textures/...png");
-                captionZh = field(RIGHT_X, PAGE_Y + 53, COLUMN_W, page.caption.zh, "中文说明");
-                captionEn = field(RIGHT_X, PAGE_Y + 79, COLUMN_W, page.caption.en, "English caption");
-            }
-            case "aspects" -> pageAspects = field(RIGHT_X, PAGE_Y + 27, COLUMN_W, page.aspects, "cognitio:3");
-            default -> item = field(RIGHT_X, PAGE_Y + 27, COLUMN_W - 20, page.item, "minecraft:chest");
-        }
+
     }
 
     @Override protected void commit() {
@@ -100,20 +78,13 @@ public final class ResearchEditorScreen extends EditorScreen {
         form.row = number(row.getValue(), form.row);
         form.icon = icon.getValue();
         form.warp = Math.max(0, number(warp.getValue(), 0));
-        form.name.zh = nameZh.getValue();
-        form.name.en = nameEn.getValue();
-        form.subtitle.zh = subZh.getValue();
-        form.subtitle.en = subEn.getValue();
+        form.name.set(language, name.getValue());
+        form.subtitle.set(language, subtitle.getValue());
         form.aspects = aspectBox.getValue();
         form.parents = parents.getValue();
         form.hiddenParents = hidden.getValue();
         form.siblings = siblings.getValue();
-        if (form.pages.isEmpty()) return;
-        var page = form.pages.get(selected);
-        if (textZh != null) { page.text.zh = textZh.getValue(); page.text.en = textEn.getValue(); page.requires = requires.getValue(); }
-        if (image != null) { page.image = image.getValue(); page.caption.zh = captionZh.getValue(); page.caption.en = captionEn.getValue(); }
-        if (pageAspects != null) page.aspects = pageAspects.getValue();
-        if (item != null) page.item = item.getValue();
+
     }
 
     private static int number(String text, int fallback) {
@@ -195,68 +166,43 @@ public final class ResearchEditorScreen extends EditorScreen {
             g.drawString(font, clip(font, labelText.getString(), 41), fx + 22 - Math.min(41, font.width(labelText)) / 2, fy + 3, on ? TEXT : FAINT, false);
         }
 
-        label(g, "book.tcmodernlib.editor.name", MID_X, rowY(0));
-        label(g, "book.tcmodernlib.editor.name_en", MID_X, rowY(1));
-        label(g, "book.tcmodernlib.editor.subtitle", MID_X, rowY(2));
-        label(g, "book.tcmodernlib.editor.subtitle_en", MID_X, rowY(3));
+        label(g, "book.tcmodernlib.editor.language", MID_X, rowY(0));
+        languageButton(g, mouseX, mouseY, MID_X, rowY(0) + 9, MID_W, language);
+        label(g, form.name.isRaw() ? "book.tcmodernlib.editor.shared_text" : "book.tcmodernlib.editor.name", MID_X, rowY(1));
+        label(g, form.subtitle.isRaw() ? "book.tcmodernlib.editor.shared_text" : "book.tcmodernlib.editor.subtitle", MID_X, rowY(2));
         label(g, "book.tcmodernlib.editor.aspects", MID_X, rowY(4));
+        pickerButton(g, MID_X + MID_W - 18, rowY(4) + 9);
         aspectRow(g, aspectBox.getValue(), left + MID_X, top + rowY(4) + 25);
         label(g, "book.tcmodernlib.editor.parents", MID_X, 172);
         label(g, "book.tcmodernlib.editor.hidden_parents", MID_X, 197);
         label(g, "book.tcmodernlib.editor.siblings", MID_X, 222);
 
-        label(g, "book.tcmodernlib.editor.pages", RIGHT_X, 34);
-        String[] tools = {"+", "↑", "↓", "×"};
-        for (int i = 0; i < tools.length; i++) {
-            int tx = left + RIGHT_X + COLUMN_W - (4 - i) * 16;
-            boolean hot = inside(mouseX, mouseY, RIGHT_X + COLUMN_W - (4 - i) * 16, 31, 14, 12);
-            round(g, tx, top + 31, 14, 12, 4, hot ? (i == 3 ? alpha(WARN, 0.4F) : 0x33FFFFFF) : 0x1AFFFFFF);
-            centered(g, font, Component.literal(tools[i]), tx + 7, top + 33, i == 3 ? 0xFFFFB3A8 : TEXT);
-        }
-        for (int i = 0; i < LIST_ROWS && listScroll + i < form.pages.size(); i++) {
-            int index = listScroll + i, ry = top + LIST_Y + i * LIST_ROW;
-            var page = form.pages.get(index);
-            boolean on = index == selected;
-            round(g, left + RIGHT_X, ry, COLUMN_W, LIST_ROW - 1, 4, on ? alpha(ACCENT, 0.35F) : inside(mouseX, mouseY, RIGHT_X, LIST_Y + i * LIST_ROW, COLUMN_W, LIST_ROW - 1) ? 0x1FFFFFFF : 0x0CFFFFFF);
-            String summary = (index + 1) + ". " + Component.translatable("book.tcmodernlib.page_type." + page.type).getString() + "  " + snippet(page);
-            g.drawString(font, clip(font, summary, COLUMN_W - 8), left + RIGHT_X + 4, ry + 2, on ? TEXT : MUTED, false);
-        }
-        if (form.pages.isEmpty()) text(g, font, Component.translatable("book.tcmodernlib.editor.no_pages"), left + RIGHT_X + 4, top + LIST_Y + 2, FAINT);
-        if (form.pages.isEmpty()) return;
-        var page = form.pages.get(selected);
-        boolean hotType = inside(mouseX, mouseY, RIGHT_X, PAGE_Y, COLUMN_W, 14);
-        round(g, left + RIGHT_X, top + PAGE_Y, COLUMN_W, 14, 7, hotType ? 0x33FFFFFF : 0x1FFFFFFF);
-        text(g, font, Component.translatable("book.tcmodernlib.editor.page_type",
-                Component.translatable("book.tcmodernlib.page_type." + page.type)).getString() + " ⟳", left + RIGHT_X + 6, top + PAGE_Y + 3, TEXT);
-        switch (page.type) {
-            case "text" -> {
-                label(g, "book.tcmodernlib.editor.text_zh", RIGHT_X, PAGE_Y + 18);
-                label(g, "book.tcmodernlib.editor.text_en", RIGHT_X, PAGE_Y + 70);
-                label(g, "book.tcmodernlib.editor.requires", RIGHT_X, PAGE_Y + 112);
-            }
-            case "image" -> {
-                label(g, "book.tcmodernlib.editor.image", RIGHT_X, PAGE_Y + 18);
-                label(g, "book.tcmodernlib.editor.caption", RIGHT_X, PAGE_Y + 44);
-                label(g, "book.tcmodernlib.editor.caption_en", RIGHT_X, PAGE_Y + 70);
-            }
-            case "aspects" -> {
-                label(g, "book.tcmodernlib.editor.aspects", RIGHT_X, PAGE_Y + 18);
-                aspectRow(g, pageAspects.getValue(), left + RIGHT_X, top + PAGE_Y + 44);
-            }
-            default -> {
-                label(g, page.type.equals("smelting") ? "book.tcmodernlib.editor.input" : "book.tcmodernlib.editor.output", RIGHT_X, PAGE_Y + 18);
-                preview(g, item.getValue(), left + RIGHT_X + COLUMN_W - 17, top + PAGE_Y + 26);
-            }
-        }
+        label(g, "book.tcmodernlib.editor.text", RIGHT_X, 34);
+        boolean hot = inside(mouseX, mouseY, RIGHT_X, 47, COLUMN_W, 190);
+        round(g, left + RIGHT_X, top + 47, COLUMN_W, 190, 5, hot ? 0x663C2B49 : WELL);
+        text(g, font, Component.translatable("book.tcmodernlib.writer.open"), left + RIGHT_X + 6, top + 54, ACCENT_LIGHT);
+        text(g, font, Component.translatable("book.tcmodernlib.writer.page_count", form.pages.size()), left + RIGHT_X + 6, top + 70, MUTED);
     }
 
-    private String snippet(ResearchForm.Page page) {
-        return switch (page.type) {
-            case "text" -> page.text.zh.isEmpty() ? page.text.en : page.text.zh;
-            case "image" -> page.image;
-            case "aspects" -> page.aspects;
-            default -> page.item;
-        };
+    private void pickerButton(GuiGraphics g, int x, int y) {
+        round(g, left + x, top + y, 18, 14, 5, 0x33FFFFFF);
+        centered(g, font, Component.literal("+"), left + x + 9, top + y + 3, TEXT);
+    }
+
+    @Override protected void renderOverlay(GuiGraphics g, int mouseX, int mouseY) {
+        String hint = null;
+        if (inside(mouseX, mouseY, LEFT_X + COLUMN_W - 18, rowY(4) + 8, 18, 18)) hint = "book.tcmodernlib.picker.item";
+        else if (inside(mouseX, mouseY, MID_X + MID_W - 18, rowY(4) + 9, 18, 14)) hint = "book.tcmodernlib.picker.aspect";
+        if (hint != null) g.renderTooltip(font, Component.translatable(hint), mouseX, mouseY);
+    }
+
+    private void chooseAspects() {
+        commit();
+        try {
+            minecraft.setScreen(new AspectPickerScreen(this, aspects.values(), form.aspects, result -> form.aspects = result));
+        } catch (RuntimeException invalid) {
+            status(Component.translatable("book.tcmodernlib.editor.invalid", String.valueOf(invalid.getMessage())).getString(), true);
+        }
     }
 
     /** The item (or texture) a field names, 16 px at {@code x, y}; a red mark when it names nothing. */
@@ -301,6 +247,24 @@ public final class ResearchEditorScreen extends EditorScreen {
     // ---- Input ------------------------------------------------------------------------------------------------
 
     @Override protected boolean clicked(double x, double y, int button) {
+        if (button == 0 && inside(x, y, RIGHT_X, 34, COLUMN_W, 203)) {
+            openTextWriter();
+            return true;
+        }
+        if (button == 0 && inside(x, y, LEFT_X + COLUMN_W - 18, rowY(4) + 8, 18, 18)) {
+            commit();
+            minecraft.setScreen(new ItemPickerScreen(this, form::selectIcon));
+            return true;
+        }
+        if (button == 0 && inside(x, y, MID_X + MID_W - 18, rowY(4) + 9, 18, 14)) {
+            chooseAspects();
+            return true;
+        }
+        if (button == 0 && inside(x, y, MID_X, rowY(0) + 9, MID_W, 14)) {
+            commit();
+            minecraft.setScreen(new ContentLanguageScreen(this, selected -> language = selected));
+            return true;
+        }
         if (inside(x, y, LEFT_X, rowY(1) + 9, COLUMN_W, 14)) {
             var keys = BookClient.book().stream().map(c -> c.key()).toList();
             if (!keys.isEmpty()) {
@@ -318,47 +282,7 @@ public final class ResearchEditorScreen extends EditorScreen {
             if (!form.flags.remove(flag)) form.flags.add(flag);
             return true;
         }
-        for (int i = 0; i < 4; i++) if (inside(x, y, RIGHT_X + COLUMN_W - (4 - i) * 16, 31, 14, 12)) { pageTool(i); return true; }
-        for (int i = 0; i < LIST_ROWS && listScroll + i < form.pages.size(); i++)
-            if (inside(x, y, RIGHT_X, LIST_Y + i * LIST_ROW, COLUMN_W, LIST_ROW - 1)) {
-                commit();
-                selected = listScroll + i;
-                rebuild();
-                return true;
-            }
-        if (!form.pages.isEmpty() && inside(x, y, RIGHT_X, PAGE_Y, COLUMN_W, 14)) {
-            commit();
-            var page = form.pages.get(selected);
-            int index = ResearchForm.PAGE_TYPES.indexOf(page.type);
-            page.type = ResearchForm.PAGE_TYPES.get(Math.floorMod(index + (button == 1 ? -1 : 1), ResearchForm.PAGE_TYPES.size()));
-            rebuild();
-            return true;
-        }
         return false;
-    }
-
-    /** Add after the selection, move up, move down, delete. */
-    private void pageTool(int tool) {
-        commit();
-        switch (tool) {
-            case 0 -> { form.pages.add(form.pages.isEmpty() ? 0 : selected + 1, new ResearchForm.Page()); selected = form.pages.isEmpty() ? 0 : Math.min(selected + 1, form.pages.size() - 1); }
-            case 1 -> { if (selected > 0) { Collections.swap(form.pages, selected, selected - 1); selected--; } }
-            case 2 -> { if (selected < form.pages.size() - 1) { Collections.swap(form.pages, selected, selected + 1); selected++; } }
-            case 3 -> { if (!form.pages.isEmpty()) { form.pages.remove(selected); selected = Math.max(0, selected - 1); } }
-            default -> { }
-        }
-        if (selected < listScroll) listScroll = selected;
-        if (selected >= listScroll + LIST_ROWS) listScroll = selected - LIST_ROWS + 1;
-        rebuild();
-    }
-
-    @Override public boolean mouseScrolled(double rawX, double rawY, double delta) {
-        double x = rawX / canvasScale(), y = rawY / canvasScale();
-        if (inside(x, y, RIGHT_X, LIST_Y, COLUMN_W, LIST_ROWS * LIST_ROW)) {
-            listScroll = Math.max(0, Math.min(Math.max(0, form.pages.size() - LIST_ROWS), listScroll + (delta > 0 ? -1 : 1)));
-            return true;
-        }
-        return super.mouseScrolled(rawX, rawY, delta);
     }
 
     /** Replaces the form shown, discarding unsaved widget values; for scripted editing. */
@@ -375,4 +299,12 @@ public final class ResearchEditorScreen extends EditorScreen {
 
     /** The form being edited. */
     public ResearchForm current() { return form; }
+
+    void bookPagesChanged() { selected = Math.max(0, Math.min(selected, form.pages.size() - 1)); }
+
+    /** Opens the research pages on the book spread. */
+    public void openTextWriter() {
+        commit();
+        minecraft.setScreen(new BookTextEditorScreen(this, form, selected, language));
+    }
 }

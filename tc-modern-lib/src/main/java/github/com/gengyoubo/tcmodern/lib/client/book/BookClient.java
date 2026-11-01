@@ -3,6 +3,7 @@ package github.com.gengyoubo.tcmodern.lib.client.book;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.research.TcResearchCategory;
 import github.com.gengyoubo.tcmodern.api.research.TcThaumonomicon;
+import github.com.gengyoubo.tcmodern.api.research.TcBookAccessors;
 import github.com.gengyoubo.tcmodern.lib.TcModernLib;
 import github.com.gengyoubo.tcmodern.lib.book.BookNetwork;
 import github.com.gengyoubo.tcmodern.lib.json.ResearchLoader;
@@ -43,6 +44,21 @@ public final class BookClient {
     static synchronized void invalidate() { book = null; }
 
     public static void open() { Minecraft.getInstance().setScreen(new ThaumonomiconScreen()); }
+
+    /** Replaces only research progress, preserving aspect pools, scans and warp. */
+    public static void research(List<String> completed) {
+        var mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        TcModernApi.runtime().ifPresent(runtime -> {
+            String name = mc.player.getGameProfile().getName();
+            var values = runtime.values();
+            var knowledge = runtime.accessor(TcBookAccessors.Progress.class).completed(name);
+            values.clear(knowledge);
+            completed.forEach(key -> values.add(knowledge, key));
+            values.put(runtime.accessor(TcBookAccessors.BrowserProgress.class).completed(), name, values.newList(completed));
+        });
+        if (mc.screen instanceof ThaumonomiconScreen screen) screen.refresh();
+    }
 
     /** True while the loaded JSON research is a remote server's rather than this game's own files. */
     private static boolean remote;

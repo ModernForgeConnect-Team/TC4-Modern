@@ -11,38 +11,62 @@ public final class ResearchForm {
     public static final List<String> FLAGS = List.of("secondary", "concealed", "hidden", "lost", "round", "special", "stub", "auto_unlock", "virtual");
     public static final List<String> PAGE_TYPES = List.of("text", "image", "aspects", "arcane", "crucible", "infusion", "crafting", "smelting");
 
-    /** A translatable text: Chinese and English, or a plain key or literal kept as it was. */
+    /** A shared translation key/literal or inline text indexed by any Minecraft language code. */
     public static final class Text {
-        public String zh = "", en = "";
         private String raw;
-        private final JsonObject others = new JsonObject();
+        private String previousRaw = "";
+        private final LinkedHashMap<String, String> translations = new LinkedHashMap<>();
 
         static Text of(JsonElement value) {
             var text = new Text();
             if (value == null || value.isJsonNull()) return text;
-            if (value.isJsonPrimitive()) { text.raw = value.getAsString(); text.zh = text.raw; return text; }
-            for (var entry : value.getAsJsonObject().entrySet()) {
-                String language = entry.getKey().toLowerCase(Locale.ROOT);
-                if (language.equals("zh_cn")) text.zh = entry.getValue().getAsString();
-                else if (language.equals("en_us")) text.en = entry.getValue().getAsString();
-                else text.others.add(entry.getKey(), entry.getValue());
-            }
+            if (value.isJsonPrimitive()) { text.raw = value.getAsString(); return text; }
+            value.getAsJsonObject().entrySet().forEach(entry -> text.translations.put(entry.getKey(), entry.getValue().getAsString()));
             return text;
         }
 
-        /** Null when empty; the original key or literal when it was not edited. */
+        public String get(String language) {
+            if (raw != null) return raw;
+            return translations.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(language))
+                    .map(Map.Entry::getValue).findFirst().orElse("");
+        }
+
+        public void set(String language, String value) {
+            if (raw != null) { raw = value; return; }
+            String key = translations.keySet().stream().filter(existing -> existing.equalsIgnoreCase(language)).findFirst()
+                    .orElseGet(() -> canonicalLanguage(language));
+            if (value.isEmpty()) translations.remove(key); else translations.put(key, value);
+        }
+
+        private static String canonicalLanguage(String language) {
+            int split = language.indexOf('_');
+            return split < 0 ? language.toLowerCase(Locale.ROOT) : language.substring(0, split).toLowerCase(Locale.ROOT)
+                    + "_" + language.substring(split + 1).toUpperCase(Locale.ROOT);
+        }
+
         JsonElement json() {
-            if (raw != null && zh.equals(raw) && en.isEmpty() && others.size() == 0) return new JsonPrimitive(raw);
-            if (zh.isEmpty() && en.isEmpty() && others.size() == 0) return null;
+            if (raw != null) return raw.isEmpty() ? null : new JsonPrimitive(raw);
+            if (translations.isEmpty()) return null;
             var result = new JsonObject();
-            if (!zh.isEmpty()) result.addProperty("zh_CN", zh);
-            if (!en.isEmpty()) result.addProperty("en_US", en);
-            others.entrySet().forEach(entry -> result.add(entry.getKey(), entry.getValue()));
+            translations.forEach(result::addProperty);
             return result;
         }
 
-        /** A plain key or literal rather than inline translations. */
-        public boolean isRaw() { return raw != null && zh.equals(raw) && en.isEmpty(); }
+        public boolean isRaw() { return raw != null; }
+
+        /** Switch the representation explicitly; the inactive representation is kept while editing. */
+        public void setRawMode(boolean enabled) {
+            if (enabled && raw == null) raw = previousRaw;
+            else if (!enabled && raw != null) { previousRaw = raw; raw = null; }
+        }
+
+        Text copy() {
+            var result = new Text();
+            result.raw = raw;
+            result.previousRaw = previousRaw;
+            result.translations.putAll(translations);
+            return result;
+        }
     }
 
     public static final class Page {
@@ -50,6 +74,17 @@ public final class ResearchForm {
         public Text text = new Text(), caption = new Text();
         public String requires = "", image = "", aspects = "", item = "";
         private JsonObject itemOriginal;
+
+        void selectItem(JsonObject item) { itemOriginal = item.deepCopy(); this.item = itemText(itemOriginal); }
+
+        Page copy() {
+            var result = new Page();
+            result.type = type;
+            result.text = text.copy(); result.caption = caption.copy();
+            result.requires = requires; result.image = image; result.aspects = aspects; result.item = item;
+            result.itemOriginal = itemOriginal == null ? null : itemOriginal.deepCopy();
+            return result;
+        }
 
         static Page of(JsonElement value) {
             var page = new Page();
@@ -104,6 +139,8 @@ public final class ResearchForm {
     public final Set<String> flags = new LinkedHashSet<>();
     public final List<Page> pages = new ArrayList<>();
     private JsonObject iconOriginal;
+
+    void selectIcon(JsonObject item) { iconOriginal = item.deepCopy(); icon = itemText(iconOriginal); }
 
     private ResearchForm(JsonObject original, boolean category) {
         this.original = original;

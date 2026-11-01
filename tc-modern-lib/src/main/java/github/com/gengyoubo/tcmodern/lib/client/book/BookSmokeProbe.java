@@ -117,6 +117,42 @@ public final class BookSmokeProbe {
                 mc.screen.onClose();
                 require(mc.screen == original, "Editor did not return to the original book");
                 proof.put("originalBookAndEditorEntry", true);
+                var form = github.com.gengyoubo.tcmodern.lib.client.book.edit.ResearchForm.newResearch(CATEGORY, 0, 0);
+                form.pages.add(new github.com.gengyoubo.tcmodern.lib.client.book.edit.ResearchForm.Page());
+                var editor = new github.com.gengyoubo.tcmodern.lib.client.book.edit.ResearchEditorScreen(original, "", form);
+                mc.setScreen(editor);
+                editor.openTextWriter();
+                var writer = mc.screen;
+                var fields = writer.children().stream().filter(e -> e instanceof net.minecraft.client.gui.components.MultiLineEditBox)
+                        .map(e -> (net.minecraft.client.gui.components.MultiLineEditBox) e).toList();
+                require(fields.size() == 2, "Book spread must expose both text pages");
+                fields.get(0).setValue("第一页\n第二行");
+                fields.get(1).setValue("另一页");
+                screenshot(mc, "writer", 0, 0);
+                writer.onClose();
+                require(mc.screen == editor && "第一页<BR>第二行".equals(form.pages.get(0).text.get("zh_cn"))
+                        && "另一页".equals(form.pages.get(1).text.get("zh_cn")), "Book drafts did not return to editor");
+                proof.put("bookWritingAndNewlines", true);
+                editor.openTextWriter();
+                writer = mc.screen;
+                var buttons = writer.children().stream().filter(e -> e instanceof net.minecraft.client.gui.components.Button)
+                        .map(e -> (net.minecraft.client.gui.components.Button) e).toList();
+                buttons.get(2).onPress(); // Text -> image on the first page.
+                require(form.pages.get(0).type.equals("text"), "Draft changed the research before confirming");
+                var edits = writer.children().stream().filter(e -> e instanceof net.minecraft.client.gui.components.EditBox)
+                        .map(e -> (net.minecraft.client.gui.components.EditBox) e).toList();
+                edits.get(0).setValue("thaumcraft:textures/items/thaumonomicon.png");
+                buttons = writer.children().stream().filter(e -> e instanceof net.minecraft.client.gui.components.Button)
+                        .map(e -> (net.minecraft.client.gui.components.Button) e).toList();
+                buttons.get(4).onPress(); // Caption switches to a translation key.
+                edits = writer.children().stream().filter(e -> e instanceof net.minecraft.client.gui.components.EditBox)
+                        .map(e -> (net.minecraft.client.gui.components.EditBox) e).toList();
+                edits.get(1).setValue("example.book.caption");
+                screenshot(mc, "writer-image", 0, 0);
+                writer.onClose();
+                require(form.pages.get(0).type.equals("image") && form.pages.get(0).caption.isRaw()
+                        && "example.book.caption".equals(form.pages.get(0).caption.get("zh_cn")), "Image or translation key not applied");
+                proof.put("bookImageAndTranslationKey", true);
                 // Continue the existing isolated editor and action checks.
                 mc.setScreen(new ThaumonomiconScreen());
                 stage = 50;
@@ -132,7 +168,7 @@ public final class BookSmokeProbe {
                 require(screen.cheating() && screen.visible(hidden), "Debug mode did not reveal hidden research");
                 // Debug menu on the root research: "complete".
                 click(screen, screen.nodeCenter(ROOT), 1);
-                click(screen, screen.menuPoint(1), 0);
+                click(screen, screen.menuPoint(0), 0);
                 stage = 6;
             } else if (stage == 6 && ++frames > WAIT) {
                 var screen = book(mc);
@@ -181,22 +217,39 @@ public final class BookSmokeProbe {
                 proof.put("readerPages", true);
                 // Revoke with everything that needs it.
                 click(screen, screen.nodeCenter(ROOT), 1);
-                click(screen, screen.menuPoint(4), 0);
+                click(screen, screen.menuPoint(3), 0);
                 stage = 10;
             } else if (stage == 10 && ++frames > WAIT * 3) {
                 var screen = book(mc);
                 require(!screen.completedKeys().contains(ROOT) && !screen.completedKeys().contains(CHILD), "Revoke with dependents left research: " + screen.completedKeys());
+                require(screen.pool("aer") == airBefore - 2, "Research revoke changed the aspect pool");
+                pending = server(mc, () -> {
+                    require(!TcResearch.isComplete(api(), player(mc), ROOT) && !TcResearch.isComplete(api(), player(mc), CHILD),
+                            "Dependent revoke did not persist on the server");
+                });
                 proof.put("debugRevokeWithDependents", true);
                 click(screen, screen.categoryPoint(CATEGORY), 1);
                 click(screen, screen.menuPoint(0), 0);
                 stage = 11;
-            } else if (stage == 11 && ++frames > WAIT) {
+            } else if (stage == 11 && pending.isDone() && ++frames > WAIT) {
                 var screen = book(mc);
                 require(screen.completedKeys().containsAll(List.of(ROOT, CHILD, NOTE, HIDDEN)), "Category complete missed research");
+                click(screen, screen.nodeCenter(NOTE), 1);
+                click(screen, screen.menuPoint(2), 0);
+                stage = 110;
+            } else if (stage == 110 && ++frames > WAIT * 2) {
+                var screen = book(mc);
+                require(!screen.completedKeys().contains(NOTE) && screen.completedKeys().containsAll(List.of(ROOT, CHILD, HIDDEN)),
+                        "Single revoke changed the wrong research: " + screen.completedKeys());
+                pending = server(mc, () -> {
+                    require(!TcResearch.isComplete(api(), player(mc), NOTE) && TcResearch.isComplete(api(), player(mc), ROOT),
+                            "Single revoke did not persist on the server");
+                });
+                proof.put("debugRevokeSingle", true);
                 click(screen, screen.categoryPoint(CATEGORY), 1);
                 click(screen, screen.menuPoint(1), 0);
                 stage = 12;
-            } else if (stage == 12 && ++frames > WAIT) {
+            } else if (stage == 12 && pending.isDone() && ++frames > WAIT) {
                 var screen = book(mc);
                 require(List.of(ROOT, CHILD, NOTE, HIDDEN).stream().noneMatch(screen.completedKeys()::contains), "Category reset left research");
                 proof.put("debugCategoryCompleteAndReset", true);
@@ -240,11 +293,11 @@ public final class BookSmokeProbe {
                 var form = editor.current();
                 require(form.column == 4 && form.row == 2 && CATEGORY.equals(form.categoryKey), "New research form is not at the clicked slot");
                 form.key = "TEST_NEW";
-                form.name.zh = "新建的研究";
-                form.name.en = "Created in game";
+                form.name.set("zh_cn", "新建的研究");
+                form.name.set("en_us", "Created in game");
                 form.aspects = "aer:1";
                 form.parents = "TEST_ROOT";
-                form.pages.get(0).text.zh = "在游戏里写的页面。";
+                form.pages.get(0).text.set("zh_cn", "在游戏里写的页面。");
                 editor.load(form);
                 screenshot(mc, "editor", 0, 0);
                 editor.submit();
@@ -259,14 +312,14 @@ public final class BookSmokeProbe {
                 proof.put("editCreateResearch", true);
                 // Edit an existing research through its menu ("Edit…" follows copy key).
                 click(screen, screen.nodeCenter(NOTE), 1);
-                click(screen, screen.menuPoint(6), 0);
+                click(screen, screen.menuPoint(5), 0);
                 require(mc.screen instanceof github.com.gengyoubo.tcmodern.lib.client.book.edit.ResearchEditorScreen, "Edit did not open the editor");
                 stage = 17;
             } else if (stage == 17 && ++frames > WAIT) {
                 var editor = (github.com.gengyoubo.tcmodern.lib.client.book.edit.ResearchEditorScreen) mc.screen;
                 var form = editor.current();
                 require(NOTE.equals(form.key), "Editor opened " + form.key);
-                form.name.zh = "测试笔记研究（已编辑）";
+                form.name.set("zh_cn", "测试笔记研究（已编辑）");
                 editor.load(form);
                 editor.submit();
                 stage = 18;
@@ -276,7 +329,7 @@ public final class BookSmokeProbe {
                 proof.put("editExistingResearch", true);
                 // Delete the created research: menu, then the confirmation.
                 click(screen, screen.nodeCenter("TEST_NEW"), 1);
-                click(screen, screen.menuPoint(7), 0);
+                click(screen, screen.menuPoint(6), 0);
                 click(screen, screen.menuPoint(0), 0);
                 stage = 19;
             } else if (stage == 19 && ++frames > WAIT * 2) {
@@ -290,7 +343,7 @@ public final class BookSmokeProbe {
                 var editor = (github.com.gengyoubo.tcmodern.lib.client.book.edit.CategoryEditorScreen) mc.screen;
                 var form = github.com.gengyoubo.tcmodern.lib.client.book.edit.ResearchForm.newCategory();
                 form.key = "TESTCAT2";
-                form.name.zh = "游戏内新建章节";
+                form.name.set("zh_cn", "游戏内新建章节");
                 editor.load(form);
                 editor.submit();
                 stage = 20;
@@ -388,11 +441,14 @@ public final class BookSmokeProbe {
 
     /** Offscreen at a fixed 480x270 GUI size; mouse in canvas coordinates of the current layout. */
     private void screenshot(Minecraft mc, String name, int mouseX, int mouseY) throws Exception {
-        int width = 480, height = 270, pixels = 2;
+        int width = name.startsWith("writer") ? mc.getWindow().getGuiScaledWidth() : 480;
+        int height = name.startsWith("writer") ? mc.getWindow().getGuiScaledHeight() : 270;
+        int targetWidth = name.startsWith("writer") ? mc.getWindow().getWidth() : width * 2;
+        int targetHeight = name.startsWith("writer") ? mc.getWindow().getHeight() : height * 2;
         var screen = mc.screen;
         var book = screen instanceof ThaumonomiconScreen open ? open : null;
         int dx = book == null ? 0 : mouseX - book.canvasLeft(), dy = book == null ? 0 : mouseY - book.canvasTop();
-        var target = new com.mojang.blaze3d.pipeline.TextureTarget(width * pixels, height * pixels, true, Minecraft.ON_OSX);
+        var target = new com.mojang.blaze3d.pipeline.TextureTarget(targetWidth, targetHeight, true, Minecraft.ON_OSX);
         screen.resize(mc, width, height);
         int mx = book == null || mouseX == 0 && mouseY == 0 ? 0 : Math.round((book.canvasLeft() + dx) * book.canvasScale());
         int my = book == null || mouseX == 0 && mouseY == 0 ? 0 : Math.round((book.canvasTop() + dy) * book.canvasScale());

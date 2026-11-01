@@ -22,7 +22,8 @@ public final class CategoryEditorScreen extends EditorScreen {
 
     private final String id;
     private ResearchForm form;
-    private EditBox key, icon, background, nameZh, nameEn;
+    private EditBox key, icon, background, name;
+    private String language = net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
 
     public CategoryEditorScreen(Screen parent, String id, ResearchForm form) {
         super(Component.translatable(id.isEmpty() ? "book.tcmodernlib.editor.new_category" : "book.tcmodernlib.editor.category_title", form.key), parent);
@@ -35,8 +36,7 @@ public final class CategoryEditorScreen extends EditorScreen {
         key.setEditable(id.isEmpty());
         icon = field(X, 84, W - 44, form.icon, "ns:textures/...png");
         background = field(X, 120, W, form.background, "thaumcraft:textures/gui/gui_researchback.png");
-        nameZh = field(X, 156, W, form.name.zh, "中文名称");
-        nameEn = field(X, 192, W, form.name.en, "English name");
+        name = field(X, 192, W, form.name.get(language), "");
     }
 
     @Override protected void commit() {
@@ -44,8 +44,7 @@ public final class CategoryEditorScreen extends EditorScreen {
         form.key = key.getValue().strip();
         form.icon = icon.getValue().strip();
         form.background = background.getValue().strip();
-        form.name.zh = nameZh.getValue();
-        form.name.en = nameEn.getValue();
+        form.name.set(language, name.getValue());
     }
 
     @Override protected List<Button> buttons() {
@@ -82,8 +81,9 @@ public final class CategoryEditorScreen extends EditorScreen {
         label(g, "book.tcmodernlib.editor.key", X, 39);
         label(g, "book.tcmodernlib.editor.icon", X, 75);
         label(g, "book.tcmodernlib.editor.background", X, 111);
-        label(g, "book.tcmodernlib.editor.name", X, 147);
-        label(g, "book.tcmodernlib.editor.name_en", X, 183);
+        label(g, "book.tcmodernlib.editor.language", X, 147);
+        languageButton(g, mouseX, mouseY, X, 156, W, language);
+        label(g, form.name.isRaw() ? "book.tcmodernlib.editor.shared_text" : "book.tcmodernlib.editor.name", X, 183);
         int px = left + X + W - 38, py = top + 83;
         round(g, px - 1, py - 1, 18, 18, 4, WELL);
         var texture = ResourceLocation.tryParse(icon.getValue().strip());
@@ -94,6 +94,11 @@ public final class CategoryEditorScreen extends EditorScreen {
     }
 
     @Override protected boolean clicked(double x, double y, int button) {
+        if (button == 0 && inside(x, y, X, 156, W, 14)) {
+            commit();
+            minecraft.setScreen(new ContentLanguageScreen(this, selected -> language = selected));
+            return true;
+        }
         if (!inside(x, y, X + W - 18, 84, 18, 14)) return false;
         commit();
         int index = ICONS.indexOf(form.icon);

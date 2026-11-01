@@ -26,6 +26,14 @@ class ResearchJsonTest {
         assertEquals("Modern research", parsed.texts().get("en_US").get("tc.research_category.MODERN"));
     }
 
+    @Test void languageCodesWithoutRegionAreAccepted() {
+        var parsed = parse("""
+                {"type":"tc4modern:category", "key":"EXAMPLE", "icon":"minecraft:textures/item/book.png",
+                 "name":{"tok":"toki", "ja_jp":"日本語"}}""");
+        assertEquals("toki", parsed.texts().get("tok").get("tc.research_category.EXAMPLE"));
+        assertEquals("日本語", parsed.texts().get("ja_JP").get("tc.research_category.EXAMPLE"));
+    }
+
     @Test void researchWithEveryPageKind() {
         var parsed = parse("""
                 {"type": "tc4modern:research", "key": "DESK", "category": "MODERN", "position": [2, -1], "complexity": 2,

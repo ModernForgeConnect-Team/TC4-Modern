@@ -69,7 +69,22 @@ public final class BookNetwork {
         }
     }
 
-    private static final String VERSION = "2";
+    /** Full server-authoritative research list: TC4's own sync packet only adds to client knowledge. */
+    public record ResearchSync(List<String> completed) {
+        void write(FriendlyByteBuf out) {
+            out.writeVarInt(completed.size());
+            completed.forEach(key -> out.writeUtf(key, 32767));
+        }
+        static ResearchSync read(FriendlyByteBuf in) {
+            int count = in.readVarInt();
+            if (count < 0 || count > 65536) throw new IllegalArgumentException("Invalid research progress count");
+            var completed = new ArrayList<String>(count);
+            for (int i = 0; i < count; i++) completed.add(in.readUtf(32767));
+            return new ResearchSync(List.copyOf(completed));
+        }
+    }
+
+    private static final String VERSION = "3";
     private static SimpleChannel channel;
 
     private BookNetwork() {}
@@ -80,9 +95,14 @@ public final class BookNetwork {
                 () -> VERSION, VERSION::equals, VERSION::equals);
         channel.registerMessage(0, Action.class, Action::write, Action::read, BookNetwork::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         channel.registerMessage(1, Reloaded.class, Reloaded::write, Reloaded::read, BookNetwork::receive, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        channel.registerMessage(2, ResearchSync.class, ResearchSync::write, ResearchSync::read, BookNetwork::receiveResearch, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static void send(Action action) { channel.sendToServer(action); }
+
+    public static void research(ServerPlayer player, List<String> completed) {
+        channel.send(PacketDistributor.PLAYER.with(() -> player), new ResearchSync(List.copyOf(completed)));
+    }
 
     /** Tells every client about a reload and hands them the server's research. */
     public static void reloaded(MinecraftServer server, ResearchLoader.Result result) {
@@ -109,6 +129,12 @@ public final class BookNetwork {
     private static void receive(Reloaded reloaded, Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                 () -> () -> github.com.gengyoubo.tcmodern.lib.client.book.BookClient.reloaded(reloaded)));
+        context.get().setPacketHandled(true);
+    }
+
+    private static void receiveResearch(ResearchSync progress, Supplier<NetworkEvent.Context> context) {
+        context.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                () -> () -> github.com.gengyoubo.tcmodern.lib.client.book.BookClient.research(progress.completed())));
         context.get().setPacketHandled(true);
     }
 }

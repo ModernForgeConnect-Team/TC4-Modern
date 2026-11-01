@@ -54,7 +54,9 @@ public final class BookCommand {
         }
         var keys = key.equals(ALL) ? TcResearch.keys(runtime.get()) : List.of(key);
         for (var player : targets) {
-            int removed = TcResearch.revoke(runtime.get(), player, keys);
+            var result = TcResearch.revokeAndSnapshot(runtime.get(), player, keys);
+            BookNetwork.research(player, result.completed());
+            int removed = result.removed();
             source.sendSuccess(() -> Component.translatable("commands.tcmodernlib.research.revoke", removed, player.getDisplayName()), true);
         }
         return targets.size();

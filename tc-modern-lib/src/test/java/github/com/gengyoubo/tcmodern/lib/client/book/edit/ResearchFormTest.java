@@ -25,11 +25,11 @@ class ResearchFormTest {
         assertEquals("cognitio:3 ordo:1", form.aspects);
         assertTrue(form.subtitle.isRaw());
         form.column = 5;
-        form.name.en = "Desk";
+        form.name.set("en_us", "Desk");
         form.icon = "minecraft:diamond";
         form.aspects = "aer:2, ignis×1";
         form.flags.remove("secondary");
-        form.pages.get(0).text.en = "Page one";
+        form.pages.get(0).text.set("en_us", "Page one");
         form.pages.remove(3);
         var json = form.json();
         assertEquals(5, json.getAsJsonArray("position").get(0).getAsInt());
@@ -41,9 +41,7 @@ class ResearchFormTest {
         assertFalse(json.has("flags"));
         assertEquals(7, json.get("custom").getAsInt());
         assertTrue(json.has("triggers"));
-        var first = json.getAsJsonArray("pages").get(0).getAsJsonObject().getAsJsonObject("text");
-        assertEquals("tc.research_page.DESK.1", first.get("zh_CN").getAsString());
-        assertEquals("Page one", first.get("en_US").getAsString());
+        assertEquals("Page one", json.getAsJsonArray("pages").get(0).getAsString());
         assertEquals(3, json.getAsJsonArray("pages").size());
     }
 
@@ -58,6 +56,56 @@ class ResearchFormTest {
         assertThrows(RuntimeException.class, () -> ResearchForm.aspectsJson("cognitio"));
     }
 
+    @Test void selectedItemDataSurvivesSavingAndTextEditsReplaceIt() {
+        var form = ResearchForm.newResearch("MODERN", 0, 0);
+        form.key = "PICKED";
+        var picked = JsonParser.parseString("{\"item\":\"example:variant\",\"nbt\":\"{variant:3}\"}").getAsJsonObject();
+        form.selectIcon(picked);
+        var page = form.pages.get(0);
+        page.type = "smelting";
+        page.selectItem(picked);
+        assertEquals(picked, form.json().getAsJsonObject("icon"));
+        assertEquals(picked, form.json().getAsJsonArray("pages").get(0).getAsJsonObject().getAsJsonObject("smelting"));
+        form.icon = "minecraft:book";
+        assertFalse(form.json().getAsJsonObject("icon").has("nbt"));
+    }
+
+    @Test void editingAnyLanguagePreservesOtherTranslationsAndSharedKeys() {
+        var form = ResearchForm.of(JsonParser.parseString(RESEARCH).getAsJsonObject());
+        assertEquals("デスク", form.name.get("ja_jp"));
+        form.name.set("ja_jp", "研究机");
+        form.name.set("fr_fr", "Bureau");
+        form.name.set("tok", "poki");
+        form.name.set("zh_cn", "现代研究台");
+        form.subtitle.set("ja_jp", form.subtitle.get("ja_jp"));
+        var json = form.json();
+        assertEquals("研究机", json.getAsJsonObject("name").get("ja_JP").getAsString());
+        assertEquals("Bureau", json.getAsJsonObject("name").get("fr_FR").getAsString());
+        assertEquals("poki", json.getAsJsonObject("name").get("tok").getAsString());
+        assertEquals("现代研究台", json.getAsJsonObject("name").get("zh_CN").getAsString());
+        assertEquals("tc.research_text.CUSTOM", json.get("subtitle").getAsString());
+        form.name.set("fr_FR", "");
+        assertFalse(form.json().getAsJsonObject("name").has("fr_FR"));
+    }
+
+    @Test void pageDraftAndTranslationKeyModePreserveInactiveTranslations() {
+        var form = ResearchForm.of(JsonParser.parseString(RESEARCH).getAsJsonObject());
+        var original = form.pages.get(1);
+        var draft = original.copy();
+        draft.text.setRawMode(true);
+        draft.text.set("ja_jp", "example.book.page");
+        assertEquals("example.book.page", draft.json().getAsJsonObject().get("text").getAsString());
+        assertEquals("第二页", original.text.get("zh_cn"));
+        draft.text.setRawMode(false);
+        assertEquals("第二页", draft.text.get("zh_cn"));
+        draft.text.setRawMode(true);
+        assertEquals("example.book.page", draft.text.get("en_us"));
+        draft.text.setRawMode(false);
+        draft.text.set("ja_jp", "追加");
+        assertEquals("追加", draft.json().getAsJsonObject().getAsJsonObject("text").get("ja_JP").getAsString());
+        assertEquals("第二页", original.text.get("zh_cn"));
+    }
+
     @Test void newResearchAndCategoryAreValidShapes() {
         var research = ResearchForm.newResearch("MODERN", 3, 4);
         research.key = "NEW";
@@ -68,7 +116,7 @@ class ResearchFormTest {
         assertEquals(1, json.getAsJsonArray("pages").size());
         var category = ResearchForm.newCategory();
         category.key = "CAT";
-        category.name.zh = "章节";
+        category.name.set("zh_cn", "章节");
         var categoryJson = category.json();
         assertEquals("tc4modern:category", categoryJson.get("type").getAsString());
         assertEquals("章节", categoryJson.getAsJsonObject("name").get("zh_CN").getAsString());
