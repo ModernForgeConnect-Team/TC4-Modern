@@ -15,6 +15,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.RandomSource;
 
 /** Transactional editor for every kind of research page, using the original book spread. */
 final class BookTextEditorScreen extends Screen {
@@ -103,7 +104,7 @@ final class BookTextEditorScreen extends Screen {
         mode(page.text, x, 58);
         if (page.text.isRaw()) field(x, 80, 158, page.text.get(language), "book.tcmodernlib.writer.key_hint", value -> page.text.set(language, value));
         else {
-            var box = new MultiLineEditBox(font, px(x), py(80), size(158), size(112), Component.empty(), Component.translatable("book.tcmodernlib.writer.placeholder")) {
+            var box = new MultiLineEditBox(font, px(x), py(80), size(158), size(94), Component.empty(), Component.translatable("book.tcmodernlib.writer.placeholder")) {
                 @Override protected void renderBackground(GuiGraphics g) { g.fill(getX(), getY(), getX() + width, getY() + height, isFocused() ? 0x184B2F16 : 0x084B2F16); }
                 @Override protected void renderContents(GuiGraphics g, int mx, int my, float tick) {
                     g.flush(); RenderSystem.setShaderColor(0.19F, 0.12F, 0.07F, 1F);
@@ -114,8 +115,64 @@ final class BookTextEditorScreen extends Screen {
             box.setCharacterLimit(16384); box.setValue(display(page.text.get(language)));
             box.setValueListener(value -> page.text.set(language, value.replace("\n", "<BR>")));
             textBoxes.add(addRenderableWidget(box));
+            button(x, 178, 76, Component.translatable("book.tcmodernlib.writer.insert_texture"), () -> insertTexture(page, box));
+            button(x + 82, 178, 76, Component.translatable("book.tcmodernlib.writer.insert_item"), () -> insertItem(page, box));
         }
         field(x, 211, 158, page.requires, "book.tcmodernlib.writer.requires_hint", value -> page.requires = value);
+    }
+
+    /** Reserve the current selection/caret before the picker rebuilds this screen. */
+    private String reserve(ResearchForm.Page page, MultiLineEditBox box) {
+        String token = "TC4INSERT" + UUID.randomUUID().toString().replace("-", "") + "END";
+        setFocused(box);
+        for (char c : token.toCharArray()) box.charTyped(c, 0);
+        if (!page.text.get(language).contains(token)) throw new IllegalStateException(Component.translatable("book.tcmodernlib.writer.insert_full").getString());
+        return token;
+    }
+
+    private void insertTexture(ResearchForm.Page page, MultiLineEditBox box) {
+        error = null;
+        String before = page.text.get(language);
+        try {
+            String token = reserve(page, box);
+            minecraft.setScreen(new TexturePickerScreen(this,
+                    texture -> page.text.set(language, page.text.get(language).replace(token, inlineImage(texture))),
+                    () -> page.text.set(language, before)));
+        } catch (RuntimeException failure) { page.text.set(language, before); error = failure.getMessage(); build(); }
+    }
+
+    private void insertItem(ResearchForm.Page page, MultiLineEditBox box) {
+        error = null;
+        String before = page.text.get(language);
+        try {
+            String token = reserve(page, box);
+            minecraft.setScreen(ItemPickerScreen.forStack(this, stack -> {
+                var texture = itemTexture(stack);
+                if (texture == null) { page.text.set(language, before); error = Component.translatable("book.tcmodernlib.writer.item_unsupported").getString(); }
+                else page.text.set(language, page.text.get(language).replace(token, inlineImage(texture.toString())));
+            }, () -> page.text.set(language, before)));
+        } catch (RuntimeException failure) { page.text.set(language, before); error = failure.getMessage(); build(); }
+    }
+
+    static String inlineImage(String texture) {
+        return "<IMG>" + texture + ":0:0:255:255:0.0625</IMG>";
+    }
+
+    /** TC4 text can draw only one static texture, so reject models that need 3D, tint or multiple layers. */
+    private ResourceLocation itemTexture(ItemStack stack) {
+        try {
+            var model = minecraft.getItemRenderer().getModel(stack, minecraft.level, minecraft.player, 0);
+            if (model.isGui3d() || model.isCustomRenderer()) return null;
+            var quads = model.getQuads(null, null, RandomSource.create(0));
+            if (quads.isEmpty() || quads.stream().anyMatch(q -> q.isTinted()
+                    && minecraft.getItemColors().getColor(stack, q.getTintIndex()) != -1)) return null;
+            var sprite = quads.get(0).getSprite();
+            var id = sprite.contents().name();
+            if (quads.stream().anyMatch(q -> !q.getSprite().contents().name().equals(id))
+                    || sprite.contents().getUniqueFrames().limit(2).count() > 1) return null;
+            var texture = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "textures/" + id.getPath() + ".png");
+            return minecraft.getResourceManager().getResource(texture).isPresent() ? texture : null;
+        } catch (RuntimeException unavailable) { return null; }
     }
     private void addImage(ResearchForm.Page page, int x) {
         field(x, 76, 128, page.image, "book.tcmodernlib.writer.image_hint", value -> page.image = value);
@@ -137,9 +194,12 @@ final class BookTextEditorScreen extends Screen {
         image(g, first, 25); image(g, first + 1, 200);
         item(g, first, 25); item(g, first + 1, 200);
         labels(g, first, 25); labels(g, first + 1, 200);
-        if (error != null) g.drawString(font, font.plainSubstrByWidth(error, 300), 40, 226, 0xFFAA0000, false);
         g.pose().popPose();
         super.render(g, mouseX, mouseY, tick);
+        if (error != null) {
+            g.fill(px(27), py(196), px(357), py(210), 0xE03A1010);
+            g.drawString(font, font.plainSubstrByWidth(error, size(320)), px(32), py(199), 0xFFFFD0C0, false);
+        }
     }
     private void heading(GuiGraphics g, int index, int x) {
         if (exists(index)) g.drawString(font, Component.translatable("book.tcmodernlib.writer.page", index + 1), x, 20, 0xFF3B2414, false);

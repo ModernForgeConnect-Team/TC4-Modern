@@ -2,6 +2,10 @@ package github.com.gengyoubo.tcmodern.lib.book;
 
 import github.com.gengyoubo.tcmodern.lib.TcModernLib;
 import github.com.gengyoubo.tcmodern.lib.json.ResearchLoader;
+import github.com.gengyoubo.tcmodern.api.TcModernApi;
+import github.com.gengyoubo.tcmodern.api.research.TcResearch;
+import github.com.gengyoubo.tcmodern.api.research.TcResearchEntry;
+import github.com.gengyoubo.tcmodern.api.research.TcThaumonomicon;
 import java.util.*;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
@@ -108,6 +112,15 @@ public final class BookNetwork {
     public static void reloaded(MinecraftServer server, ResearchLoader.Result result) {
         channel.send(PacketDistributor.ALL.noArg(),
                 new Reloaded(result.categories(), result.research(), result.errors(), ResearchLoader.contents(), true));
+        // A reload can introduce default-visible research after players have already joined. Trigger the original
+        // player initialization after clients have received the new registry; MFCL persists and syncs the result.
+        TcModernApi.runtime().ifPresent(runtime -> {
+            var automatic = TcThaumonomicon.snapshot(runtime).stream().flatMap(category -> category.entries().stream())
+                    .filter(entry -> ResearchLoader.source(entry.key()) != null && entry.has(TcResearchEntry.Flag.AUTO_UNLOCK))
+                    .map(TcResearchEntry::key).toList();
+            if (!automatic.isEmpty()) for (var player : server.getPlayerList().getPlayers())
+                TcResearch.completeOnly(runtime, player, automatic);
+        });
     }
 
     @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent event) {

@@ -14,12 +14,16 @@ import net.minecraft.resources.ResourceLocation;
 final class TexturePickerScreen extends Screen {
     private final Screen parent;
     private final Consumer<String> select;
+    private final Runnable cancel;
     private List<ResourceLocation> all = List.of(), filtered = List.of();
     private EditBox search;
     private int scroll;
     TexturePickerScreen(Screen parent, Consumer<String> select) {
+        this(parent, select, () -> { });
+    }
+    TexturePickerScreen(Screen parent, Consumer<String> select, Runnable cancel) {
         super(Component.translatable("book.tcmodernlib.writer.select_image"));
-        this.parent = parent; this.select = select;
+        this.parent = parent; this.select = select; this.cancel = cancel;
     }
     @Override protected void init() {
         all = minecraft.getResourceManager().listResources("textures", id -> id.getPath().endsWith(".png")).keySet().stream().sorted().toList();
@@ -49,6 +53,6 @@ final class TexturePickerScreen extends Screen {
         return super.mouseClicked(x, y, button);
     }
     @Override public boolean mouseScrolled(double x, double y, double delta) { scroll = Math.max(0, Math.min(Math.max(0, filtered.size() - rows()), scroll + (delta > 0 ? -1 : 1))); return true; }
-    @Override public void onClose() { minecraft.setScreen(parent); }
+    @Override public void onClose() { cancel.run(); minecraft.setScreen(parent); }
     @Override public boolean isPauseScreen() { return false; }
 }

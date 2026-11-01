@@ -97,8 +97,6 @@ class ResearchJsonTest {
         assertMessage("Unknown flag 'shiny'", """
                 {"type": "tc4modern:research", "key": "A", "category": "C", "position": [0, 0], "icon": {"item": "x:y"},
                  "aspects": {"ordo": 1}, "flags": ["shiny"]}""");
-        assertMessage("at least one aspect", """
-                {"type": "tc4modern:research", "key": "A", "category": "C", "position": [0, 0], "icon": {"item": "x:y"}}""");
         assertMessage("exactly one of text, image", """
                 {"type": "tc4modern:research", "key": "A", "category": "C", "position": [0, 0], "icon": {"item": "x:y"},
                  "aspects": {"ordo": 1}, "pages": [{"text": "a", "image": "x:y"}]}""");
@@ -111,6 +109,15 @@ class ResearchJsonTest {
                 {"type": "tc4modern:category", "key": "has space", "icon": "x:y"}""");
         assertMessage("namespace:path", """
                 {"type": "tc4modern:category", "key": "C", "icon": "no-namespace"}""");
+    }
+
+    @Test void fewerThanTwoDistinctAspectsAreAutomaticallyUnlocked() {
+        String base = "{\"type\":\"tc4modern:research\",\"key\":\"A\",\"category\":\"C\",\"position\":[0,0],\"icon\":{\"item\":\"minecraft:book\"}";
+        assertTrue(parse(base + "}").research().flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
+        assertTrue(parse(base + ",\"aspects\":{\"aer\":64}}").research().flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
+        assertFalse(parse(base + ",\"aspects\":{\"aer\":1,\"ordo\":1}}").research().flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
+        assertFalse(parse("{\"type\":\"tc4modern:research\",\"key\":\"V\",\"category\":\"C\",\"flags\":[\"virtual\"]}")
+                .research().flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
     }
 
     private static void assertMessage(String expected, String json) {

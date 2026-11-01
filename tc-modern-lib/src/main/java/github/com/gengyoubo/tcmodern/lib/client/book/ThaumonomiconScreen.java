@@ -586,10 +586,11 @@ public final class ThaumonomiconScreen extends Screen {
     // ---- Input ------------------------------------------------------------------------------------------------
 
     private void open(TcResearchEntry entry) {
-        reader = new BookReader(this, entry, cheat, completed, PAGE_W, PAGE_H);
-        spread = 0;
-        sound("page", 0.6F, 0.1F);
+        if (!BookClient.Opening.preview(this, originalBook, entry.key()))
+            previewFailed();
     }
+
+    void previewFailed() { show(Component.translatable("book.tcmodernlib.preview.unavailable")); }
 
     private void activate(TcResearchEntry entry) {
         if (cheat || done(entry)) { open(entry); return; }

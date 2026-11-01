@@ -163,5 +163,11 @@
   "book.tcmodernlib.writer.image_hint": "图片资源 ID",
   "book.tcmodernlib.writer.select_image": "选择图片",
   "book.tcmodernlib.writer.search_image": "搜索图片资源 ID",
-  "book.tcmodernlib.writer.recipe_item": "选择配方产物"
+  "book.tcmodernlib.writer.recipe_item": "选择配方产物",
+  "book.tcmodernlib.editor.auto_aspects": "少于两种要素时默认解锁",
+  "book.tcmodernlib.preview.unavailable": "无法打开原版页面，请从魔导手册进入编辑模式",
+  "book.tcmodernlib.writer.insert_texture": "插入贴图",
+  "book.tcmodernlib.writer.insert_item": "插入物品",
+  "book.tcmodernlib.writer.insert_full": "正文已满，无法插入",
+  "book.tcmodernlib.writer.item_unsupported": "此物品的模型无法作为原版小贴图插入"
 }

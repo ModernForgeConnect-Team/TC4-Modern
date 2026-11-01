@@ -8,7 +8,7 @@ import java.util.*;
  *
  * @param iconItem    the icon stack; exactly one of it and {@code iconTexture} is set
  * @param iconTexture the icon as {@code namespace:path}
- * @param aspects     tags by aspect tag; at least one unless the research is virtual
+ * @param aspects     distinct aspect tags; non-virtual research with fewer than two is automatically unlocked
  * @param warp        0 for none
  */
 public record TcResearchDefinition(String key, String category, int column, int row, int complexity,
@@ -53,14 +53,15 @@ public record TcResearchDefinition(String key, String category, int column, int 
         boolean virtual = flags.contains(TcResearchEntry.Flag.VIRTUAL);
         if (!virtual && (iconItem == null) == iconTexture.isEmpty())
             throw new IllegalArgumentException(key + ": a research needs exactly one icon, an item or a texture");
-        if (!virtual && aspects.isEmpty()) throw new IllegalArgumentException(key + ": a research needs at least one aspect");
         if (complexity < 1 || complexity > 3) throw new IllegalArgumentException(key + ": complexity is 1 to 3");
         if (warp < 0) throw new IllegalArgumentException(key + ": negative warp");
         aspects = Collections.unmodifiableMap(new LinkedHashMap<>(aspects));
         parents = List.copyOf(parents);
         hiddenParents = List.copyOf(hiddenParents);
         siblings = List.copyOf(siblings);
-        flags = flags.isEmpty() ? Set.of() : Collections.unmodifiableSet(EnumSet.copyOf(flags));
+        var normalizedFlags = flags.isEmpty() ? EnumSet.noneOf(TcResearchEntry.Flag.class) : EnumSet.copyOf(flags);
+        if (!virtual && aspects.size() < 2) normalizedFlags.add(TcResearchEntry.Flag.AUTO_UNLOCK);
+        flags = Collections.unmodifiableSet(normalizedFlags);
         itemTriggers = List.copyOf(itemTriggers);
         entityTriggers = List.copyOf(entityTriggers);
         aspectTriggers = List.copyOf(aspectTriggers);

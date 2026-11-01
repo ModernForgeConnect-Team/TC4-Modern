@@ -11,21 +11,18 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import github.com.gengyoubo.mfcl.api.LegacyMappings;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraft.client.gui.screens.Screen;
 import github.com.gengyoubo.tcmodern.lib.book.BookLogic;
-import java.util.WeakHashMap;
+import github.com.gengyoubo.mfcl.api.LegacyObject;
+import github.com.gengyoubo.mfcl.api.mla.LegacyField;
+import github.com.gengyoubo.mfcl.api.mla.LegacyMethod;
+import github.com.gengyoubo.mfcl.api.mla.LegacyType;
+import net.minecraft.client.gui.screens.Screen;
 
 /**
  * Keeps the editor's research snapshot current and adds its entry point to the original hosted Thaumonomicon.
@@ -88,6 +85,7 @@ public final class BookClient {
         private Session() {}
 
         @SubscribeEvent public static void loggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+            Opening.reset();
             if (!remote) return;
             remote = false;
             TcModernApi.runtime().ifPresent(ResearchLoader::reload);
@@ -97,35 +95,132 @@ public final class BookClient {
 
     /**
      * The original book item still runs its own use on both sides (sibling research, the cheat sheet, the research
-     * sync); only the screen it opens is replaced. MFCL shows that original browser in its own host screen, so the
-     * first hosted screen opened after use gets an operator-only entry to the editor. The hosted screen itself
+     * sync). MFCL shows that original browser in its own host screen; the original browser gets an operator-only
+     * entry to the editor, including browsers recreated when returning from a research page. The hosted screen itself
      * remains responsible for all ordinary browsing and research actions.
      */
     @Mod.EventBusSubscriber(modid = TcModernLib.MOD_ID, value = Dist.CLIENT)
     public static final class Opening {
-        private static final String THAUMONOMICON = "Thaumcraft:ItemThaumonomicon", HOST_SCREEN = "github.com.gengyoubo.mfcl.client.ClientContainerBridge$HostedScreen";
-        private static final long WINDOW_MS = 1500;
-        private static final Map<Item, Boolean> BOOKS = new ConcurrentHashMap<>();
-        private static long expectUntil;
-        private static final Map<Screen, Boolean> HOSTS = new WeakHashMap<>();
+        private static final String HOST_SCREEN = "github.com.gengyoubo.mfcl.client.ClientContainerBridge$HostedScreen";
+        private static final String BROWSER = "thaumcraft.client.gui.GuiResearchBrowser";
+        private static Screen pendingBrowser, previewPage, returningPage;
+        private static ThaumonomiconScreen pendingEditor, previewEditor;
+        private static long pendingDeadline;
 
-        private Opening() {}
+        @LegacyType("net.minecraft.client.Minecraft")
+        public interface ClientFactory {
+            @LegacyMethod(name = "func_71410_x", descriptor = "()Lnet/minecraft/client/Minecraft;", isStatic = true)
+            LegacyObject instance();
+        }
 
-        @SubscribeEvent public static void used(PlayerInteractEvent.RightClickItem event) {
-            if (event.getLevel().isClientSide() && isBook(event.getItemStack())) expectUntil = System.currentTimeMillis() + WINDOW_MS;
+        @LegacyType("net.minecraft.client.Minecraft")
+        public interface Client {
+            @LegacyField(name = "field_71462_r", descriptor = "Lnet/minecraft/client/gui/GuiScreen;")
+            LegacyObject screen();
+        }
+
+        @LegacyType("thaumcraft.client.gui.GuiResearchBrowser")
+        public interface BrowserSelection {
+            @LegacyField(name = "currentHighlight", descriptor = "Lthaumcraft/api/research/ResearchItem;") LegacyObject highlighted();
+            @LegacyField(name = "currentHighlight", descriptor = "Lthaumcraft/api/research/ResearchItem;") void highlighted(LegacyObject item);
+        }
+
+        /** Preview in TC4 without granting or syncing the selected research. */
+        static boolean preview(ThaumonomiconScreen editor, Screen originalBook, String key) {
+            var mc = Minecraft.getInstance();
+            var runtime = TcModernApi.runtime().orElse(null);
+            if (runtime == null || originalBook == null || mc.player == null || !mc.player.hasPermissions(BookLogic.CHEAT_PERMISSION)) return false;
+            try {
+                var research = runtime.accessor(github.com.gengyoubo.tcmodern.api.research.TcResearchAccessors.Categories.class).find(key);
+                if (research == null) return false;
+                mc.setScreen(originalBook);
+                var client = runtime.accessor(ClientFactory.class).instance();
+                var old = runtime.accessor(Client.class, client).screen();
+                if (old == null || !BROWSER.equals(old.typeName())) { mc.setScreen(editor); return false; }
+                var selected = runtime.accessor(BrowserSelection.class, old);
+                var previous = selected.highlighted();
+                var values = runtime.values();
+                var browser = runtime.accessor(TcBookAccessors.BrowserProgress.class).completed();
+                String name = mc.player.getGameProfile().getName();
+                Object existing = values.map(browser).get(name);
+                if (!(existing instanceof LegacyObject completed)) { mc.setScreen(editor); return false; }
+                boolean hadResearch = values.list(completed).contains(key);
+                var originalPages = runtime.accessor(TcBookAccessors.Research.class, research).pages();
+                var builder = runtime.accessor(TcBookAccessors.ResearchBuilder.class, research);
+                try {
+                    if (!hadResearch) values.add(completed, key);
+                    if (originalPages == null || originalPages.length == 0) {
+                        var blank = runtime.accessor(TcBookAccessors.TextPages.class).text("");
+                        builder.pages(new LegacyObject[] { blank });
+                    }
+                    selected.highlighted(research);
+                    pendingBrowser = originalBook; pendingEditor = editor;
+                    pendingDeadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(3);
+                    if (!originalBook.mouseClicked(0, 0, 0)) throw new IllegalStateException("Original browser did not handle the preview click");
+                    originalBook.mouseReleased(0, 0, 0);
+                } finally {
+                    selected.highlighted(previous);
+                    if (!hadResearch) values.remove(completed, key);
+                    if (originalPages == null || originalPages.length == 0) builder.pages(originalPages);
+                }
+                return true;
+            } catch (RuntimeException failure) {
+                pendingBrowser = null; pendingEditor = null; pendingDeadline = 0;
+                com.mojang.logging.LogUtils.getLogger().warn("Could not open original research page {}", key, failure);
+                mc.setScreen(editor);
+                return false;
+            }
         }
 
         @SubscribeEvent public static void opening(ScreenEvent.Opening event) {
-            var screen = event.getNewScreen();
-            if (screen == null || screen instanceof ThaumonomiconScreen || System.currentTimeMillis() > expectUntil) return;
-            if (!screen.getClass().getName().equals(HOST_SCREEN)) return;
-            expectUntil = 0;
-            HOSTS.put(screen, true);
+            var current = event.getCurrentScreen();
+            var next = event.getNewScreen();
+            if (current == pendingBrowser && pendingEditor != null && next != null && next.getClass().getName().equals(HOST_SCREEN)) {
+                previewPage = next; previewEditor = pendingEditor;
+                pendingBrowser = null; pendingEditor = null; pendingDeadline = 0;
+            } else if (previewPage != null && current == previewPage) {
+                if (returningPage == current && next != null && next.getClass().getName().equals(HOST_SCREEN)
+                        && Minecraft.getInstance().player != null && Minecraft.getInstance().player.hasPermissions(BookLogic.CHEAT_PERMISSION)) {
+                    event.setNewScreen(previewEditor);
+                    previewPage = null; previewEditor = null; returningPage = null;
+                } else if (next != null && next.getClass().getName().equals(HOST_SCREEN)) {
+                    previewPage = next; returningPage = null;
+                } else { previewPage = null; previewEditor = null; returningPage = null; }
+            }
         }
 
-        private static boolean editable(Screen screen) {
+        @SubscribeEvent public static void key(ScreenEvent.KeyPressed.Pre event) {
+            if (event.getScreen() == previewPage && (event.getKeyCode() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
+                    || Minecraft.getInstance().options.keyInventory.matches(event.getKeyCode(), event.getScanCode()))) returningPage = previewPage;
+        }
+
+        @SubscribeEvent public static void tick(net.minecraftforge.event.TickEvent.ClientTickEvent event) {
+            if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || pendingEditor == null || System.nanoTime() < pendingDeadline) return;
+            var editor = pendingEditor;
+            boolean stillOnBrowser = Minecraft.getInstance().screen == pendingBrowser;
+            pendingBrowser = null; pendingEditor = null; pendingDeadline = 0;
+            if (stillOnBrowser) { Minecraft.getInstance().setScreen(editor); editor.previewFailed(); }
+        }
+
+        private Opening() {}
+
+        private static void reset() {
+            pendingBrowser = null; previewPage = null; returningPage = null;
+            pendingEditor = null; previewEditor = null;
+            pendingDeadline = 0;
+        }
+
+        static boolean editable(Screen screen) {
             var player = Minecraft.getInstance().player;
-            return HOSTS.containsKey(screen) && player != null && player.hasPermissions(BookLogic.CHEAT_PERMISSION);
+            if (screen == null || !screen.getClass().getName().equals(HOST_SCREEN) || player == null
+                    || !player.hasPermissions(BookLogic.CHEAT_PERMISSION)) return false;
+            return TcModernApi.runtime().map(runtime -> {
+                try {
+                    var client = runtime.accessor(ClientFactory.class).instance();
+                    var original = runtime.accessor(Client.class, client).screen();
+                    return original != null && BROWSER.equals(original.typeName());
+                } catch (RuntimeException unavailable) { return false; }
+            }).orElse(false);
         }
 
         @SubscribeEvent(priority = EventPriority.LOWEST) public static void render(ScreenEvent.Render.Post event) {
@@ -146,17 +241,5 @@ public final class BookClient {
             Minecraft.getInstance().setScreen(new ThaumonomiconScreen(screen));
         }
 
-        /** The original Thaumonomicon, any metadata (the cheat sheet included); cached per host item. */
-        static boolean isBook(ItemStack stack) {
-            if (stack.isEmpty()) return false;
-            return BOOKS.computeIfAbsent(stack.getItem(), item -> TcModernApi.runtime().map(runtime -> {
-                try {
-                    var legacy = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, stack.copyWithCount(1)).orElse(null);
-                    return legacy != null && runtime.snapshot(legacy).key().equals(THAUMONOMICON);
-                } catch (RuntimeException modernOnly) {
-                    return false;
-                }
-            }).orElse(false));
-        }
     }
 }

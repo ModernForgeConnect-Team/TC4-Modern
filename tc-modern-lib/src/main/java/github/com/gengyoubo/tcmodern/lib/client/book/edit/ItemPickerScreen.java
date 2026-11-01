@@ -17,6 +17,8 @@ final class ItemPickerScreen extends Screen {
     private static final int CELL = 20;
     private final Screen parent;
     private final Consumer<JsonObject> select;
+    private Consumer<ItemStack> stackSelection;
+    private Runnable cancel = () -> { };
     private List<ItemStack> items = List.of(), filtered = List.of();
     private EditBox search;
     private int scroll, columns, rows, gridX;
@@ -24,6 +26,12 @@ final class ItemPickerScreen extends Screen {
     ItemPickerScreen(Screen parent, Consumer<JsonObject> select) {
         super(Component.translatable("book.tcmodernlib.picker.item"));
         this.parent = parent; this.select = select;
+    }
+
+    static ItemPickerScreen forStack(Screen parent, Consumer<ItemStack> select, Runnable cancel) {
+        var picker = new ItemPickerScreen(parent, ignored -> { });
+        picker.stackSelection = select; picker.cancel = cancel;
+        return picker;
     }
 
     @Override protected void init() {
@@ -87,13 +95,15 @@ final class ItemPickerScreen extends Screen {
     @Override public boolean mouseClicked(double x, double y, int button) {
         int index = index(x, y);
         if (button == 0 && index >= 0 && index < filtered.size()) {
-            select.accept(itemJson(filtered.get(index))); minecraft.setScreen(parent); return true;
+            var stack = filtered.get(index);
+            if (stackSelection != null) stackSelection.accept(stack.copy()); else select.accept(itemJson(stack));
+            minecraft.setScreen(parent); return true;
         }
         return super.mouseClicked(x, y, button);
     }
     @Override public boolean mouseScrolled(double x, double y, double delta) {
         scroll = Math.max(0, Math.min(maxScroll(), scroll + (delta > 0 ? -1 : 1))); return true;
     }
-    @Override public void onClose() { minecraft.setScreen(parent); }
+    @Override public void onClose() { cancel.run(); minecraft.setScreen(parent); }
     @Override public boolean isPauseScreen() { return false; }
 }

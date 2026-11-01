@@ -183,7 +183,7 @@ public final class ResearchForm {
         form.column = column;
         form.row = row;
         form.icon = "minecraft:book";
-        form.aspects = "cognitio:3";
+        form.aspects = "cognitio:3 ordo:1";
         var page = new Page();
         form.pages.add(page);
         return form;

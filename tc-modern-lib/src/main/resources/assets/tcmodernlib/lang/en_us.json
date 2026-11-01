@@ -163,5 +163,11 @@
   "book.tcmodernlib.writer.image_hint": "Image resource ID",
   "book.tcmodernlib.writer.select_image": "Select image",
   "book.tcmodernlib.writer.search_image": "Search image resource ID",
-  "book.tcmodernlib.writer.recipe_item": "Recipe output item"
+  "book.tcmodernlib.writer.recipe_item": "Recipe output item",
+  "book.tcmodernlib.editor.auto_aspects": "Fewer than two aspects: unlocked by default",
+  "book.tcmodernlib.preview.unavailable": "Cannot open the original page; enter editing from the book",
+  "book.tcmodernlib.writer.insert_texture": "Insert texture",
+  "book.tcmodernlib.writer.insert_item": "Insert item",
+  "book.tcmodernlib.writer.insert_full": "The page is full",
+  "book.tcmodernlib.writer.item_unsupported": "This item model cannot be inserted as a TC4 texture"
 }

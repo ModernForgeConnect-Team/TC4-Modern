@@ -170,6 +170,11 @@ public final class ResearchEditorScreen extends EditorScreen {
         languageButton(g, mouseX, mouseY, MID_X, rowY(0) + 9, MID_W, language);
         label(g, form.name.isRaw() ? "book.tcmodernlib.editor.shared_text" : "book.tcmodernlib.editor.name", MID_X, rowY(1));
         label(g, form.subtitle.isRaw() ? "book.tcmodernlib.editor.shared_text" : "book.tcmodernlib.editor.subtitle", MID_X, rowY(2));
+        try {
+            if (ResearchForm.aspectsJson(aspectBox.getValue()).size() < 2)
+                g.drawString(font, clip(font, Component.translatable("book.tcmodernlib.editor.auto_aspects").getString(), MID_W),
+                        left + MID_X, top + rowY(3) + 8, MUTED, false);
+        } catch (RuntimeException invalid) { /* Existing field validation reports malformed input on save. */ }
         label(g, "book.tcmodernlib.editor.aspects", MID_X, rowY(4));
         pickerButton(g, MID_X + MID_W - 18, rowY(4) + 9);
         aspectRow(g, aspectBox.getValue(), left + MID_X, top + rowY(4) + 25);
