@@ -53,6 +53,7 @@ public final class Tc4JeiPlugin implements IModPlugin {
             github.com.gengyoubo.tcmodern.tc4.client.testing.JeiSmokeProbe.ready(index -> {
                 if (index == 3) return checkItemInFluid(runtime);
                 if (index == 4) return checkMultiblocks(runtime);
+                if (index == 5) return checkModernDeskUpgrade(runtime);
                 var type = List.of(ARCANE, CRUCIBLE, INFUSION).get(index);
                 var manager = runtime.getRecipeManager();
                 var recipes = manager.createRecipeLookup(type).get().toList();
@@ -80,6 +81,20 @@ public final class Tc4JeiPlugin implements IModPlugin {
                     }
                 }
                 if (index == 0) {
+                    var cabinet = recipes.stream().filter(r -> r.output().is(github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.ARCHIVE_CABINET.get().asItem()))
+                            .findFirst().orElseThrow(() -> new IllegalStateException("Missing archive cabinet arcane recipe"));
+                    if (!cabinet.source().research().equals("modern2") || cabinet.source().width() != 3 || cabinet.source().height() != 3
+                            || cabinet.source().aspects().stream().filter(a -> (a.tag().equals("terra") || a.tag().equals("ordo")) && a.amount() == 5).count() != 2
+                            || cabinet.inputs().get(0).stream().noneMatch(s -> s.is(Items.CHERRY_PLANKS))
+                            || cabinet.inputs().get(1).stream().noneMatch(s -> s.is(Items.CHERRY_SLAB))
+                            || cabinet.inputs().get(4).stream().noneMatch(s -> s.is(Items.CHEST)))
+                        throw new IllegalStateException("Archive cabinet ingredients, aspects or research are incorrect: " + cabinet.source() + " mapped=" + cabinet.inputs());
+                    var tagShapeless = recipes.stream().filter(r -> r.source().kind() == github.com.gengyoubo.tcmodern.api.recipe.TcRecipe.Kind.ARCANE_SHAPELESS
+                            && r.output().is(Items.AMETHYST_SHARD) && r.source().aspects().stream().anyMatch(a -> a.tag().equals("terra") && a.amount() == 42))
+                            .findFirst().orElseThrow(() -> new IllegalStateException("Missing tag-based shapeless arcane recipe"));
+                    if (tagShapeless.inputs().get(0).stream().noneMatch(s -> s.is(Items.IRON_INGOT))
+                            || tagShapeless.inputs().get(1).stream().noneMatch(s -> s.is(Items.CHERRY_SLAB)))
+                        throw new IllegalStateException("Shapeless Forge item tags did not resolve: " + tagShapeless.inputs());
                     var compounds = manager.createRecipeLookup(AspectCompositionCategory.TYPE).get().toList();
                     if (compounds.isEmpty()) throw new IllegalStateException("No aspect compositions");
                     var factory = runtime.getJeiHelpers().getFocusFactory();
@@ -258,6 +273,25 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 .map(List::of).orElseGet(List::of);
     }
 
+    private static int checkModernDeskUpgrade(IJeiRuntime runtime) {
+        var manager = runtime.getRecipeManager();
+        var type = WandConversionCategory.TYPE;
+        var recipe = manager.createRecipeLookup(type).get().filter(r -> r.structure().equals("research_table"))
+                .findFirst().orElseThrow(() -> new IllegalStateException("Missing modern research desk conversion"));
+        var category = manager.getRecipeCategory(type);
+        var factory = runtime.getJeiHelpers().getFocusFactory();
+        if (manager.createRecipeLayoutDrawable(category, recipe, factory.getEmptyFocusGroup()).isEmpty())
+            throw new IllegalStateException("Cannot create modern research desk conversion layout");
+        var output = factory.createFocus(RecipeIngredientRole.OUTPUT, VanillaTypes.ITEM_STACK, recipe.result());
+        var input = factory.createFocus(RecipeIngredientRole.INPUT, VanillaTypes.ITEM_STACK, recipe.block());
+        for (var focus : List.of(input, output)) {
+            if (manager.createRecipeLookup(type).limitFocus(List.of(focus)).get().noneMatch(recipe::equals))
+                throw new IllegalStateException("Modern research desk lookup failed for " + focus);
+        }
+        runtime.getRecipesGui().showRecipes(category, List.of(recipe), List.of(output));
+        return 1;
+    }
+
     private static int checkItemInFluid(IJeiRuntime runtime) {
         var manager = runtime.getRecipeManager();
         var type = ItemInFluidCategory.TYPE;
@@ -372,6 +406,9 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 result.add(new WandConversionCategory.Recipe(new ItemStack(Items.CAULDRON), wands, crucible, "jei.tc4modern.wand.any")));
         converter.map(new LegacyStack("Thaumcraft:ItemThaumonomicon", 0, 1, "")).ifPresent(book ->
                 result.add(new WandConversionCategory.Recipe(new ItemStack(Items.BOOKSHELF), wands, book, "jei.tc4modern.wand.any")));
+        converter.map(new LegacyStack("Thaumcraft:blockTable", 2, 1, "")).ifPresent(table ->
+                result.add(new WandConversionCategory.Recipe(table, wands,
+                        new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.RESEARCH_DESK.get()), "jei.tc4modern.wand.modern_desk", "research_table")));
         return result;
     }
 

@@ -34,7 +34,7 @@ public final class ResearchEditorScreen extends EditorScreen {
     private int selected;
     private String language = net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
     // Widgets of the current layout.
-    private EditBox key, column, row, icon, warp, name, subtitle, aspectBox, parents, hidden, siblings;
+    private EditBox key, column, row, icon, warp, name, subtitle, aspectBox, noteAspectBox, parents, hidden, siblings;
 
     /** {@code id} is the file id, or empty for a new research. */
     public ResearchEditorScreen(Screen parent, String id, ResearchForm form) {
@@ -64,6 +64,7 @@ public final class ResearchEditorScreen extends EditorScreen {
         warp = field(LEFT_X, rowY(5) + 9, 60, String.valueOf(form.warp), "0");
         name = field(MID_X, rowY(1) + 9, MID_W, form.name.get(language), "");
         subtitle = field(MID_X, rowY(2) + 9, MID_W, form.subtitle.get(language), "");
+        noteAspectBox = field(MID_X, rowY(3) + 9, MID_W - 20, form.noteAspects, "cognitio:1 ordo:1");
         aspectBox = field(MID_X, rowY(4) + 9, MID_W - 20, form.aspects, "cognitio:3 ordo:1");
         parents = field(MID_X, 172 + 9, MID_W, form.parents, "KEY, KEY");
         hidden = field(MID_X, 197 + 9, MID_W, form.hiddenParents, "KEY, KEY");
@@ -81,6 +82,7 @@ public final class ResearchEditorScreen extends EditorScreen {
         form.name.set(language, name.getValue());
         form.subtitle.set(language, subtitle.getValue());
         form.aspects = aspectBox.getValue();
+        form.noteAspects = noteAspectBox.getValue();
         form.parents = parents.getValue();
         form.hiddenParents = hidden.getValue();
         form.siblings = siblings.getValue();
@@ -170,12 +172,9 @@ public final class ResearchEditorScreen extends EditorScreen {
         languageButton(g, mouseX, mouseY, MID_X, rowY(0) + 9, MID_W, language);
         label(g, form.name.isRaw() ? "book.tcmodernlib.editor.shared_text" : "book.tcmodernlib.editor.name", MID_X, rowY(1));
         label(g, form.subtitle.isRaw() ? "book.tcmodernlib.editor.shared_text" : "book.tcmodernlib.editor.subtitle", MID_X, rowY(2));
-        try {
-            if (ResearchForm.aspectsJson(aspectBox.getValue()).size() < 2)
-                g.drawString(font, clip(font, Component.translatable("book.tcmodernlib.editor.auto_aspects").getString(), MID_W),
-                        left + MID_X, top + rowY(3) + 8, MUTED, false);
-        } catch (RuntimeException invalid) { /* Existing field validation reports malformed input on save. */ }
-        label(g, "book.tcmodernlib.editor.aspects", MID_X, rowY(4));
+        label(g, "book.tcmodernlib.editor.note_aspects", MID_X, rowY(3));
+        pickerButton(g, MID_X + MID_W - 18, rowY(3) + 9);
+        label(g, "book.tcmodernlib.editor.point_cost", MID_X, rowY(4));
         pickerButton(g, MID_X + MID_W - 18, rowY(4) + 9);
         aspectRow(g, aspectBox.getValue(), left + MID_X, top + rowY(4) + 25);
         label(g, "book.tcmodernlib.editor.parents", MID_X, 172);
@@ -198,13 +197,15 @@ public final class ResearchEditorScreen extends EditorScreen {
         String hint = null;
         if (inside(mouseX, mouseY, LEFT_X + COLUMN_W - 18, rowY(4) + 8, 18, 18)) hint = "book.tcmodernlib.picker.item";
         else if (inside(mouseX, mouseY, MID_X + MID_W - 18, rowY(4) + 9, 18, 14)) hint = "book.tcmodernlib.picker.aspect";
+        else if (inside(mouseX, mouseY, MID_X, rowY(3), MID_W, 23)) hint = "book.tcmodernlib.editor.note_aspects_hint";
         if (hint != null) g.renderTooltip(font, Component.translatable(hint), mouseX, mouseY);
     }
 
-    private void chooseAspects() {
+    private void chooseAspects(boolean notes) {
         commit();
         try {
-            minecraft.setScreen(new AspectPickerScreen(this, aspects.values(), form.aspects, result -> form.aspects = result));
+            minecraft.setScreen(new AspectPickerScreen(this, aspects.values(), notes ? form.noteAspects : form.aspects,
+                    result -> { if (notes) form.noteAspects = result; else form.aspects = result; }));
         } catch (RuntimeException invalid) {
             status(Component.translatable("book.tcmodernlib.editor.invalid", String.valueOf(invalid.getMessage())).getString(), true);
         }
@@ -262,7 +263,11 @@ public final class ResearchEditorScreen extends EditorScreen {
             return true;
         }
         if (button == 0 && inside(x, y, MID_X + MID_W - 18, rowY(4) + 9, 18, 14)) {
-            chooseAspects();
+            chooseAspects(false);
+            return true;
+        }
+        if (button == 0 && inside(x, y, MID_X + MID_W - 18, rowY(3) + 9, 18, 14)) {
+            chooseAspects(true);
             return true;
         }
         if (button == 0 && inside(x, y, MID_X, rowY(0) + 9, MID_W, 14)) {

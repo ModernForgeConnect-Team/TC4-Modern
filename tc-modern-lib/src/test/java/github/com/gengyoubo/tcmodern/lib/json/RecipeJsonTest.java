@@ -19,6 +19,23 @@ class RecipeJsonTest {
     }
 
     @Test
+    void arcaneRecipesAcceptItemTagsAndRejectAmbiguousOrInvalidTags() {
+        var shaped = (TcRecipeDefinition.ArcaneShaped) parse("""
+                {"type":"tc4modern:arcane_shaped","research":"R","pattern":["X"],
+                 "key":{"X":{"tag":"forge:ingots/iron"}},"result":{"item":"minecraft:book"}}""");
+        assertEquals(new Ingredient.Tag("forge:ingots/iron"), shaped.key().get('X'));
+        var shapeless = (TcRecipeDefinition.ArcaneShapeless) parse("""
+                {"type":"tc4modern:arcane_shapeless","research":"R","ingredients":[{"tag":"minecraft:planks"}],
+                 "result":{"item":"minecraft:book"}}""");
+        assertEquals(new Ingredient.Tag("minecraft:planks"), shapeless.ingredients().get(0));
+        assertThrows(JsonParseException.class, () -> parse("""
+                {"type":"tc4modern:arcane_shapeless","research":"R","ingredients":[{"tag":"forge:ingots/iron","item":"minecraft:iron_ingot"}],"result":{"item":"minecraft:book"}}"""));
+        assertThrows(IllegalArgumentException.class, () -> new Ingredient.Tag("INVALID TAG"));
+        assertThrows(IllegalArgumentException.class, () -> parse("""
+                {"type":"tc4modern:crucible","research":"R","catalyst":{"tag":"forge:ingots/iron"},"aspects":{"aer":1},"result":{"item":"minecraft:book"}}"""));
+    }
+
+    @Test
     void shapedReadsPatternKeyAspectsWildcardAndMirroring() {
         var recipe = (TcRecipeDefinition.ArcaneShaped) parse("""
                 {"type":"tc4modern:arcane_shaped","research":"BASICARTIFACE","pattern":["G G"," I "],

@@ -69,6 +69,11 @@ public final class RecipeJson {
 
     private static Ingredient ingredient(JsonElement value, HostItems hostItems) {
         var json = asObject(value, "ingredient");
+        if (json.has("tag")) {
+            if (json.has("ore") || json.has("item") || json.has("legacy_item"))
+                throw new JsonParseException("An ingredient must specify exactly one of tag, ore, item or legacy_item");
+            return new Ingredient.Tag(string(json, "tag"));
+        }
         if (json.has("ore")) {
             if (json.has("item") || json.has("legacy_item")) throw new JsonParseException("An ingredient is an ore name or an item, not both");
             return new Ingredient.Ore(string(json, "ore"));

@@ -128,6 +128,13 @@ public final class TcThaumonomicon {
                 tags, research.column(), research.row(), research.complexity(), runtime.stack(research.iconItem()));
         else item = runtime.accessor(ResearchTextureFactory.class).withTexture(research.key(), research.category(),
                 tags, research.column(), research.row(), research.complexity(), resource(runtime, research.iconTexture()));
+        if (!research.noteAspects().equals(research.aspects())) {
+            try {
+                runtime.accessor(ResearchNoteAspects.class, item).set(aspectList(runtime, research.noteAspects(), research.key()));
+            } catch (RuntimeException unsupported) {
+                throw new IllegalStateException(research.key() + ": separate note aspects require an updated MFCL", unsupported);
+            }
+        }
         var builder = runtime.accessor(ResearchBuilder.class, item);
         for (var flag : research.flags()) switch (flag) {
             case SPECIAL -> builder.special();
@@ -363,10 +370,16 @@ public final class TcThaumonomicon {
                 warp = 0;
             }
             var icon = research.iconItem();
+            var costs = aspects(research.tags());
+            var notes = costs;
+            try {
+                var separate = runtime.accessor(ResearchNoteAspects.class, item).get();
+                if (separate != null) notes = aspects(separate);
+            } catch (RuntimeException unsupported) { /* Older MFCL: TC4 uses the same aspects for both. */ }
             return new TcResearchEntry(research.key(), research.category(), research.column(), research.row(), research.complexity(),
-                    icon == null ? null : runtime.snapshot(icon), location(research.iconResource()), aspects(research.tags()),
+                    icon == null ? null : runtime.snapshot(icon), location(research.iconResource()), costs,
                     strings(research.parents()), strings(research.parentsHidden()), strings(research.siblings()), flags,
-                    itemTriggers, strings(research.entityTriggers()), aspectTriggers, warp, pages);
+                    itemTriggers, strings(research.entityTriggers()), aspectTriggers, warp, pages, notes);
         }
 
         TcResearchPage page(LegacyObject value) {

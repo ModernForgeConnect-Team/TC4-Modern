@@ -133,7 +133,7 @@ public final class ResearchForm {
 
     private final JsonObject original;
     public final boolean category;
-    public String key = "", categoryKey = "", icon = "", background = "", aspects = "", parents = "", hiddenParents = "", siblings = "";
+    public String key = "", categoryKey = "", icon = "", background = "", aspects = "", noteAspects = "", parents = "", hiddenParents = "", siblings = "";
     public int column, row, complexity = 1, warp;
     public Text name = new Text(), subtitle = new Text();
     public final Set<String> flags = new LinkedHashSet<>();
@@ -169,6 +169,7 @@ public final class ResearchForm {
         if (json.has("icon")) { form.iconOriginal = json.getAsJsonObject("icon"); form.icon = itemText(form.iconOriginal); }
         form.subtitle = Text.of(json.get("subtitle"));
         if (json.has("aspects")) form.aspects = aspectsText(json.getAsJsonObject("aspects"));
+        form.noteAspects = json.has("note_aspects") ? aspectsText(json.getAsJsonObject("note_aspects")) : form.aspects;
         form.parents = list(json, "parents");
         form.hiddenParents = list(json, "hidden_parents");
         form.siblings = list(json, "siblings");
@@ -184,6 +185,7 @@ public final class ResearchForm {
         form.row = row;
         form.icon = "minecraft:book";
         form.aspects = "cognitio:3 ordo:1";
+        form.noteAspects = "cognitio:1 ordo:1";
         var page = new Page();
         form.pages.add(page);
         return form;
@@ -214,6 +216,9 @@ public final class ResearchForm {
         json.addProperty("complexity", complexity);
         json.add("icon", itemJson(icon, iconOriginal));
         json.add("aspects", aspectsJson(aspects));
+        var note = aspectsJson(noteAspects);
+        if (original.has("note_aspects") || !note.equals(json.get("aspects"))) json.add("note_aspects", note);
+        else json.remove("note_aspects");
         setList(json, "parents", parents);
         setList(json, "hidden_parents", hiddenParents);
         setList(json, "siblings", siblings);

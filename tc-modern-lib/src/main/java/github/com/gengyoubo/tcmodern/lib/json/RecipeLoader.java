@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Stream;
@@ -41,12 +42,22 @@ public final class RecipeLoader {
             return;
         }
         var files = files(FOLDER);
+        var pendingResearch = new HashSet<String>();
+        for (var research : files(ResearchLoader.FOLDER).values()) {
+            try {
+                var json = JsonParser.parseString(Files.readString(research, StandardCharsets.UTF_8)).getAsJsonObject();
+                if (json.has("type") && "tc4modern:research".equals(json.get("type").getAsString()) && json.has("key"))
+                    pendingResearch.add(json.get("key").getAsString());
+            } catch (IOException | RuntimeException ignored) {
+                // ResearchLoader reports malformed research files separately.
+            }
+        }
         HostItemsFromRuntime hostItems = new HostItemsFromRuntime(runtime);
         int added = 0;
         for (Map.Entry<String, Path> file : files.entrySet()) {
             try {
                 var json = JsonParser.parseString(Files.readString(file.getValue(), StandardCharsets.UTF_8)).getAsJsonObject();
-                TcRecipeRegistrar.register(runtime, RecipeJson.parse(json, hostItems));
+                TcRecipeRegistrar.register(runtime, RecipeJson.parse(json, hostItems), pendingResearch);
                 added++;
             } catch (IOException | RuntimeException failure) {
                 LogUtils.getLogger().error("TC4 recipes: skipped {} ({}): {}", file.getKey(), file.getValue(), failure.toString());

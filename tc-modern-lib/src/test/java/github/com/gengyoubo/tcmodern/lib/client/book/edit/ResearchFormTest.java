@@ -19,6 +19,19 @@ class ResearchFormTest {
         assertEquals(original, ResearchForm.of(original).json());
     }
 
+    @Test void noteAndPointAspectsEditIndependently() {
+        var form = ResearchForm.of(JsonParser.parseString(RESEARCH).getAsJsonObject());
+        assertEquals(form.aspects, form.noteAspects);
+        form.aspects = "";
+        form.noteAspects = "aer:1 ignis:1";
+        var saved = form.json();
+        assertEquals(0, saved.getAsJsonObject("aspects").size());
+        assertEquals(2, saved.getAsJsonObject("note_aspects").size());
+        var reopened = ResearchForm.of(saved);
+        assertEquals("", reopened.aspects);
+        assertEquals("aer:1 ignis:1", reopened.noteAspects);
+    }
+
     @Test void editsChangeOnlyTheirFields() {
         var form = ResearchForm.of(JsonParser.parseString(RESEARCH).getAsJsonObject());
         assertEquals("Thaumcraft:ItemResource@3", form.icon);

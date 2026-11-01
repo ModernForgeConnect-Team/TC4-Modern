@@ -1,0 +1,39 @@
+{
+  "type": "tc4modern:research",
+  "key": "1",
+  "category": "Modern",
+  "position": [
+    0,
+    0
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:research_desk"
+  },
+  "aspects": {},
+  "flags": [
+    "round"
+  ],
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "现代学？你可能不明白我在说什么。但是这个学问的诞生并非容易。而是在经过多年后诞生的偏向于现代的学问。而这个主要是研究如何将“神秘”带到现代。<BR>在现实世界中，炼金术最著名的目标之一，就是将普通金属转化为黄金的学问，但是随着科技发展发现在当时的科技水平完全无法做到。<BR>那么炼金术难道完全没有任何用处吗？显然不能这么说。虽然炼制黄金完全是无稽之谈，但是在研究如何虽然炼制黄金的目标始终未能实现，但炼金术士在这一过程中所积累的实验方法、器材与知识，依然具有重要价值。",
+        "en_US": "Modern Thaumaturgy explores how to bring the arcane into the modern world.<BR>Alchemists once sought to turn base metals into gold, a goal beyond the means of their time. Yet their work was far from useless: the methods, instruments and knowledge they developed still have lasting value."
+      }
+    },
+    {
+      "text": {
+        "zh_CN": "而且化学的很多器材都来源炼金术的器材，所以没有炼金术的话化学可能诞生的会更晚。<BR>那么，让我们思考一个问题：假如炼金术与魔法真的存在，它们会为现代世界带来怎样的改变？这便是“现代学”所要探索的问题。<BR>从狭义上看，现代学致力于让传统炼金术变得更加便捷、精确和高效。从广义上看，它则试图将魔法与现代科学技术相结合，让两种看似截然不同的知识体系相互碰撞，创造出超越想象的可能性。",
+        "en_US": "Much of chemistry's equipment descended from alchemy; without it, chemistry might have emerged later.<BR>What if alchemy and magic were real? How might they change the modern world?<BR>Modern Thaumaturgy makes traditional alchemy more convenient, precise and efficient, while bringing magic and modern science together to explore new possibilities."
+      }
+    }
+  ],
+  "name": {
+    "zh_CN": "现代学",
+    "en_US": "Modern Thaumaturgy"
+  },
+  "subtitle": {
+    "zh_CN": " ",
+    "en_US": " "
+  }
+}

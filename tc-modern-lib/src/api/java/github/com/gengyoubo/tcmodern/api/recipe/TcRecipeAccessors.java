@@ -68,6 +68,7 @@ public final class TcRecipeAccessors {
     @LegacyType("thaumcraft.api.crafting.ShapedArcaneRecipe")
     public interface Shaped {
         @LegacyMethod(name = "getInput", descriptor = "()[Ljava/lang/Object;") LegacyObject[] inputs();
+        @LegacyField(name = "input", descriptor = "[Ljava/lang/Object;") LegacyObject rawInputs();
         @LegacyField(name = "width", descriptor = "I") int width();
         @LegacyField(name = "height", descriptor = "I") int height();
         @LegacyMethod(name = "setMirrored", descriptor = "(Z)Lthaumcraft/api/crafting/ShapedArcaneRecipe;") LegacyObject mirrored(boolean mirrored);

@@ -78,7 +78,10 @@ dependencies {
     if (rootProject.devProperty('withJade').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("maven.modrinth:jade:${rootProject.jade_version}")
     }
-    implementation fg.deobf("github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${rootProject.mfcl_version}")
+    def localMfcl = rootProject.devProperty('mfclRuntimeJar')
+    implementation fg.deobf(localMfcl.isPresent()
+            ? "local.mfcl:${rootProject.file(localMfcl.get()).name.replaceFirst(/\.jar$/, '')}:local"
+            : "github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${rootProject.mfcl_version}")
     testImplementation rootProject.mfclApiDependency
     testImplementation fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     testImplementation platform('org.junit:junit-bom:5.11.4')

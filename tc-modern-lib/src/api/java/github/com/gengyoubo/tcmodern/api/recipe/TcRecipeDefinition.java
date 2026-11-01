@@ -24,6 +24,13 @@ public sealed interface TcRecipeDefinition {
         record Ore(String name) implements Ingredient {
             public Ore { if (Objects.requireNonNull(name).isBlank()) throw new IllegalArgumentException("Blank ore dictionary name"); }
         }
+        /** A modern item tag, resolved when the server's tags are loaded or reloaded. */
+        record Tag(String id) implements Ingredient {
+            public Tag {
+                if (!Objects.requireNonNull(id).matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))
+                    throw new IllegalArgumentException("Invalid item tag: " + id);
+            }
+        }
     }
 
     /** Arcane workbench, shaped: 1-3 rows of equal width up to 3; a space is an empty slot. */
@@ -67,6 +74,7 @@ public sealed interface TcRecipeDefinition {
         public Crucible {
             research = requireResearch(research);
             Objects.requireNonNull(catalyst);
+            if (catalyst instanceof Ingredient.Tag) throw new IllegalArgumentException("Item tags are supported by arcane recipes only");
             aspects = requireAspects(aspects);
             Objects.requireNonNull(result);
             if (aspects.isEmpty()) throw new IllegalArgumentException("Crucible recipes need aspects");

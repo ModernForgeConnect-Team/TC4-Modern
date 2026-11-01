@@ -107,6 +107,8 @@ public final class ResearchDeskScreen extends AbstractContainerScreen<ResearchDe
 
     DeskSnapshot snapshot() { return menu.snapshot(); }
 
+    static boolean discovered(DeskSnapshot snapshot, String tag) { return tag != null && snapshot.pools().containsKey(tag); }
+
     List<String> palette() {
         var snapshot = snapshot();
         String key = mode + "\u0000" + query;
@@ -590,6 +592,11 @@ public final class ResearchDeskScreen extends AbstractContainerScreen<ResearchDe
     }
 
     private void icon(GuiGraphics g, String tag, int x, int y, int size) {
+        if (!discovered(snapshot(), tag)) {
+            var question = Component.literal("?");
+            g.drawString(font, question, x + (size - font.width(question)) / 2, y + (size - font.lineHeight) / 2, MUTED, false);
+            return;
+        }
         var aspect = aspects.get(tag);
         if (aspect == null) aspect = new TcAspect(tag, 0x808080, "", List.of());
         if (size == 16) { AspectIcons.render(g, aspect, x, y); return; }
@@ -626,7 +633,7 @@ public final class ResearchDeskScreen extends AbstractContainerScreen<ResearchDe
             var lines = new ArrayList<Component>();
             lines.add(Component.translatable("desk.tc4modern.copy_cost"));
             if (!snapshot().duplicate()) lines.add(Component.translatable("desk.tc4modern.copy_locked").withStyle(ChatFormatting.RED));
-            sheet.copyCost().forEach((aspect, amount) -> lines.add(Component.literal(AspectIcons.name(aspect) + " ×" + amount)
+            sheet.copyCost().forEach((aspect, amount) -> lines.add(Component.literal((discovered(snapshot(), aspect) ? AspectIcons.name(aspect) : "?") + " ×" + amount)
                     .withStyle(snapshot().pool(aspect) >= amount ? ChatFormatting.GRAY : ChatFormatting.RED)));
             lines.add(Component.translatable("desk.tc4modern.copy_items").withStyle(ChatFormatting.GRAY));
             g.renderComponentTooltip(font, lines, mouseX, mouseY);
@@ -635,12 +642,16 @@ public final class ResearchDeskScreen extends AbstractContainerScreen<ResearchDe
 
     private List<Component> aspectTooltip(String tag, DeskSnapshot.Cell cell) {
         var lines = new ArrayList<Component>();
+        if (!discovered(snapshot(), tag)) {
+            lines.add(Component.literal("?").withStyle(ChatFormatting.GRAY));
+            return lines;
+        }
         lines.add(Component.literal(AspectIcons.name(tag)).withStyle(ChatFormatting.AQUA));
         int tier = order.tier(tag);
         lines.add(Component.translatable(tier == 0 ? "desk.tc4modern.primal" : "desk.tc4modern.tier", tier).withStyle(ChatFormatting.GRAY));
         var aspect = aspects.get(tag);
         if (aspect != null && !aspect.primal())
-            lines.add(Component.literal(String.join(" + ", aspect.components().stream().map(AspectIcons::name).toList())).withStyle(ChatFormatting.DARK_PURPLE));
+            lines.add(Component.literal(String.join(" + ", aspect.components().stream().map(component -> discovered(snapshot(), component) ? AspectIcons.name(component) : "?").toList())).withStyle(ChatFormatting.DARK_PURPLE));
         lines.add(Component.translatable("desk.tc4modern.points", snapshot().pool(tag)).withStyle(ChatFormatting.GRAY));
         if (cell != null && cell.type() == 1) lines.add(Component.translatable("desk.tc4modern.fixed").withStyle(ChatFormatting.GOLD));
         if (cell != null && cell.type() == 2) lines.add(Component.translatable("desk.tc4modern.erase_hint").withStyle(ChatFormatting.DARK_GRAY));

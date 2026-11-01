@@ -1,0 +1,45 @@
+{
+  "type": "tc4modern:research",
+  "key": "modern2",
+  "name": {
+    "zh_CN": "档案柜",
+    "en_US": "Archive Cabinet"
+  },
+  "category": "Modern",
+  "position": [
+    4,
+    0
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:archive_cabinet"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "modernitas": 1,
+    "permutatio": 1
+  },
+  "subtitle": {
+    "zh_CN": "整理要解的笔记？但是特别占背包？这个最合适了！",
+    "en_US": "Too many notes taking up inventory space?"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "档案柜通常用来存放文件。不过，如果拿它来整理那些尚未解开的研究笔记，似乎也未尝不可。",
+        "en_US": "Archive cabinets usually hold documents, but they are just as useful for organizing research notes you have yet to solve."
+      }
+    },
+    {
+      "arcane": {
+        "item": "tc4modern:archive_cabinet"
+      }
+    }
+  ],
+  "parents": [
+    "modern1"
+  ],
+  "flags": [
+    "secondary"
+  ]
+}

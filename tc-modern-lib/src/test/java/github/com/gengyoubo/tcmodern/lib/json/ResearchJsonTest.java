@@ -120,6 +120,18 @@ class ResearchJsonTest {
                 .research().flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
     }
 
+    @Test void noteAspectsAndPurchaseCostsAreIndependent() {
+        String base = "{\"type\":\"tc4modern:research\",\"key\":\"A\",\"category\":\"C\",\"position\":[0,0],\"icon\":{\"item\":\"minecraft:book\"}";
+        var split = parse(base + ",\"aspects\":{\"aer\":3},\"note_aspects\":{\"ignis\":1,\"aqua\":1}}").research();
+        assertEquals(Map.of("aer", 3), split.aspects());
+        assertEquals(Map.of("ignis", 1, "aqua", 1), split.noteAspects());
+        assertFalse(split.flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
+        assertFalse(parse(base + ",\"note_aspects\":{\"ignis\":1,\"aqua\":1}}").research().flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
+        assertTrue(parse(base + ",\"aspects\":{\"aer\":1,\"ordo\":1},\"note_aspects\":{\"ignis\":1}}").research().flags().contains(TcResearchEntry.Flag.AUTO_UNLOCK));
+        var legacy = parse(base + ",\"aspects\":{\"aer\":2,\"ordo\":1}}").research();
+        assertEquals(legacy.aspects(), legacy.noteAspects());
+    }
+
     private static void assertMessage(String expected, String json) {
         var failure = assertThrows(JsonParseException.class, () -> parse(json));
         assertTrue(failure.getMessage().contains(expected), "Expected '" + expected + "' in: " + failure.getMessage());

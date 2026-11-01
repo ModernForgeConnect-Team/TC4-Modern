@@ -485,6 +485,8 @@ public final class ThaumonomiconScreen extends Screen {
                 String.join(", ", entry.flags().stream().map(f -> f.name().toLowerCase(Locale.ROOT)).toList())).getString());
         if (!entry.aspects().isEmpty()) lines.add(Component.translatable("book.tcmodernlib.info.aspects",
                 String.join(", ", entry.aspects().entrySet().stream().map(e -> e.getKey() + "×" + e.getValue()).toList())).getString());
+        if (!entry.noteAspects().equals(entry.aspects())) lines.add(Component.translatable("book.tcmodernlib.info.note_aspects",
+                String.join(", ", entry.noteAspects().keySet())).getString());
         if (!entry.parents().isEmpty()) lines.add(Component.translatable("book.tcmodernlib.info.parents", String.join(", ", entry.parents())).getString());
         if (!entry.hiddenParents().isEmpty()) lines.add(Component.translatable("book.tcmodernlib.info.hidden_parents", String.join(", ", entry.hiddenParents())).getString());
         if (!entry.siblings().isEmpty()) lines.add(Component.translatable("book.tcmodernlib.info.siblings", String.join(", ", entry.siblings())).getString());

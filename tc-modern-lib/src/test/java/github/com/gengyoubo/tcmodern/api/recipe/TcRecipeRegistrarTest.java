@@ -13,6 +13,17 @@ class TcRecipeRegistrarTest {
     private static final LegacyStack RESULT = new LegacyStack("Thaumcraft:ItemResource", 2, 4, "");
 
     @Test
+    void tagsAreAcceptedBeforeForgeHasLoadedTheirContents() {
+        var runtime = new Fixture();
+        TcRecipeRegistrar.register(runtime, new TcRecipeDefinition.ArcaneShaped("KNOWN", List.of("XX"),
+                Map.of('X', new Ingredient.Tag("forge:ingots/iron")), Map.of(), RESULT, true));
+        TcRecipeRegistrar.register(runtime, new TcRecipeDefinition.ArcaneShapeless("KNOWN",
+                List.of(new Ingredient.Tag("minecraft:planks")), Map.of(), RESULT));
+        assertEquals("tcmodernlib_tag_forge:ingots/iron", ((Object[]) runtime.calls.get(0).args()[3])[2]);
+        assertEquals("tcmodernlib_tag_minecraft:planks", ((Object[]) runtime.calls.get(1).args()[3])[0]);
+    }
+
+    @Test
     void shapedRecipePassesPatternCharacterKeysOreNamesAndStacksToTheOriginal() {
         var runtime = new Fixture();
         var key = new LinkedHashMap<Character, Ingredient>();

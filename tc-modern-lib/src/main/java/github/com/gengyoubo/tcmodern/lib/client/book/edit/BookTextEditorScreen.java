@@ -8,6 +8,10 @@ import github.com.gengyoubo.tcmodern.lib.json.RecipeJson;
 import github.com.gengyoubo.tcmodern.lib.json.RecipeLoader;
 import java.util.*;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.StringSplitter;
+import net.minecraft.client.renderer.MultiBufferSource;
+import org.joml.Matrix4f;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
@@ -41,6 +45,20 @@ final class BookTextEditorScreen extends Screen {
     private int py(int y) { return Math.round(top + y * scale); }
     private int size(int value) { return Math.max(1, Math.round(value * scale)); }
     private boolean exists(int index) { return index >= 0 && index < pages.size(); }
+
+    /** Keep the player's language/resource-pack glyphs, but remove the edit box's heavy shadow on paper. */
+    private static final class PaperFont extends Font {
+        private final Font delegate;
+        PaperFont(Font delegate) { super(id -> null, false); this.delegate = delegate; }
+        @Override public StringSplitter getSplitter() { return delegate.getSplitter(); }
+        @Override public int width(String text) { return delegate.width(text); }
+        @Override public String plainSubstrByWidth(String text, int width) { return delegate.plainSubstrByWidth(text, width); }
+        @Override public int drawInBatch(String text, float x, float y, int color, boolean shadow, Matrix4f matrix,
+                MultiBufferSource buffers, DisplayMode mode, int background, int light, boolean bidi) {
+            int ink = color == -2039584 ? 0xFF34271D : 0xFF73533B;
+            return delegate.drawInBatch(text, x, y, ink, false, matrix, buffers, mode, background, light, bidi) + (shadow ? 1 : 0);
+        }
+    }
 
     @Override protected void init() {
         scale = Math.max(0.1F, Math.min(1.5F, Math.min((width - 8F) / WIDTH, (height - 8F) / HEIGHT)));
@@ -104,12 +122,8 @@ final class BookTextEditorScreen extends Screen {
         mode(page.text, x, 58);
         if (page.text.isRaw()) field(x, 80, 158, page.text.get(language), "book.tcmodernlib.writer.key_hint", value -> page.text.set(language, value));
         else {
-            var box = new MultiLineEditBox(font, px(x), py(80), size(158), size(94), Component.empty(), Component.translatable("book.tcmodernlib.writer.placeholder")) {
+            var box = new MultiLineEditBox(new PaperFont(font), px(x), py(80), size(158), size(94), Component.empty(), Component.translatable("book.tcmodernlib.writer.placeholder")) {
                 @Override protected void renderBackground(GuiGraphics g) { g.fill(getX(), getY(), getX() + width, getY() + height, isFocused() ? 0x184B2F16 : 0x084B2F16); }
-                @Override protected void renderContents(GuiGraphics g, int mx, int my, float tick) {
-                    g.flush(); RenderSystem.setShaderColor(0.19F, 0.12F, 0.07F, 1F);
-                    super.renderContents(g, mx, my, tick); g.flush(); RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-                }
                 @Override protected void renderDecorations(GuiGraphics g) { }
             };
             box.setCharacterLimit(16384); box.setValue(display(page.text.get(language)));

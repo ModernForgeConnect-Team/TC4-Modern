@@ -1,0 +1,41 @@
+{
+  "type": "tc4modern:research",
+  "key": "modern1",
+  "name": {
+    "zh_CN": "现代研究台",
+    "en_US": "Modern Research Desk"
+  },
+  "category": "Modern",
+  "position": [
+    2,
+    0
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:research_desk"
+  },
+  "aspects": {},
+  "flags": [
+    "secondary"
+  ],
+  "subtitle": {
+    "zh_CN": "这是书桌吗？",
+    "en_US": "Is that a writing desk?"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "你也应该意识到了吧？研究台虽然是解锁研究必要的东西，但是特别不方便。现代研究台可以让事情变得更简单。(或者单纯当个装饰也不是不行)<BR>现在用法杖shift+右键研究台就可以让研究台\"现代化\"<BR>而且现代研究台可以和某些方块进行联动...",
+        "en_US": "You may have noticed that the research table is essential, but rather inconvenient. A modern research desk makes things easier. (It also makes a fine decoration.)<BR>Sneak and right-click a research table with a wand to modernize it.<BR>The desk can also work with certain nearby blocks..."
+      }
+    }
+  ],
+  "parents": [
+    "1"
+  ],
+  "note_aspects": {
+    "cognitio": 1,
+    "fabrico": 1,
+    "sensus": 1
+  }
+}

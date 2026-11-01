@@ -13,6 +13,7 @@ import github.com.gengyoubo.tcmodern.api.research.TcBookAccessors;
 import github.com.gengyoubo.mfcl.api.LegacyObject;
 import github.com.gengyoubo.mfcl.api.mla.LegacyType;
 import github.com.gengyoubo.mfcl.api.mla.LegacyField;
+import github.com.gengyoubo.mfcl.api.mla.LegacyMethod;
 import github.com.gengyoubo.tcmodern.lib.TcModernLib;
 import github.com.gengyoubo.tcmodern.lib.json.ResearchLoader;
 import java.nio.charset.StandardCharsets;
@@ -57,16 +58,32 @@ public final class BookSmokeProbe {
         @LegacyField(name = "guiMapBottom", descriptor = "I", isStatic = true) int bottom();
         @LegacyField(name = "guiMapLeft", descriptor = "I", isStatic = true) int left();
         @LegacyField(name = "guiMapRight", descriptor = "I", isStatic = true) int right();
+        @LegacyField(name = "hasScribestuff", descriptor = "Z") void hasScribestuff(boolean available);
     }
     @LegacyType("thaumcraft.client.gui.GuiResearchRecipe")
     public interface RecipeProbe {
         @LegacyField(name = "research", descriptor = "Lthaumcraft/api/research/ResearchItem;") LegacyObject research();
+    }
+    @LegacyType("thaumcraft.common.lib.research.ResearchManager")
+    public interface NoteManagerProbe {
+        @LegacyMethod(name = "getData", descriptor = "(Lnet/minecraft/item/ItemStack;)Lthaumcraft/common/lib/research/ResearchNoteData;", isStatic = true)
+        LegacyObject data(LegacyObject stack);
+    }
+    @LegacyType("thaumcraft.common.lib.research.ResearchNoteData")
+    public interface NoteDataProbe {
+        @LegacyField(name = "hexEntries", descriptor = "Ljava/util/HashMap;") LegacyObject entries();
+    }
+    @LegacyType("thaumcraft.common.lib.research.ResearchManager$HexEntry")
+    public interface NoteHexProbe {
+        @LegacyField(name = "aspect", descriptor = "Lthaumcraft/api/aspects/Aspect;") LegacyObject aspect();
+        @LegacyField(name = "type", descriptor = "I") int type();
     }
     private static final int WAIT = 14;
     private static final String CATEGORY = "TC4TEST", ROOT = "TEST_ROOT", CHILD = "TEST_CHILD", NOTE = "TEST_NOTE", HIDDEN = "TEST_HIDDEN";
     private final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(6);
     private final Map<String, Object> proof = new LinkedHashMap<>();
     private CompletableFuture<?> pending;
+    private net.minecraft.client.gui.screens.Screen originalBrowser;
     private int stage, frames, lastStage = -1, airBefore;
 
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
@@ -120,7 +137,20 @@ public final class BookSmokeProbe {
                 require(ResearchLoader.last().errors().isEmpty(), "JSON research reported errors: " + ResearchLoader.last().errors());
                 require("测试根研究".equals(TcThaumonomicon.name(api(), ROOT)), "Inline name not published: " + TcThaumonomicon.name(api(), ROOT));
                 var root = category.entries().stream().filter(e -> e.key().equals(ROOT)).findFirst().orElseThrow();
+                var splitNote = category.entries().stream().filter(e -> e.key().equals(NOTE)).findFirst().orElseThrow();
+                require(splitNote.aspects().isEmpty() && splitNote.noteAspects().keySet().equals(Set.of("aqua", "terra")),
+                        "Independent note aspects or empty cost did not register: " + splitNote);
                 require(root.pages().size() == 6, "Root pages: " + root.pages());
+                var originalIcon = root.iconItem();
+                require(originalIcon != null, "Modern research icon missing from registry");
+                var snapshotClass = Class.forName("github.com.gengyoubo.mfcl.bridge.LegacyClientData$Stack");
+                var snapshot = snapshotClass.getConstructor(String.class, int.class, int.class, String.class, String.class)
+                        .newInstance(originalIcon.key(), originalIcon.metadata(), originalIcon.count(), "", originalIcon.snbt());
+                var mapping = Class.forName("github.com.gengyoubo.mfcl.client.ModernItemMapping");
+                var renderedIcon = (ItemStack) mapping.getMethod("renderStack", snapshotClass).invoke(null, snapshot);
+                require("tc4modern:research_desk".equals(String.valueOf(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(renderedIcon.getItem()))),
+                        "Original GUI did not map the modern research desk icon: " + renderedIcon);
+                proof.put("originalGuiModernResearchIcon", true);
                 var completed = TcThaumonomicon.completed(api(), mc.player.getGameProfile().getName());
                 require(completed.containsAll(List.of("TEST_AUTO_ZERO", "TEST_AUTO_ONE")), "Zero/one-aspect research did not auto-unlock after reload: " + completed);
                 require(!root.has(github.com.gengyoubo.tcmodern.api.research.TcResearchEntry.Flag.AUTO_UNLOCK)
@@ -161,6 +191,7 @@ public final class BookSmokeProbe {
                 stage = 53;
             } else if (stage == 53 && ++frames > WAIT) {
                 var original = mc.screen;
+                originalBrowser = original;
                 int x = original.width - mc.font.width(net.minecraft.network.chat.Component.translatable("book.tcmodernlib.cheat.off")) - 10;
                 var click = new net.minecraftforge.client.event.ScreenEvent.MouseButtonPressed.Pre(original, x, 10, 0);
                 MinecraftForge.EVENT_BUS.post(click);
@@ -268,7 +299,7 @@ public final class BookSmokeProbe {
                 screen.refresh();
                 airBefore = screen.pool("aer");
                 // Normal mode: the secondary child is bought with points.
-                click(screen, screen.nodeCenter(CHILD), 0);
+                clickOriginalResearch(mc, screen, CHILD);
                 stage = 7;
             } else if (stage == 7 && pending.isDone() && ++frames > WAIT) {
                 var screen = book(mc);
@@ -276,7 +307,8 @@ public final class BookSmokeProbe {
                 require(screen.completedKeys().contains(CHILD), "Buying the secondary research failed");
                 require(screen.pool("aer") == airBefore - 2, "Buying did not spend 2 aer: " + airBefore + " -> " + screen.pool("aer"));
                 proof.put("buySecondaryResearch", true);
-                click(screen, screen.nodeCenter(NOTE), 0);
+                require(screen.unlockable(entry(screen, NOTE)), "Note prerequisites are not complete");
+                clickOriginalResearch(mc, screen, NOTE);
                 stage = 8;
             } else if (stage == 8 && ++frames > WAIT) {
                 pending = server(mc, () -> {
@@ -285,7 +317,18 @@ public final class BookSmokeProbe {
                     for (var stack : player.getInventory().items) {
                         if (stack.isEmpty()) continue;
                         var legacy = api().mappings().toLegacy(LegacyMappings.ITEM_STACK, stack).orElse(null);
-                        if (legacy != null && api().snapshot(legacy).key().equals("Thaumcraft:ItemResearchNotes")) note = true;
+                        if (legacy != null && api().snapshot(legacy).key().equals("Thaumcraft:ItemResearchNotes")) {
+                            var data = api().accessor(NoteManagerProbe.class).data(legacy);
+                            var entries = api().values().map(api().accessor(NoteDataProbe.class, data).entries());
+                            var fixed = new HashSet<String>();
+                            for (Object value : entries.values()) {
+                                var hex = api().accessor(NoteHexProbe.class, (LegacyObject) value);
+                                if (hex.type() == 1 && hex.aspect() != null)
+                                    fixed.add(api().accessor(github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors.Aspect.class, hex.aspect()).tag());
+                            }
+                            require(fixed.equals(Set.of("aqua", "terra")), "Original note used wrong fixed aspects: " + fixed);
+                            note = true;
+                        }
                     }
                     require(note, "Clicking a primary research did not write a research note");
                 });
@@ -396,6 +439,7 @@ public final class BookSmokeProbe {
                 form.name.set("zh_cn", "新建的研究");
                 form.name.set("en_us", "Created in game");
                 form.aspects = "aer:1";
+                form.noteAspects = "aer:1";
                 form.parents = "TEST_ROOT";
                 form.pages.get(0).text.set("zh_cn", "在游戏里写的页面。");
                 editor.load(form);
@@ -478,6 +522,22 @@ public final class BookSmokeProbe {
                 .orElseThrow(() -> new IllegalStateException("No research " + key));
     }
 
+    private void clickOriginalResearch(Minecraft mc, ThaumonomiconScreen editor, String key) {
+        mc.setScreen(originalBrowser);
+        var browser = originalScreen();
+        var selection = api().accessor(BookClient.Opening.BrowserSelection.class, browser);
+        var previous = selection.highlighted();
+        try {
+            api().accessor(BrowserProbe.class, browser).hasScribestuff(true);
+            selection.highlighted(api().accessor(github.com.gengyoubo.tcmodern.api.research.TcResearchAccessors.Categories.class).find(key));
+            require(originalBrowser.mouseClicked(0, 0, 0), "Original browser did not handle research " + key);
+            originalBrowser.mouseReleased(0, 0, 0);
+        } finally {
+            selection.highlighted(previous);
+            mc.setScreen(editor);
+        }
+    }
+
     private static LegacyObject originalScreen() {
         var runtime = api();
         var client = runtime.accessor(BookClient.Opening.ClientFactory.class).instance();
@@ -542,7 +602,7 @@ public final class BookSmokeProbe {
                  "name": {"zh_CN": "测试章节", "en_US": "Test chapter"}}""", StandardCharsets.UTF_8);
         Files.writeString(folder.resolve("root.json"), """
                 {"type": "tc4modern:research", "key": "TEST_ROOT", "category": "TC4TEST", "position": [0, 0],
-                 "icon": {"legacy_item": "Thaumcraft:ItemThaumonomicon"}, "aspects": {"cognitio": 2, "ordo": 1},
+                 "icon": {"item": "tc4modern:research_desk"}, "aspects": {"cognitio": 2, "ordo": 1},
                  "name": {"zh_CN": "%s", "en_US": "Test root"}, "subtitle": {"zh_CN": "由 JSON 定义", "en_US": "Defined in JSON"},
                  "pages": [
                    {"text": {"zh_CN": "这是第一页，来自 JSON 文件。<BR>魔导手册会按原版标记换行。<IMG>thaumcraft:textures/items/thaumonomicon.png:0:0:255:255:0.0625</IMG><IMG>minecraft:textures/item/nether_star.png:0:0:255:255:0.0625</IMG><LINE>分隔线之后的一段文字，用来检查自动换行是否正常工作。", "en_US": "Page one."}},
@@ -553,11 +613,11 @@ public final class BookSmokeProbe {
                    {"text": {"zh_CN": "完成子研究后才可见的一页。"}, "requires": "TEST_CHILD"}]}""".formatted(rootName), StandardCharsets.UTF_8);
         Files.writeString(folder.resolve("child.json"), """
                 {"type": "tc4modern:research", "key": "TEST_CHILD", "category": "TC4TEST", "position": [2, 0],
-                 "icon": {"item": "minecraft:diamond"}, "aspects": {"aer": 2, "ordo": 1}, "parents": ["TEST_ROOT"], "flags": ["secondary"],
+                 "icon": {"item": "minecraft:diamond"}, "aspects": {"aer": 2, "ordo": 1}, "note_aspects": {"ignis": 1, "aqua": 1}, "parents": ["TEST_ROOT"], "flags": ["secondary"],
                  "name": {"zh_CN": "测试子研究"}}""", StandardCharsets.UTF_8);
         Files.writeString(folder.resolve("note.json"), """
                 {"type": "tc4modern:research", "key": "TEST_NOTE", "category": "TC4TEST", "position": [2, 2],
-                 "icon": {"legacy_item": "Thaumcraft:ItemInkwell"}, "aspects": {"ordo": 2, "ignis": 1}, "parents": ["TEST_ROOT"],
+                 "icon": {"legacy_item": "Thaumcraft:ItemInkwell"}, "aspects": {}, "note_aspects": {"aqua": 1, "terra": 1}, "parents": ["TEST_ROOT"],
                  "name": {"zh_CN": "测试笔记研究"}}""", StandardCharsets.UTF_8);
         Files.writeString(folder.resolve("hidden.json"), """
                 {"type": "tc4modern:research", "key": "TEST_HIDDEN", "category": "TC4TEST", "position": [0, 2],

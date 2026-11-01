@@ -8,14 +8,24 @@ import java.util.*;
  *
  * @param iconItem    the icon stack; exactly one of it and {@code iconTexture} is set
  * @param iconTexture the icon as {@code namespace:path}
- * @param aspects     distinct aspect tags; non-virtual research with fewer than two is automatically unlocked
+ * @param aspects     aspect point cost for direct purchase
+ * @param noteAspects fixed aspects in the research note; null uses the original shared aspects
  * @param warp        0 for none
  */
 public record TcResearchDefinition(String key, String category, int column, int row, int complexity,
                                    LegacyStack iconItem, String iconTexture, Map<String, Integer> aspects,
                                    List<String> parents, List<String> hiddenParents, List<String> siblings,
                                    Set<TcResearchEntry.Flag> flags, List<LegacyStack> itemTriggers, List<String> entityTriggers,
-                                   List<String> aspectTriggers, int warp, List<Page> pages) {
+                                   List<String> aspectTriggers, int warp, List<Page> pages, Map<String, Integer> noteAspects) {
+    /** Backwards compatible TC4 definition, using the same aspects for cost and notes. */
+    public TcResearchDefinition(String key, String category, int column, int row, int complexity,
+                                LegacyStack iconItem, String iconTexture, Map<String, Integer> aspects,
+                                List<String> parents, List<String> hiddenParents, List<String> siblings,
+                                Set<TcResearchEntry.Flag> flags, List<LegacyStack> itemTriggers, List<String> entityTriggers,
+                                List<String> aspectTriggers, int warp, List<Page> pages) {
+        this(key, category, column, row, complexity, iconItem, iconTexture, aspects, parents, hiddenParents,
+                siblings, flags, itemTriggers, entityTriggers, aspectTriggers, warp, pages, null);
+    }
     /** A page to build. Recipe pages show every registered recipe of their kind whose output matches. */
     public sealed interface Page { }
     public record Text(String text, String requires) implements Page {
@@ -56,11 +66,18 @@ public record TcResearchDefinition(String key, String category, int column, int 
         if (complexity < 1 || complexity > 3) throw new IllegalArgumentException(key + ": complexity is 1 to 3");
         if (warp < 0) throw new IllegalArgumentException(key + ": negative warp");
         aspects = Collections.unmodifiableMap(new LinkedHashMap<>(aspects));
+        noteAspects = noteAspects == null ? aspects : Collections.unmodifiableMap(new LinkedHashMap<>(noteAspects));
+        for (var entry : aspects.entrySet())
+            if (entry.getValue() == null || entry.getValue() < 1 || entry.getValue() > Short.MAX_VALUE)
+                throw new IllegalArgumentException(key + ": invalid point cost for " + entry.getKey());
+        for (var entry : noteAspects.entrySet())
+            if (entry.getValue() == null || entry.getValue() < 1)
+                throw new IllegalArgumentException(key + ": invalid note aspect amount for " + entry.getKey());
         parents = List.copyOf(parents);
         hiddenParents = List.copyOf(hiddenParents);
         siblings = List.copyOf(siblings);
         var normalizedFlags = flags.isEmpty() ? EnumSet.noneOf(TcResearchEntry.Flag.class) : EnumSet.copyOf(flags);
-        if (!virtual && aspects.size() < 2) normalizedFlags.add(TcResearchEntry.Flag.AUTO_UNLOCK);
+        if (!virtual && noteAspects.size() < 2) normalizedFlags.add(TcResearchEntry.Flag.AUTO_UNLOCK);
         flags = Collections.unmodifiableSet(normalizedFlags);
         itemTriggers = List.copyOf(itemTriggers);
         entityTriggers = List.copyOf(entityTriggers);

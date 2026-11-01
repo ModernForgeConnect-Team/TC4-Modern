@@ -1,0 +1,9 @@
+{
+  "type": "tc4modern:category",
+  "key": "Modern",
+  "name": {
+    "zh_CN": "现代学",
+    "en_US": "Modern Thaumaturgy"
+  },
+  "icon": "thaumcraft:textures/misc/r_thaumaturgy.png"
+}

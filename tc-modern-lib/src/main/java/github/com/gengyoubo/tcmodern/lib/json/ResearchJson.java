@@ -91,7 +91,8 @@ public final class ResearchJson {
         try {
             return new Parsed(null, new TcResearchDefinition(key, string(json, "category"), column, row, complexity, iconItem, iconTexture,
                     aspects(json, "aspects"), strings(json, "parents"), strings(json, "hidden_parents"), strings(json, "siblings"),
-                    flags, triggerItems, triggerEntities, triggerAspects, warp, pages), texts);
+                    flags, triggerItems, triggerEntities, triggerAspects, warp, pages,
+                    json.has("note_aspects") ? aspects(json, "note_aspects") : null), texts);
         } catch (IllegalArgumentException invalid) {
             throw new JsonParseException(invalid.getMessage(), invalid);
         }

@@ -1,0 +1,12 @@
+{
+  "type": "tc4modern:arcane_shaped",
+  "research": "modern2",
+  "pattern": ["XYX", "XZX", "XYX"],
+  "key": {
+    "X": {"tag": "minecraft:planks"},
+    "Y": {"tag": "minecraft:wooden_slabs"},
+    "Z": {"item": "minecraft:chest"}
+  },
+  "aspects": {"terra": 5, "ordo": 5},
+  "result": {"item": "tc4modern:archive_cabinet"}
+}

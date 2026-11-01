@@ -8,6 +8,10 @@ import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
 import github.com.gengyoubo.tcmodern.api.aspect.TcPlayerAspects;
 import github.com.gengyoubo.tcmodern.api.research.TcResearch;
+import github.com.gengyoubo.tcmodern.api.research.TcResearchDefinition;
+import github.com.gengyoubo.tcmodern.api.research.TcResearchEntry;
+import github.com.gengyoubo.tcmodern.api.research.TcResearchAccessors;
+import github.com.gengyoubo.tcmodern.api.research.TcThaumonomicon;
 import github.com.gengyoubo.tcmodern.tc4.client.research.NativeResearchSmokeProbe;
 import github.com.gengyoubo.tcmodern.tc4.content.ArchiveCabinetBlockEntity;
 import github.com.gengyoubo.tcmodern.tc4.content.ResearchDeskBlock;
@@ -16,6 +20,7 @@ import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
 import github.com.gengyoubo.tcmodern.tc4.research.AspectOrder;
 import github.com.gengyoubo.tcmodern.tc4.research.DeskAccessors;
 import github.com.gengyoubo.tcmodern.tc4.research.DeskSnapshot;
+import github.com.gengyoubo.tcmodern.tc4.research.DeskConversion;
 import github.com.gengyoubo.tcmodern.tc4.research.ResearchItems;
 import java.nio.file.Files;
 import java.util.*;
@@ -220,6 +225,7 @@ public final class ResearchDeskSmokeProbe {
     private void seed(Minecraft mc) {
         var player = player(mc);
         var level = player.serverLevel();
+        verifyUpgrade(player);
         desk = player.blockPosition().east(3);
         var state = Tc4Blocks.RESEARCH_DESK.get().defaultBlockState().setValue(ResearchDeskBlock.FACING, Direction.WEST);
         level.setBlockAndUpdate(desk, state);
@@ -251,6 +257,72 @@ public final class ResearchDeskSmokeProbe {
         player.getInventory().add(new ItemStack(Items.PAPER, 8));
         player.getInventory().add(new ItemStack(Items.INK_SAC, 8));
         proof.put("slotFiltersAcceptOnlyOriginalItems", true);
+    }
+
+    private void verifyUpgrade(ServerPlayer player) {
+        var runtime = api();
+        var level = player.serverLevel();
+        var main = player.blockPosition().west(6);
+        var side = main.east();
+        int flags = net.minecraft.world.level.block.Block.UPDATE_CLIENTS | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
+        level.setBlock(main, runtime.hostBlock("Thaumcraft:blockTable", 5, net.minecraft.world.level.block.state.BlockState.class).orElseThrow(), flags);
+        level.setBlock(side, runtime.hostBlock("Thaumcraft:blockTable", 8, net.minecraft.world.level.block.state.BlockState.class).orElseThrow(), flags);
+        var old = Objects.requireNonNull(level.getBlockEntity(main)).getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER).orElseThrow(IllegalStateException::new);
+        var inkwell = runtime.mappings().toHost(LegacyMappings.ITEM_STACK, runtime.stack(new LegacyStack("Thaumcraft:ItemInkwell", 0, 1, "")), ItemStack.class).orElseThrow();
+        var note = runtime.withPlayer(player, actor -> {
+            var world = runtime.mappings().toLegacy(LegacyMappings.WORLD, level).orElseThrow();
+            var legacy = runtime.accessor(NativeResearchSmokeProbe.NoteFactory.class).create(runtime.stack(new LegacyStack("Thaumcraft:ItemResearchNotes", 0, 1, "")), "NITOR", world);
+            return runtime.mappings().toHost(LegacyMappings.ITEM_STACK, legacy, ItemStack.class).orElseThrow();
+        });
+        require(old.insertItem(0, inkwell, false).isEmpty() && old.insertItem(1, note, false).isEmpty(), "Original table refused test inventory");
+        var wand = runtime.mappings().toHost(LegacyMappings.ITEM_STACK,
+                runtime.stack(new LegacyStack("Thaumcraft:WandCasting", 0, 1, "{rod:\"wood\",cap:\"iron\"}")), ItemStack.class).orElseThrow();
+        player.setItemInHand(InteractionHand.MAIN_HAND, wand.copy());
+        player.setShiftKeyDown(true);
+        var hit = new BlockHitResult(Vec3.atCenterOf(side), Direction.UP, side, false);
+        var locked = new net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, side, hit);
+        MinecraftForge.EVENT_BUS.post(locked);
+        require(locked.isCanceled() && level.getBlockEntity(main) != null && !level.getBlockState(main).is(Tc4Blocks.RESEARCH_DESK.get()),
+                "Locked upgrade changed the original table");
+        if (runtime.accessor(TcResearchAccessors.Categories.class).find(DeskConversion.RESEARCH) == null)
+            TcThaumonomicon.register(runtime, new TcResearchDefinition(DeskConversion.RESEARCH, "BASICS", 0, 0, 1, null, "", Map.of(),
+                    List.of(), List.of(), List.of(), Set.of(TcResearchEntry.Flag.VIRTUAL), List.of(), List.of(), List.of(), 0, List.of()));
+        TcResearch.completeOnly(runtime, player, List.of(DeskConversion.RESEARCH));
+        player.setShiftKeyDown(false);
+        var standing = new net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, side, hit);
+        DeskConversion.interact(standing);
+        require(!standing.isCanceled() && !level.getBlockState(main).is(Tc4Blocks.RESEARCH_DESK.get()), "Standing wand use upgraded the table");
+        player.setShiftKeyDown(true);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
+        var nonWand = new net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, side, hit);
+        DeskConversion.interact(nonWand);
+        require(!nonWand.isCanceled() && !level.getBlockState(main).is(Tc4Blocks.RESEARCH_DESK.get()), "Non-wand upgraded the table");
+        player.setItemInHand(InteractionHand.MAIN_HAND, wand.copy());
+        var upgrade = new net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, side, hit);
+        MinecraftForge.EVENT_BUS.post(upgrade);
+        require(upgrade.isCanceled() && level.getBlockEntity(main) instanceof ResearchDeskBlockEntity, "Original table did not upgrade");
+        var modern = (ResearchDeskBlockEntity) level.getBlockEntity(main);
+        require(level.getBlockState(side).is(Tc4Blocks.RESEARCH_DESK.get())
+                && ItemStack.matches(modern.tools(), inkwell) && ItemStack.matches(modern.note(), note), "Upgrade lost the paired half or inventory");
+        require(ItemStack.matches(player.getMainHandItem(), wand), "Upgrade changed the wand");
+        int n = 0;
+        for (Direction direction : Direction.Plane.HORIZONTAL) for (boolean clickSide : new boolean[]{false, true}) {
+            var at = main.offset((n++ + 1) * 3, 0, -6);
+            var partner = at.relative(direction);
+            level.setBlock(at, runtime.hostBlock("Thaumcraft:blockTable", direction.get3DDataValue(), net.minecraft.world.level.block.state.BlockState.class).orElseThrow(), flags);
+            level.setBlock(partner, runtime.hostBlock("Thaumcraft:blockTable", direction.getOpposite().get3DDataValue() + 4, net.minecraft.world.level.block.state.BlockState.class).orElseThrow(), flags);
+            var clicked = clickSide ? partner : at;
+            var action = new net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, clicked,
+                    new BlockHitResult(Vec3.atCenterOf(clicked), Direction.UP, clicked, false));
+            MinecraftForge.EVENT_BUS.post(action);
+            require(action.isCanceled() && level.getBlockState(at).is(Tc4Blocks.RESEARCH_DESK.get())
+                    && level.getBlockState(partner).is(Tc4Blocks.RESEARCH_DESK.get())
+                    && ResearchDeskBlock.partner(at, level.getBlockState(at)).equals(partner),
+                    "Upgrade failed for " + direction + " from " + (clickSide ? "side" : "main"));
+        }
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.setShiftKeyDown(false);
+        proof.put("wandUpgradeRequiresResearchAndPreservesInventory", true);
     }
 
     private void use(Minecraft mc, BlockPos pos) {

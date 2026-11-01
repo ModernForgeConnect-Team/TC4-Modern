@@ -29,9 +29,10 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 @Mod.EventBusSubscriber(modid = "tc4modern", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class JeiSmokeProbe {
     private static volatile IntUnaryOperator showCategory;
+    private static boolean createdTagFixture;
     private final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(5);
     private final Map<String, Object> proof = new LinkedHashMap<>();
-    private final String[] categories = {"arcane", "crucible", "infusion", "item_in_fluid", "multiblock"};
+    private final String[] categories = {"arcane", "crucible", "infusion", "item_in_fluid", "multiblock", "modern_desk_upgrade"};
     private int stage, category, frames;
     private java.util.concurrent.CompletableFuture<Map<String, Integer>> command;
 
@@ -40,6 +41,16 @@ public final class JeiSmokeProbe {
     @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
         if (Boolean.getBoolean("tc4modern.jeiSmokeTest")) {
+            try {
+                var file = net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().resolve("tc4modern/tc4_recipes/tc4jeitest/tag_shapeless.json");
+                Files.createDirectories(file.getParent());
+                Files.writeString(file, """
+                        {"type":"tc4modern:arcane_shapeless","research":"BASICARTIFACE",
+                         "ingredients":[{"tag":"forge:ingots/iron"},{"tag":"minecraft:wooden_slabs"}],
+                         "aspects":{"terra":42},"result":{"item":"minecraft:amethyst_shard"}}
+                        """, java.nio.file.StandardOpenOption.CREATE_NEW);
+                createdTagFixture = true;
+            } catch (java.io.IOException failure) { throw new IllegalStateException(failure); }
             event.enqueueWork(() -> MinecraftForge.EVENT_BUS.addListener(new JeiSmokeProbe()::tick));
         }
     }
@@ -114,6 +125,7 @@ public final class JeiSmokeProbe {
             LogUtils.getLogger().error("TC4_MODERN_JEI_SMOKE_FAIL", failure);
         }
         try {
+            if (createdTagFixture) Files.deleteIfExists(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().resolve("tc4modern/tc4_recipes/tc4jeitest/tag_shapeless.json"));
             var file = mc.gameDirectory.toPath().resolve("logs/tc4modern/jei-smoke.json");
             Files.createDirectories(file.getParent());
             Files.writeString(file, new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(proof));

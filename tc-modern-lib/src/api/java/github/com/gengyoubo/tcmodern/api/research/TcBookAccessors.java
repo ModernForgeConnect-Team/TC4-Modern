@@ -87,6 +87,13 @@ public final class TcBookAccessors {
         @LegacyMethod(name = "registerResearchItem", descriptor = "()" + ITEM) LegacyObject register();
     }
 
+    /** Optional MFCL extension; the original field remains the point cost. */
+    @LegacyType("thaumcraft.api.research.ResearchItem")
+    public interface ResearchNoteAspects {
+        @LegacyField(name = "mfcl$noteAspects", descriptor = "Lthaumcraft/api/aspects/AspectList;") void set(LegacyObject aspects);
+        @LegacyField(name = "mfcl$noteAspects", descriptor = "Lthaumcraft/api/aspects/AspectList;") LegacyObject get();
+    }
+
     @LegacyType("thaumcraft.api.research.ResearchItem")
     public interface ResearchFactory {
         @LegacyConstructor(descriptor = "(Ljava/lang/String;Ljava/lang/String;Lthaumcraft/api/aspects/AspectList;IIILnet/minecraft/item/ItemStack;)V")
