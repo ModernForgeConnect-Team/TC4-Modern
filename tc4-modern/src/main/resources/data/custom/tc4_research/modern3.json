@@ -1,0 +1,46 @@
+{
+  "type": "tc4modern:research",
+  "key": "modern3",
+  "name": {
+    "zh_CN": "魔法骨粉",
+    "en_US": "Magic Bone Meal"
+  },
+  "category": "Modern",
+  "position": [
+    2,
+    2
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:magic_bone_meal"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "herba": 1,
+    "victus": 1,
+    "terra": 1
+  },
+  "subtitle": {
+    "zh_CN": "等树长大？太慢了！",
+    "en_US": "Waiting for trees? Far too slow!"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "普通的骨粉对宏伟之木和银树的树苗毫无作用，它们吸收的是灵气而不是养分。<BR>把骨粉和花朵一起注入大地的力量，就能得到魔法骨粉。对宏伟之木树苗或银树树苗使用，就有机会让它们立刻长成大树。<BR>别忘了给大树留出足够的空间，否则树苗是长不起来的。",
+        "en_US": "Ordinary bone meal does nothing for greatwood and silverwood saplings; they feed on vis rather than nutrients.<BR>Infusing bone meal and flowers with the power of earth yields magic bone meal. Use it on a greatwood or silverwood sapling for a chance to grow it into a full tree at once.<BR>Leave the tree enough room, or the sapling will not grow."
+      }
+    },
+    {
+      "arcane": {
+        "item": "tc4modern:magic_bone_meal"
+      }
+    }
+  ],
+  "parents": [
+    "1"
+  ],
+  "flags": [
+    "secondary"
+  ]
+}

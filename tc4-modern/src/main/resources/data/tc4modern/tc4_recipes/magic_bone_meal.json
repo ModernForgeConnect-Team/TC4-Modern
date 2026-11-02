@@ -1,0 +1,11 @@
+{
+  "type": "tc4modern:arcane_shaped",
+  "research": "modern3",
+  "pattern": ["XYX", "YXY", "XYX"],
+  "key": {
+    "X": {"item": "minecraft:bone_meal"},
+    "Y": {"tag": "minecraft:small_flowers"}
+  },
+  "aspects": {"terra": 20},
+  "result": {"item": "tc4modern:magic_bone_meal", "count": 10}
+}

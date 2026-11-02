@@ -90,6 +90,7 @@
   "jei.tc4modern.multiblock.node_jar.note": "围绕已有灵气节点搭建，顶层为任意木台阶；法杖右键中层或上层玻璃，底层不能触发。成型时 75% 概率削弱节点。",
   "item.tc4modern.element_workbook": "元素练习册",
   "workbook.tc4modern.tooltip": "右键练习要素连线 · 1～7 级 · 免费练习",
+  "item.tc4modern.magic_bone_meal": "魔法骨粉",
   "workbook.tc4modern.level": "%s级",
   "workbook.tc4modern.rules": "相邻要素须有直接合成关系，将所有金边要素连通。",
   "workbook.tc4modern.controls": "左键选取并填入 · 右键擦除 · 悬停查看组成",

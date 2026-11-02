@@ -16,7 +16,8 @@ class ResearchLocalizationTest {
                 "category_modern", List.of("tc.research_category.Modern"),
                 "1", List.of("tc.research_name.1", "tc.research_text.1", "tc.research_page.1.1", "tc.research_page.1.2"),
                 "modern1", List.of("tc.research_name.modern1", "tc.research_text.modern1", "tc.research_page.modern1.1"),
-                "modern2", List.of("tc.research_name.modern2", "tc.research_text.modern2", "tc.research_page.modern2.1"));
+                "modern2", List.of("tc.research_name.modern2", "tc.research_text.modern2", "tc.research_page.modern2.1"),
+                "modern3", List.of("tc.research_name.modern3", "tc.research_text.modern3", "tc.research_page.modern3.1"));
         for (var entry : expected.entrySet()) {
             String resource = "/data/custom/tc4_research/" + entry.getKey() + ".json";
             try (var in = getClass().getResourceAsStream(resource)) {
