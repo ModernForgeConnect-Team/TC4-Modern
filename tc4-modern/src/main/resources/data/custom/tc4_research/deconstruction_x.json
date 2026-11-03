@@ -1,0 +1,43 @@
+{
+  "type": "tc4modern:research",
+  "key": "deconstruction_x",
+  "name": {
+    "zh_CN": "解构工作台 X",
+    "en_US": "Deconstruction Table X"
+  },
+  "category": "Modern",
+  "position": [
+    -3,
+    2
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:deconstruction_x"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "permutatio": 1,
+    "cognitio": 1,
+    "metallum": 1
+  },
+  "parents": [
+    "modern_decomposition"
+  ],
+  "subtitle": {
+    "zh_CN": "改良的元素分解",
+    "en_US": "Improved aspect decomposition"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "将物品放入工作台后，它会自动开始分解；进度条结束时消耗一个物品，有一半几率得到物品包含的一种完整要素，包括复合要素。点击领取要素后，工作台会继续处理下一件物品。",
+        "en_US": "Insert an item to start deconstruction automatically. After the progress bar completes, one item is consumed and there is a 50% chance of obtaining one whole aspect, including a compound aspect. Claim it before the table processes the next item."
+      }
+    },
+    {
+      "arcane": {
+        "item": "tc4modern:deconstruction_x"
+      }
+    }
+  ]
+}

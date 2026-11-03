@@ -3,6 +3,9 @@ package github.com.gengyoubo.tcmodern.tc4.init;
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
 import github.com.gengyoubo.tcmodern.tc4.content.ArchiveCabinetBlockEntity;
 import github.com.gengyoubo.tcmodern.tc4.content.ResearchDeskBlockEntity;
+import github.com.gengyoubo.tcmodern.tc4.content.NodeReactorBlockEntity;
+import github.com.gengyoubo.tcmodern.tc4.content.ModernDeconstructionBlockEntity;
+import github.com.gengyoubo.tcmodern.tc4.content.PrimalFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -19,6 +22,15 @@ public final class Tc4BlockEntities {
     @SuppressWarnings("DataFlowIssue")
     public static final RegistryObject<BlockEntityType<ArchiveCabinetBlockEntity>> ARCHIVE_CABINET = TYPES.register("archive_cabinet",
             () -> BlockEntityType.Builder.of(ArchiveCabinetBlockEntity::new, Tc4Blocks.ARCHIVE_CABINET.get()).build(null));
+    @SuppressWarnings("DataFlowIssue")
+    public static final RegistryObject<BlockEntityType<NodeReactorBlockEntity>> NODE_REACTOR = TYPES.register("node_reactor",
+            () -> BlockEntityType.Builder.of(NodeReactorBlockEntity::new, Tc4Blocks.NODE_REACTOR.get()).build(null));
+    @SuppressWarnings("DataFlowIssue")
+    public static final RegistryObject<BlockEntityType<ModernDeconstructionBlockEntity>> DECONSTRUCTION = TYPES.register("deconstruction",
+            () -> BlockEntityType.Builder.of(ModernDeconstructionBlockEntity::new, Tc4Blocks.DECONSTRUCTION_X.get(), Tc4Blocks.DECONSTRUCTION_Y.get()).build(null));
+    @SuppressWarnings("DataFlowIssue")
+    public static final RegistryObject<BlockEntityType<PrimalFurnaceBlockEntity>> PRIMAL_FURNACE = TYPES.register("primal_furnace",
+            () -> BlockEntityType.Builder.of(PrimalFurnaceBlockEntity::new, Tc4Blocks.PRIMAL_FURNACE.get()).build(null));
 
     private Tc4BlockEntities() { }
 

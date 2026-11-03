@@ -1,0 +1,49 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "tc4modern:block/node_reactor"
+      }
+    },
+    {
+      "when": {
+        "tube_down": "true"
+      },
+      "apply": {
+        "model": "tc4modern:block/node_reactor_tube_down"
+      }
+    },
+    {
+      "when": {
+        "tube_north": "true"
+      },
+      "apply": {
+        "model": "tc4modern:block/node_reactor_tube_north"
+      }
+    },
+    {
+      "when": {
+        "tube_south": "true"
+      },
+      "apply": {
+        "model": "tc4modern:block/node_reactor_tube_south"
+      }
+    },
+    {
+      "when": {
+        "tube_west": "true"
+      },
+      "apply": {
+        "model": "tc4modern:block/node_reactor_tube_west"
+      }
+    },
+    {
+      "when": {
+        "tube_east": "true"
+      },
+      "apply": {
+        "model": "tc4modern:block/node_reactor_tube_east"
+      }
+    }
+  ]
+}

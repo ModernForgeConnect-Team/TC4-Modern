@@ -1,0 +1,30 @@
+{
+  "type": "tc4modern:arcane_shaped",
+  "research": "primal_furnace",
+  "pattern": [
+    "QBQ",
+    "IFI",
+    "III"
+  ],
+  "key": {
+    "Q": {
+      "item": "minecraft:quartz"
+    },
+    "B": {
+      "item": "minecraft:blaze_powder"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "F": {
+      "item": "minecraft:blast_furnace"
+    }
+  },
+  "aspects": {
+    "ignis": 20,
+    "perditio": 10
+  },
+  "result": {
+    "item": "tc4modern:primal_furnace"
+  }
+}

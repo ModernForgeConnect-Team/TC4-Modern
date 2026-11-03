@@ -1,0 +1,43 @@
+{
+  "type": "tc4modern:research",
+  "key": "node_reactor",
+  "name": {
+    "zh_CN": "节点反应堆",
+    "en_US": "Node Reactor"
+  },
+  "category": "Modern",
+  "position": [
+    -1,
+    4
+  ],
+  "complexity": 2,
+  "icon": {
+    "item": "tc4modern:node_reactor"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "auram": 1,
+    "potentia": 1,
+    "permutatio": 1
+  },
+  "parents": [
+    "deconstruction_y"
+  ],
+  "subtitle": {
+    "zh_CN": "人造节点",
+    "en_US": "An artificial node"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "将源质输入反应堆，反应堆会在上方的空位生成一个人造节点，并将源质注入节点。用法杖对着节点即可吸取魔力。<BR>人造节点不会自行恢复要素，吸干后也不会永久枯竭；继续输入源质便可重新充能。反应堆可以储存复合要素，但法杖仍只能直接吸取原始要素。每种要素最多储存 1000 点。",
+        "en_US": "Supply essentia to the reactor, and it creates an artificial node in the empty space above and charges it. Use a wand on the node to draw vis.<BR>The node does not recharge itself or permanently burn out. Supply more essentia to recharge it. The reactor can store compound aspects, but wands can only directly draw primal aspects. Each aspect is limited to 1000 points."
+      }
+    },
+    {
+      "arcane": {
+        "item": "tc4modern:node_reactor"
+      }
+    }
+  ]
+}

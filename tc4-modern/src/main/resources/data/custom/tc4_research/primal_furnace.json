@@ -1,0 +1,43 @@
+{
+  "type": "tc4modern:research",
+  "key": "primal_furnace",
+  "name": {
+    "zh_CN": "原始炼金炉",
+    "en_US": "Primal Alchemical Furnace"
+  },
+  "category": "Modern",
+  "position": [
+    -1,
+    6
+  ],
+  "complexity": 2,
+  "icon": {
+    "item": "tc4modern:primal_furnace"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "perditio": 1,
+    "permutatio": 1,
+    "auram": 1
+  },
+  "parents": [
+    "node_reactor"
+  ],
+  "subtitle": {
+    "zh_CN": "化繁为简",
+    "en_US": "Back to the basics"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "虽然名字里有“原始”，它却能将复合源质完整分解为组成它的所有原始要素。右键打开界面，放入材料和燃料，就能炼化物品并分解要素。<BR>也可以从底部通过管道或源质容器输入源质，这种输入不消耗燃料。将奥术蒸馏器叠在炉子上方，从蒸馏器引出管道；最多可叠放五个。<BR>原始要素会先进入蒸馏器，再由管道输出。每种要素都有独立缓存；缓存空间不足时，炼金炉暂停处理，不会丢失要素。",
+        "en_US": "This furnace fully decomposes compound essentia into its constituent primal aspects. Open its interface and insert material and fuel to smelt items and decompose their aspects.<BR>Essentia can also enter from below through tubes or a container without fuel. Stack up to five arcane alembics on top and connect tubes to the alembics.<BR>Primal aspects enter the alembics before leaving through tubes. Each aspect has its own buffer; processing pauses when the entire result will not fit."
+      }
+    },
+    {
+      "arcane": {
+        "item": "tc4modern:primal_furnace"
+      }
+    }
+  ]
+}

@@ -11,6 +11,7 @@
     "item": "tc4modern:research_desk"
   },
   "aspects": {},
+  "parents": ["modern_decomposition"],
   "flags": [
     "round"
   ],

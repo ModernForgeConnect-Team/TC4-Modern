@@ -1,0 +1,27 @@
+{
+  "type": "tc4modern:arcane_shaped",
+  "research": "node_reactor",
+  "pattern": [
+    "GGG",
+    "GRG",
+    "III"
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "aspects": {
+    "aer": 10,
+    "ordo": 10
+  },
+  "result": {
+    "item": "tc4modern:node_reactor"
+  }
+}

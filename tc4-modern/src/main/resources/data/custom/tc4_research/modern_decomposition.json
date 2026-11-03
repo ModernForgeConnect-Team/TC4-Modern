@@ -1,0 +1,25 @@
+{
+  "type": "tc4modern:research",
+  "key": "modern_decomposition",
+  "name": {
+    "zh_CN": "现代元素分解论",
+    "en_US": "Modern Aspect Decomposition"
+  },
+  "category": "Modern",
+  "position": [-2, 0],
+  "complexity": 1,
+  "icon": {"item": "minecraft:gold_ingot"},
+  "aspects": {},
+  "note_aspects": {"perditio": 1, "cognitio": 1, "permutatio": 1},
+  "flags": ["round"],
+  "subtitle": {
+    "zh_CN": "重新思考物质与要素",
+    "en_US": "Rethinking matter and aspects"
+  },
+  "pages": [{
+    "text": {
+      "zh_CN": "我们早已学会将物质分解为要素，但这个过程难免有所损耗：高等要素可能无法完整保留，得到的原始要素也往往太少。解构工作台正是一个例子。<BR>法杖充能时，节点中不需要的要素可能很多，需要的却太少。如果能够更精确地分解物质，甚至制造和充能人工节点，也许就能解决这个问题。",
+      "en_US": "We have long known how to break matter down into aspects, but the process is imperfect: compound aspects may be lost, and the yield of primal aspects can be small. The deconstruction table is one example.<BR>When charging a wand, a node may contain plenty of unwanted aspects but too little of what is needed. More precise decomposition, or even an artificial node that can be charged, might offer a solution."
+    }
+  }]
+}

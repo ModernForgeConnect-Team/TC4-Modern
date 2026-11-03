@@ -19,6 +19,8 @@ public final class DeskClient {
         event.enqueueWork(() -> {
             MenuScreens.register(Tc4Menus.RESEARCH_DESK.get(), ResearchDeskScreen::new);
             MenuScreens.register(Tc4Menus.ARCHIVE_CABINET.get(), ArchiveCabinetScreen::new);
+            MenuScreens.register(Tc4Menus.DECONSTRUCTION.get(), github.com.gengyoubo.tcmodern.tc4.client.deconstruction.ModernDeconstructionScreen::new);
+            MenuScreens.register(Tc4Menus.PRIMAL_FURNACE.get(), github.com.gengyoubo.tcmodern.tc4.client.furnace.PrimalFurnaceScreen::new);
         });
     }
 

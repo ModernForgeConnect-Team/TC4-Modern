@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "tc4modern:block/deconstruction_y_top",
+    "side": "tc4modern:block/deconstruction_y_side",
+    "bottom": "tc4modern:block/deconstruction_bottom"
+  }
+}

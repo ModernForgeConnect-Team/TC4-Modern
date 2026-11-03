@@ -4,6 +4,9 @@ import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
 import github.com.gengyoubo.tcmodern.tc4.content.ArchiveCabinetBlock;
 import github.com.gengyoubo.tcmodern.tc4.content.DeepslateLegacyOreBlock;
 import github.com.gengyoubo.tcmodern.tc4.content.ResearchDeskBlock;
+import github.com.gengyoubo.tcmodern.tc4.content.ModernDeconstructionBlock;
+import github.com.gengyoubo.tcmodern.tc4.content.NodeReactorBlock;
+import github.com.gengyoubo.tcmodern.tc4.content.PrimalFurnaceBlock;
 import java.util.function.Supplier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -40,6 +43,10 @@ public final class Tc4Blocks {
             ore("deepslate_amber_bearing_stone", DeepslateLegacyOreBlock.Drop.AMBER, 6);
     public static final RegistryObject<Block> RESEARCH_DESK = withItem("research_desk", ResearchDeskBlock::new);
     public static final RegistryObject<Block> ARCHIVE_CABINET = withItem("archive_cabinet", ArchiveCabinetBlock::new);
+    public static final RegistryObject<Block> DECONSTRUCTION_X = withItem("deconstruction_x", () -> new ModernDeconstructionBlock(false));
+    public static final RegistryObject<Block> DECONSTRUCTION_Y = withItem("deconstruction_y", () -> new ModernDeconstructionBlock(true));
+    public static final RegistryObject<Block> NODE_REACTOR = withItem("node_reactor", NodeReactorBlock::new);
+    public static final RegistryObject<Block> PRIMAL_FURNACE = withItem("primal_furnace", PrimalFurnaceBlock::new);
 
     private Tc4Blocks() { }
 

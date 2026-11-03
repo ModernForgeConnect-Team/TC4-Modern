@@ -171,6 +171,15 @@ minecraft {
             if (providers.gradleProperty('multiblockSmokeTest').isPresent()) {
                 property 'tc4modern.multiblockSmokeTest', 'true'
             }
+            if (providers.gradleProperty('nodeReactorSmokeTest').isPresent()) {
+                property 'tc4modern.nodeReactorSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('deconstructionSmokeTest').isPresent()) {
+                property 'tc4modern.deconstructionSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('primalFurnaceSmokeTest').isPresent()) {
+                property 'tc4modern.primalFurnaceSmokeTest', 'true'
+            }
             if (providers.gradleProperty('modernScannerSmokeTest').isPresent()) {
                 property 'tc4modern.modernScannerSmokeTest', 'true'
             }

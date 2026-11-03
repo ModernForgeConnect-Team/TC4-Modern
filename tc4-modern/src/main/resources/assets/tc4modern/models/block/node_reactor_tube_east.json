@@ -1,0 +1,72 @@
+{
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "pipe": "tc4modern:block/essentia_tube",
+    "particle": "tc4modern:block/essentia_tube"
+  },
+  "elements": [
+    {
+      "from": [
+        16,
+        6.5,
+        6.5
+      ],
+      "to": [
+        24,
+        9.5,
+        9.5
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#pipe",
+          "rotation": 90
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#pipe",
+          "rotation": 90
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#pipe",
+          "rotation": 90
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#pipe",
+          "rotation": 90
+        },
+        "east": {
+          "uv": [
+            4,
+            0,
+            7,
+            3
+          ],
+          "texture": "#pipe"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "type": "tc4modern:research",
+  "key": "deconstruction_y",
+  "name": {
+    "zh_CN": "解构工作台 Y",
+    "en_US": "Deconstruction Table Y"
+  },
+  "category": "Modern",
+  "position": [
+    -1,
+    2
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:deconstruction_y"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "perditio": 1,
+    "ignis": 1,
+    "permutatio": 1
+  },
+  "parents": [
+    "modern_decomposition"
+  ],
+  "subtitle": {
+    "zh_CN": "改良的元素分解",
+    "en_US": "Improved aspect decomposition"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "将物品放入工作台后，它会自动开始分解；进度条结束时消耗一个物品，将它包含的所有要素完整分解为原始要素。点击领取要素后，工作台会继续处理下一件物品。",
+        "en_US": "Insert an item to start deconstruction automatically. After the progress bar completes, one item is consumed and all of its aspects are fully decomposed into primal aspects. Claim them before the table processes the next item."
+      }
+    },
+    {
+      "arcane": {
+        "item": "tc4modern:deconstruction_y"
+      }
+    }
+  ]
+}

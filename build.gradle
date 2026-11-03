@@ -13,8 +13,12 @@ ext.devProperty = { String key ->
     providers.gradleProperty(key).orElse(providers.provider { developerProperties.getProperty(key) })
 }
 // Local MFCL builds are useful while developing a public API before its Maven release.
-ext.mfclApiDependency = devProperty('mfclApiJar').isPresent()
-        ? files(file(devProperty('mfclApiJar').get()))
+def localMfclApi = devProperty('mfclApiJar')
+if (localMfclApi.isPresent() && !file(localMfclApi.get()).isFile()) {
+    throw new GradleException("MFCL API JAR not found: ${localMfclApi.get()}. Update or remove mfclApiJar in gradle-local.properties (or the -P option).")
+}
+ext.mfclApiDependency = localMfclApi.isPresent()
+        ? files(file(localMfclApi.get()))
         : "github.com.gengyoubo.mfcl:mfcl-api:${mfcl_api_version}"
 
 subprojects {

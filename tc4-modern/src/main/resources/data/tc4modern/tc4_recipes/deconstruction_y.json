@@ -1,0 +1,27 @@
+{
+  "type": "tc4modern:arcane_shaped",
+  "research": "deconstruction_y",
+  "pattern": [
+    "MMM",
+    "PTP",
+    "PPP"
+  ],
+  "key": {
+    "M": {
+      "item": "minecraft:blaze_powder"
+    },
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "T": {
+      "item": "minecraft:crafting_table"
+    }
+  },
+  "aspects": {
+    "ordo": 5,
+    "perditio": 5
+  },
+  "result": {
+    "item": "tc4modern:deconstruction_y"
+  }
+}
