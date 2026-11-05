@@ -1,0 +1,38 @@
+{
+  "type": "tc4modern:research",
+  "key": "pencil",
+  "category": "Modern",
+  "position": [
+    2,
+    -2
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:pencil"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "instrumentum": 1,
+    "cognitio": 1,
+    "fabrico": 1
+  },
+  "parents": [
+    "modern1"
+  ],
+  "name": {
+    "zh_CN": "铅笔",
+    "en_US": "Pencils"
+  },
+  "subtitle": {
+    "zh_CN": "书写的新选择",
+    "en_US": "A new way to write"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "铅笔是一次性的书写工具，可以放入现代研究台代替笔与墨。虽然用完后就不能继续使用，但制作简单，不需要墨水。<BR>将两块木板竖直放在一块木炭上方，就能合成一支铅笔。进一步研究也许能找到更持久、更方便的书写工具。",
+        "en_US": "A pencil is a disposable writing tool for the modern research desk. It is simple to make and needs no ink, although it cannot be used once worn out.<BR>Place two planks vertically above charcoal to craft one. Further research may reveal more convenient, longer-lasting writing tools."
+      }
+    }
+  ]
+}

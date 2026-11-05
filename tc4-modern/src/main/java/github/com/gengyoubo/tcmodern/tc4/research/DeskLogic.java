@@ -115,11 +115,12 @@ public final class DeskLogic {
         if (!ResearchItems.isScribeTools(toolsHost) || !ResearchItems.isNote(noteHost)) return;
         var random = player.getRandom();
         Boolean finished = runtime.withPlayer(player, actor -> {
-            var tools = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, toolsHost).orElse(null);
+            boolean modernTool = toolsHost.getItem() instanceof github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem;
+            var tools = modernTool ? null : runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, toolsHost).orElse(null);
             var note = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, noteHost).orElse(null);
-            if (tools == null || note == null) return null;
-            var ink = runtime.accessor(StackView.class, tools);
-            if (ink.damage() >= ink.capacity() || runtime.accessor(StackView.class, note).damage() >= DISCOVERY) return null;
+            if ((!modernTool && tools == null) || note == null) return null;
+            var ink = modernTool ? null : runtime.accessor(StackView.class, tools);
+            if ((!modernTool && ink.damage() >= ink.capacity()) || (modernTool && ((github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem) toolsHost.getItem()).remaining(toolsHost) <= 0) || runtime.accessor(StackView.class, note).damage() >= DISCOVERY) return null;
             var notes = runtime.accessor(Notes.class);
             var data = notes.read(note);
             if (data == null) return null;
@@ -152,11 +153,15 @@ public final class DeskLogic {
             runtime.values().put(sheet.entries(), key, written);
             runtime.values().put(sheet.hexes(), key, runtime.accessor(HexFactory.class).create(q, r));
             notes.write(note, data);
-            if (!desk.inkFree()) ink.setDamage(ink.damage() + 1);
+            if (!desk.inkFree()) {
+                if (modernTool) {
+                    ((github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem) toolsHost.getItem()).consume(toolsHost, random);
+                } else ink.setDamage(ink.damage() + 1);
+            }
             boolean done = notes.finish(note, data, name);
             if (done) runtime.accessor(StackView.class, note).setDamage(DISCOVERY);
             desk.items().setStackInSlot(ResearchDeskBlockEntity.NOTE, host(runtime, noteHost, note));
-            desk.items().setStackInSlot(ResearchDeskBlockEntity.TOOLS, runtime.mappings().applyTo(LegacyMappings.ITEM_STACK, toolsHost, tools));
+            desk.items().setStackInSlot(ResearchDeskBlockEntity.TOOLS, modernTool ? toolsHost : runtime.mappings().applyTo(LegacyMappings.ITEM_STACK, toolsHost, tools));
             return done;
         });
         // The writer hears write/erase from their own screen, as in the original GUI; finishing is heard by all.

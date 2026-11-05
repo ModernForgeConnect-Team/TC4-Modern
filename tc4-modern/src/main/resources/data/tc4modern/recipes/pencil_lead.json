@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "X",
+    "X"
+  ],
+  "key": {
+    "X": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  "result": {
+    "item": "tc4modern:pencil_lead",
+    "count": 6
+  }
+}

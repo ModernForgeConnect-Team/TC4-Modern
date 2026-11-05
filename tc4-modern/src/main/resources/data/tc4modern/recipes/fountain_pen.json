@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "X",
+    "X",
+    "Y"
+  ],
+  "key": {
+    "X": {
+      "tag": "forge:ingots/steel"
+    },
+    "Y": {
+      "item": "tc4modern:pen_refill"
+    }
+  },
+  "result": {
+    "item": "tc4modern:fountain_pen",
+    "count": 1
+  }
+}

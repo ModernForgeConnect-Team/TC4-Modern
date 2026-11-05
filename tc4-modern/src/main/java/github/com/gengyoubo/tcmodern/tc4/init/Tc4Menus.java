@@ -24,6 +24,9 @@ public final class Tc4Menus {
     public static final RegistryObject<MenuType<PrimalFurnaceMenu>> PRIMAL_FURNACE =
             MENUS.register("primal_furnace", () -> IForgeMenuType.create(PrimalFurnaceMenu::new));
 
+    public static final RegistryObject<MenuType<github.com.gengyoubo.tcmodern.tc4.menu.WritingToolMenu>> WRITING_TOOL =
+            MENUS.register("writing_tool", () -> IForgeMenuType.create(github.com.gengyoubo.tcmodern.tc4.menu.WritingToolMenu::new));
+
     private Tc4Menus() { }
 
     public static void register(IEventBus modBus) { MENUS.register(modBus); }

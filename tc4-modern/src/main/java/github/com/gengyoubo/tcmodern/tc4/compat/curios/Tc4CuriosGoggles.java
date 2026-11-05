@@ -14,11 +14,12 @@ import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 /**
  * Hands Goggles of Revealing worn in the Curios head slot to the original code as the worn helmet,
  * so its own checks ({@code armorItemInSlot(3) instanceof IRevealer/IGoggles}: node rendering,
- * aspect popups, vis discount) see them. A real helmet in the vanilla slot wins: MFCL's own
- * source (priority 0) answers first and only defers on an empty helmet slot.
+ * aspect popups, vis discount) see them even when the vanilla helmet slot is occupied.
+ * The original runtime has only one head slot, so its checks see the goggles in preference
+ * to the helmet while the goggles are worn.
  */
 final class Tc4CuriosGoggles implements LegacyEquipment.Source {
-    private static final int PRIORITY = -10;
+    private static final int PRIORITY = 10;
 
     private Tc4CuriosGoggles() { }
 

@@ -51,7 +51,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 /**
- * Opt-in acceptance with {@code -PresearchDeskSmokeTest}: a real world, the original notes and inkwell, the desk opened
+ * Opt-in acceptance with {@code -PresearchDeskSmokeTest}: a real world, original notes and a fountain pen, the desk opened
  * through its side half, every action driven by screen clicks, and server state checked through MFCL afterwards.
  */
 @Mod.EventBusSubscriber(modid = "tc4modern", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -104,11 +104,24 @@ public final class ResearchDeskSmokeProbe {
                 pending = server(mc, () -> seed(mc));
                 stage = 3;
             } else if (stage == 3 && pending.isDone() && ++frames > WAIT) {
+                pending = server(mc, () -> {
+                    var p = player(mc);
+                    p.getMainHandItem().use(p.level(), p, InteractionHand.MAIN_HAND);
+                });
+                stage = 30;
+            } else if (stage == 30 && pending.isDone() && mc.screen instanceof WritingToolScreen && ++frames > WAIT) {
+                proof.put("writingToolOpensLoadingScreen", true);
+                screenshot(mc, "writing-tool", 0, 0);
+                mc.player.closeContainer();
+                stage = 31;
+            } else if (stage == 31 && mc.screen == null && ++frames > WAIT) {
                 // Opened through the side half: the main half's menu must answer.
                 pending = server(mc, () -> use(mc, ResearchDeskBlock.partner(desk, mc.getSingleplayerServer().overworld().getBlockState(desk))));
                 stage = 4;
             } else if (stage == 4 && pending.isDone() && mc.screen instanceof ResearchDeskScreen screen && screen.snapshot().sheet() != null && ++frames > WAIT) {
                 var snapshot = screen.snapshot();
+                require(screen.hasInk(), "A filled pen must be usable in the research desk screen");
+                proof.put("penRecognizedByScreen", true);
                 require(snapshot.cabinets() == 2, "Stacked cabinets were not linked: " + snapshot.cabinets());
                 require(snapshot.archive().size() == 1 && snapshot.capacity() == 2 * ArchiveCabinetBlockEntity.SIZE, "Archive listing is wrong");
                 require(snapshot.pools().size() >= 40 && snapshot.pool("aer") >= 100, "Pools were not snapshotted");
@@ -225,6 +238,7 @@ public final class ResearchDeskSmokeProbe {
     private void seed(Minecraft mc) {
         var player = player(mc);
         var level = player.serverLevel();
+        verifyWritingToolLoading(player);
         verifyUpgrade(player);
         desk = player.blockPosition().east(3);
         var state = Tc4Blocks.RESEARCH_DESK.get().defaultBlockState().setValue(ResearchDeskBlock.FACING, Direction.WEST);
@@ -248,15 +262,50 @@ public final class ResearchDeskSmokeProbe {
             var note = api().mappings().toHost(LegacyMappings.ITEM_STACK, nitor, ItemStack.class).orElseThrow();
             require(ResearchItems.isScribeTools(inkwell) && ResearchItems.isNote(note), "Original inkwell or note not recognised");
             require(!ResearchItems.isNote(inkwell) && !ResearchItems.isNote(new ItemStack(Items.PAPER)), "Note filter accepts other items");
-            require(table.items().insertItem(ResearchDeskBlockEntity.TOOLS, inkwell, false).isEmpty(), "Desk refused the inkwell");
+            require(table.items().isItemValid(ResearchDeskBlockEntity.TOOLS, inkwell), "Desk refused the inkwell");
+            var pen = new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.FOUNTAIN_PEN.get());
+            ((github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem) pen.getItem()).store(pen, 1, 0);
+            require(table.items().insertItem(ResearchDeskBlockEntity.TOOLS, pen, false).isEmpty(), "Desk refused the pen");
             require(table.items().insertItem(ResearchDeskBlockEntity.NOTE, note, false).isEmpty(), "Desk refused the note");
             require(!drawer.items().insertItem(1, new ItemStack(Items.PAPER), false).isEmpty(), "Cabinet accepted paper");
             drawer.items().setStackInSlot(0, api().mappings().toHost(LegacyMappings.ITEM_STACK, alumentum, ItemStack.class).orElseThrow());
             return null;
         });
+        player.getInventory().selected = 0;
+        player.getInventory().setItem(0, new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.MECHANICAL_PENCIL.get()));
         player.getInventory().add(new ItemStack(Items.PAPER, 8));
         player.getInventory().add(new ItemStack(Items.INK_SAC, 8));
-        proof.put("slotFiltersAcceptOnlyOriginalItems", true);
+        proof.put("slotFiltersAcceptOriginalAndModernTools", true);
+    }
+
+    private void verifyWritingToolLoading(ServerPlayer player) {
+        var inv = player.getInventory();
+        var pencil = new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.MECHANICAL_PENCIL.get());
+        var pencilItem = (github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem) pencil.getItem();
+        pencilItem.store(pencil, 0, 0); inv.setItem(0, pencil);
+        var menu = new github.com.gengyoubo.tcmodern.tc4.menu.WritingToolMenu(1, inv, 0);
+        var slot = menu.getSlot(0);
+        require(slot.getMaxStackSize() == 15 && !slot.mayPlace(new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.PEN_REFILL.get())), "Pencil refill slot filter or capacity wrong");
+        slot.set(new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.PENCIL_LEAD.get(), 15));
+        menu.removed(player);
+        var reopened = new github.com.gengyoubo.tcmodern.tc4.menu.WritingToolMenu(2, inv, 0);
+        require(reopened.getSlot(0).getItem().getCount() == 15 && pencilItem.stored(pencil) == 15, "Pencil refills did not persist on the tool");
+        pencilItem.store(pencil, 15, 15);
+        pencilItem.consume(pencil, player.getRandom());
+        var afterUse = new github.com.gengyoubo.tcmodern.tc4.menu.WritingToolMenu(3, inv, 0);
+        require(afterUse.getSlot(0).getItem().getCount() == 14, "Writing did not consume a stored lead");
+        var pen = new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.FOUNTAIN_PEN.get());
+        var penItem = (github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem) pen.getItem();
+        penItem.store(pen, 0, 0); inv.setItem(40, pen);
+        var offhand = new github.com.gengyoubo.tcmodern.tc4.menu.WritingToolMenu(4, inv, 40);
+        require(offhand.getSlot(0).getMaxStackSize() == 1, "Pen capacity was not one refill");
+        offhand.getSlot(0).set(new ItemStack(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.PEN_REFILL.get()));
+        offhand.removed(player);
+        require(penItem.stored(pen) == 1 && new github.com.gengyoubo.tcmodern.tc4.menu.WritingToolMenu(5, inv, 40).getSlot(0).hasItem(), "Offhand pen refill did not persist");
+        penItem.store(pen, 1, 95); penItem.consume(pen, player.getRandom());
+        require(penItem.stored(pen) == 0 && penItem.remaining(pen) == 0, "Pen did not consume its stored refill");
+        inv.setItem(0, ItemStack.EMPTY); inv.setItem(40, ItemStack.EMPTY);
+        proof.put("writingToolStorageAndConsumption", true);
     }
 
     private void verifyUpgrade(ServerPlayer player) {
@@ -334,7 +383,7 @@ public final class ResearchDeskSmokeProbe {
 
     private int ink(Minecraft mc) {
         var table = (ResearchDeskBlockEntity) player(mc).serverLevel().getBlockEntity(desk);
-        return api().accessor(DeskAccessors.StackView.class, api().mappings().toLegacy(LegacyMappings.ITEM_STACK, table.tools()).orElseThrow()).damage();
+        return table.tools().getDamageValue();
     }
 
     /** Takes the NITOR note back from the archive and finishes it as the original completion would. */

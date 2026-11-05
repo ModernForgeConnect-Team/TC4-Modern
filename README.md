@@ -228,7 +228,7 @@ TC4 原始二进制仍引用旧 Baubles API。本项目独立实现了一层最�
 - 注册与旧版 Baubles 对应的现代 Curios 槽位：`amulet`（1 格）、`ring`（2 格）、`belt`（1 格），并授予玩家。
 - 扫描所有旧模组中实现 `baubles.api.IBauble` 的物品，包含 TC4 附属的腰带、戒指和护身符，不限制注册命名空间或实现类所在包。通过 MFCL 公开 MLA API，使用实际物品堆的 metadata/NBT 调用 `getBaubleType`，避免把同一物品 ID 的不同变种都判为默认槽位。
 - 原版 TC4 物品在 MFCL 现代注册表中使用非透明 ID（大写 `Thaumcraft:` 会编码为 `mfcl:legacy/<hex>`），无法用静态 `curios:` 物品标签引用，因此改用 Curios 谓词校验（`tc4modern:thaumcraft_bauble`）。
-- 揭示护目镜（`ItemGoggles`）可放入 Curios 自带的 `head` 槽：通过 MFCL 0.2.9 的装备来源 API（`LegacyEquipment`）在原版头盔槽为空时作为“佩戴的头盔”交给旧运行时，因此看节点、要素悬浮、神秘减耗等原版判断都会生效。原版头盔槽有头盔时以头盔为准。神秘头盔、虚空兜帽等真正的头盔不进入 Curios 槽。
+- 揭示护目镜（`ItemGoggles`）可放入 Curios 自带的 `head` 槽：通过 MFCL 0.2.9 的装备来源 API（`LegacyEquipment`）作为“佩戴的头盔”交给旧运行时，因此即使普通头盔槽有装备，看节点、要素悬浮、神秘减耗等原版判断也会生效。旧运行时只有一个头部装备槽，同时佩戴时旧版头部装备判定以护目镜为准，可能影响旧版头盔的特殊效果。神秘头盔、虚空兜帽等真正的头盔不进入 Curios 槽。
 - 护身符、两格戒指、腰带通过 `LegacyEquipment.Source` 映射到旧 `BaublesApi.getBaubles`，TC4 与附属的装备判定可读取实际装备。旧逻辑修改/移除饰品会写回 Curios，保留旧物品 metadata/NBT 和现代侧标签。
 - Curios 负责存档、同步和死亡掉落；旧层只提供装备视图。佩戴 tick 通过 MFCL 的事件转发执行一次，穿脱回调与可穿脱检查调用原物品的 `IBauble`；饰品不能放入装饰槽，额外扩容不增加 TC4 可用格数。
 

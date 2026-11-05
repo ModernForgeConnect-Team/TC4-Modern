@@ -1,0 +1,46 @@
+{
+  "type": "tc4modern:research",
+  "key": "exsecise",
+  "name": {
+    "zh_CN": "练习册",
+    "en_US": "Aspect Workbook"
+  },
+  "category": "Modern",
+  "position": [
+    0,
+    -2
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:element_workbook"
+  },
+  "aspects": {
+    "cognitio": 3,
+    "ordo": 1
+  },
+  "note_aspects": {
+    "cognitio": 1,
+    "ordo": 1
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "研究笔记里的要素连线令人困惑？练习册可以让你先熟悉要素之间的直接组成关系。手持右键打开练习册，选择一到七级，再从左页选择要素，填入右页的六边形中。<BR>让所有金边要素通过相邻且有直接组成关系的要素连通，就算完成练习。左键填入，右键擦除；鼠标悬停可查看要素组成。",
+        "en_US": "Research-note connections can be puzzling. The workbook lets you practice the direct relationships between aspects. Use it in your hand, choose a level from I to VII, then select aspects on the left page and place them in the hexes on the right.<BR>Connect every gold-bordered aspect through adjacent aspects with a direct component relationship. Left-click to place, right-click to erase, and hover to inspect components."
+      }
+    },
+    {
+      "text": {
+        "zh_CN": "可以重置当前题目、查看提示或生成新题。练习不消耗要素点数，也不会解锁研究，适合反复尝试。<BR>一本书、一张纸和一个墨囊无序合成一本练习册。",
+        "en_US": "Reset the puzzle, ask for a hint, or generate another. Practice consumes no aspect points and unlocks no research, so experiment freely.<BR>Craft a workbook shapelessly from a book, paper and an ink sac."
+      }
+    }
+  ],
+  "parents": [
+    "1"
+  ],
+  "subtitle": {
+    "zh_CN": "熟悉要素之间的联系",
+    "en_US": "Practice connecting aspects"
+  }
+}

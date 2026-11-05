@@ -54,6 +54,24 @@ public final class NodeReactorSmokeProbe {
                     var runtime = TcModernApi.runtime().orElseThrow();
                     level.setBlockAndUpdate(pos.east(2).below(), runtime.hostBlock("Thaumcraft:blockJar", 0, BlockState.class).orElseThrow());
                     level.setBlockAndUpdate(pos, Tc4Blocks.NODE_REACTOR.get().defaultBlockState());
+                    var reactorState = level.getBlockState(pos);
+                    require(reactorState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE), "Reactor lacks pickaxe tag");
+                    require(Tc4Blocks.PRIMAL_FURNACE.get().defaultBlockState().is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE), "Furnace lacks pickaxe tag");
+                    require(Tc4Blocks.DECONSTRUCTION_X.get().defaultBlockState().is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE), "Deconstruction table lacks axe tag");
+                    var drops = net.minecraft.world.level.block.Block.getDrops(reactorState, level, pos,
+                            level.getBlockEntity(pos), mc.getSingleplayerServer().getPlayerList().getPlayers().get(0),
+                            new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE));
+                    require(drops.stream().anyMatch(stack -> stack.is(Tc4Blocks.NODE_REACTOR.get().asItem())),
+                            "Reactor loot missing: " + reactorState.getBlock().getLootTable() + " drops=" + drops);
+                    var player = mc.getSingleplayerServer().getPlayerList().getPlayers().get(0);
+                    var breakPos = pos.west(2);
+                    level.setBlockAndUpdate(breakPos, reactorState);
+                    player.setGameMode(GameType.SURVIVAL);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE));
+                    require(player.gameMode.destroyBlock(breakPos), "Could not break reactor");
+                    require(!level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(breakPos).inflate(1),
+                            item -> item.getItem().is(Tc4Blocks.NODE_REACTOR.get().asItem())).isEmpty(), "Breaking reactor did not spawn its item");
+                    player.setGameMode(GameType.CREATIVE);
                     level.setBlockAndUpdate(pos.east(), runtime.hostBlock("Thaumcraft:blockTube", 0, BlockState.class).orElseThrow());
                     level.setBlockAndUpdate(pos.east(2), runtime.hostBlock("Thaumcraft:blockTube", 0, BlockState.class).orElseThrow());
                     var world = runtime.mappings().toLegacy(LegacyMappings.WORLD, level).orElseThrow();

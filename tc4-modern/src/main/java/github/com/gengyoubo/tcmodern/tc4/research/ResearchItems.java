@@ -17,7 +17,7 @@ public final class ResearchItems {
     private ResearchItems() {}
 
     public static boolean isNote(ItemStack stack) { return is(stack, NOTES, DeskAccessors.NOTES); }
-    public static boolean isScribeTools(ItemStack stack) { return is(stack, TOOLS, DeskAccessors.SCRIBE_TOOLS); }
+    public static boolean isScribeTools(ItemStack stack) { return !stack.isEmpty() && (stack.getItem() instanceof github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem || is(stack, TOOLS, DeskAccessors.SCRIBE_TOOLS)); }
 
     private static boolean is(ItemStack stack, Map<Item, Boolean> cache, String type) {
         if (stack.isEmpty()) return false;

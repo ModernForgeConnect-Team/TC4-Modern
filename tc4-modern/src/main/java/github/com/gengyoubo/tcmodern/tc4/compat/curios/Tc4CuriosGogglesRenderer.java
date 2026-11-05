@@ -25,8 +25,8 @@ import top.theillusivec4.curios.api.client.ICurioRenderer;
 /**
  * Draws goggles worn in the Curios head slot like the vanilla armor layer draws them in the helmet
  * slot: the outer armor head model with the item's own armor texture (MFCL forwards the original
- * {@code getArmorTexture}). Skipped while a real helmet is worn, which is also when the goggles
- * are not handed to the original code.
+ * {@code getArmorTexture}). Skipped while a real helmet is worn to avoid overlapping models;
+ * the goggles still provide their effects.
  */
 final class Tc4CuriosGogglesRenderer implements ICurioRenderer {
     private final Map<String, ResourceLocation> textures = new ConcurrentHashMap<>();
@@ -54,6 +54,9 @@ final class Tc4CuriosGogglesRenderer implements ICurioRenderer {
             ((HumanoidModel<LivingEntity>) parent).copyPropertiesTo(model);
         } else {
             ICurioRenderer.followHeadRotations(entity, model.head, model.hat);
+        }
+        if (net.minecraftforge.fml.ModList.get().isLoaded("shape_shifter_curse") && Tc4SscGoggles.isTransformed(entity)) {
+            Tc4SscGoggles.align(model, (net.minecraft.world.entity.player.Player) entity);
         }
         model.setAllVisible(false);
         model.head.visible = true;

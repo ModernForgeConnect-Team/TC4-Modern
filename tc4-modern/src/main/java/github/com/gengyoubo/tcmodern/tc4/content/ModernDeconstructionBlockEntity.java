@@ -76,11 +76,16 @@ public final class ModernDeconstructionBlockEntity extends BlockEntity implement
         if (level.isClientSide) return;
         if (!table.pending.isEmpty()) { table.status=READY; return; }
         var stack=table.items.getStackInSlot(0);
-        if (stack.isEmpty()) { if (table.status!=FAILED) table.status=IDLE; return; }
+        if (stack.isEmpty()) {
+            if (table.progress!=0) { table.progress=0; table.setChanged(); }
+            if (table.status!=FAILED) table.status=IDLE;
+            return;
+        }
         var runtime=TcModernApi.runtime().orElse(null); if (runtime==null) return;
         try {
             long revision=TcScanApi.registry().revision();
             if (runtime!=table.cachedRuntime || revision!=table.cachedRevision || !ItemStack.isSameItemSameTags(stack,table.cachedInput)) {
+                if (!table.cachedInput.isEmpty() && !ItemStack.isSameItemSameTags(stack,table.cachedInput)) table.progress=0;
                 table.cachedInput=stack.copyWithCount(1); table.cachedRuntime=runtime; table.cachedRevision=revision;
                 var amounts=itemAspects(runtime,stack);
                 table.cachedAmounts=table.primal() && !amounts.isEmpty()?PrimalDecomposition.expand(amounts,TcAspects.snapshot(runtime)):amounts;

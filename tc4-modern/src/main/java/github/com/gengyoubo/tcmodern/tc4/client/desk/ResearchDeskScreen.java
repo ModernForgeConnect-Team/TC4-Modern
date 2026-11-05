@@ -129,7 +129,10 @@ public final class ResearchDeskScreen extends AbstractContainerScreen<ResearchDe
         if (!ItemStack.matches(tools, inkStack)) {
             inkStack = tools.copy();
             inkLeft = -1;
-            if (!tools.isEmpty()) TcModernApi.runtime().ifPresent(runtime -> {
+            if (tools.getItem() instanceof github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem writing) {
+                inkCapacity = tools.getMaxDamage();
+                inkLeft = writing.remaining(tools);
+            } else if (!tools.isEmpty()) TcModernApi.runtime().ifPresent(runtime -> {
                 try {
                     var legacy = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, tools).orElse(null);
                     if (legacy == null) return;
@@ -196,7 +199,7 @@ public final class ResearchDeskScreen extends AbstractContainerScreen<ResearchDe
         return result != null && snapshot().pool(first) > 0 && snapshot().pool(second) > 0;
     }
 
-    private boolean hasInk() { return inkLeft > 0; }
+    boolean hasInk() { return inkLeft > 0; }
 
     private boolean canFile() {
         var s = snapshot();

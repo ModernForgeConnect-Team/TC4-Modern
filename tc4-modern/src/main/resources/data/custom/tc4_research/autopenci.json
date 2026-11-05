@@ -1,0 +1,46 @@
+{
+  "type": "tc4modern:research",
+  "key": "autopenci",
+  "name": {
+    "zh_CN": "自动铅笔",
+    "en_US": "Mechanical Pencil"
+  },
+  "category": "Modern",
+  "position": [
+    1,
+    -4
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:mechanical_pencil"
+  },
+  "aspects": {
+    "cognitio": 3,
+    "ordo": 1
+  },
+  "note_aspects": {
+    "cognitio": 1,
+    "ordo": 1
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "铅笔虽然方便，却只能用一次。自动铅笔可以存放最多十五管铅芯，手持右键打开笔内的替芯槽，放入铅芯即可；关闭界面后，铅芯仍保存在笔里。<BR>将它放入现代研究台的书写工具槽后，书写时会自动使用铅芯。铅芯偶尔会折断，因此最好准备一些备用。",
+        "en_US": "A pencil is convenient, but disposable. A mechanical pencil stores up to fifteen leads. Use it in your hand to open its refill slot and insert leads; they remain in the pencil when the screen closes.<BR>Place it in the modern research desk to write. Leads are consumed automatically and can occasionally snap, so keep some spares."
+      }
+    },
+    {
+      "text": {
+        "zh_CN": "将两块铁锭竖直放在一管铅芯上方，可以合成自动铅笔。新合成的笔里已有一管铅芯。<BR>将两块木炭竖直排列，可以合成六管铅芯。",
+        "en_US": "Place two iron ingots vertically above one lead to craft a mechanical pencil. A newly crafted pencil contains one lead.<BR>Two charcoal placed vertically make six leads."
+      }
+    }
+  ],
+  "parents": [
+    "pencil"
+  ],
+  "subtitle": {
+    "zh_CN": "可以更换铅芯的书写工具",
+    "en_US": "A pencil with replaceable leads"
+  }
+}

@@ -173,5 +173,13 @@
   "deconstruction.tc4modern.working": "Processing",
   "deconstruction.tc4modern.invalid": "No aspects",
   "deconstruction.tc4modern.failed_short": "No yield",
-  "deconstruction.tc4modern.ready": "Ready"
+  "deconstruction.tc4modern.ready": "Ready",
+  "item.tc4modern.pencil": "Pencil",
+  "item.tc4modern.mechanical_pencil": "Mechanical Pencil",
+  "item.tc4modern.fountain_pen": "Fountain Pen",
+  "item.tc4modern.pencil_lead": "Pencil Lead",
+  "item.tc4modern.pen_refill": "Pen Refill",
+  "writing.tc4modern.title": "Refills: %s",
+  "writing.tc4modern.remaining": "Writing capacity: %s / %s",
+  "writing.tc4modern.hint": "Stored in the tool and used when writing"
 }

@@ -40,7 +40,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 public final class CuriosSmokeProbe {
     private final Map<String, Object> proof = new LinkedHashMap<>();
     private final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(4);
-    private int stage;
+    private int stage, frames;
     private CompletableFuture<Void> checks;
 
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
@@ -72,7 +72,22 @@ public final class CuriosSmokeProbe {
                 checks = server.submit(() -> Checks.validate(TcModernApi.runtime().orElseThrow(),
                         server.getPlayerList().getPlayer(mc.player.getUUID()), proof));
                 stage = 2;
-            } else if (stage == 2 && checks.isDone()) { checks.join(); finish(mc, null); }
+            } else if (stage == 2 && checks.isDone()) {
+                checks.join();
+                if (!ModList.get().isLoaded("shape_shifter_curse")) { finish(mc, null); return; }
+                mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+                mc.options.keyShift.setDown(true);
+                stage = 3;
+            } else if (stage == 3 && ++frames >= 30) {
+                net.minecraft.client.Screenshot.grab(mc.gameDirectory, "tc4modern-ssc-goggles.png", mc.getMainRenderTarget(), message -> { });
+                mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+                frames = 0; stage = 4;
+            } else if (stage == 4 && ++frames >= 30) {
+                net.minecraft.client.Screenshot.grab(mc.gameDirectory, "tc4modern-ssc-goggles-inventory.png", mc.getMainRenderTarget(), message -> { });
+                frames = 0; stage = 5;
+            } else if (stage == 5 && ++frames >= 20) {
+                finish(mc, null);
+            }
         } catch (Exception | AssertionError failure) { finish(mc, failure); }
     }
     private static void require(boolean condition, String message) {
@@ -80,6 +95,7 @@ public final class CuriosSmokeProbe {
     }
     private void finish(Minecraft mc, Throwable failure) {
         stage = 99;
+        mc.options.keyShift.setDown(false);
         proof.put("status", failure == null ? "PASS" : "FAIL");
         if (failure != null) { proof.put("failure", failure.toString()); LogUtils.getLogger().error("TC4_CURIOS_SMOKE_FAIL", failure); }
         try {
@@ -99,6 +115,10 @@ public final class CuriosSmokeProbe {
     @LegacyType("net.minecraft.inventory.IInventory") public interface Inventory {
         @LegacyMethod(name = "func_70301_a", descriptor = "(I)Lnet/minecraft/item/ItemStack;") LegacyObject get(int index);
         @LegacyMethod(name = "func_70299_a", descriptor = "(ILnet/minecraft/item/ItemStack;)V") void set(int index, LegacyObject stack);
+    }
+
+    @LegacyType("net.minecraft.entity.player.EntityPlayer") public interface PlayerArmor {
+        @LegacyMethod(name = "func_82169_q", descriptor = "(I)Lnet/minecraft/item/ItemStack;") LegacyObject armor(int index);
     }
 
     private static final class Checks {
@@ -181,6 +201,41 @@ public final class CuriosSmokeProbe {
                 require(amulet.isItemValid(0, nbtVariant), "Stack-dependent NBT amulet type was ignored");
                 require(!belt.isItemValid(0, nbtVariant), "NBT amulet incorrectly accepted belt slot");
                 proof.put("addonMetadataAndNbtSlotTypes", true);
+            }
+            var head = curios.getStacksHandler("head").orElseThrow().getStacks();
+            var curioGoggles = stack(runtime, "Thaumcraft:ItemGoggles", "curio-head");
+            head.setStackInSlot(0, curioGoggles);
+            player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(net.minecraft.world.item.Items.IRON_HELMET));
+            runtime.withPlayer(player, actor -> {
+                var worn = runtime.accessor(PlayerArmor.class, actor).armor(3);
+                require(worn != null && runtime.snapshot(worn).key().equals("Thaumcraft:ItemGoggles"),
+                        "Curios goggles did not take effect with a helmet equipped");
+                return null;
+            });
+            head.setStackInSlot(0, ItemStack.EMPTY);
+            player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, ItemStack.EMPTY);
+            proof.put("curiosGogglesWithHelmet", true);
+            if (ModList.get().isLoaded("shape_shifter_curse")) {
+                var goggles = stack(runtime, "Thaumcraft:ItemGoggles", "ssc-head");
+                require(net.onixary.shapeShifterCurseForge.form.FormManager.setForm(player, "shape-shifter-curse:axolotl_2"), "Could not select axolotl stage 2");
+                boolean stage2HelmetRestricted = net.onixary.shapeShifterCurseForge.power.MissingPowerEvents.isArmorRestricted(player,
+                        net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(net.minecraft.world.item.Items.IRON_HELMET));
+                require(net.onixary.shapeShifterCurseForge.form.FormManager.current(player).stage() == 3 && stage2HelmetRestricted,
+                        "Stage 2 fixture or its normal SSC helmet restriction changed");
+                proof.put("sscStage2KeepsHelmetRestriction", true);
+                require(net.onixary.shapeShifterCurseForge.form.FormManager.setForm(player, "shape-shifter-curse:axolotl_3"), "Could not select axolotl form");
+                var slot = net.minecraft.world.entity.EquipmentSlot.HEAD;
+                require(net.onixary.shapeShifterCurseForge.power.MissingPowerEvents.isArmorRestricted(player, slot,
+                        new ItemStack(net.minecraft.world.item.Items.IRON_HELMET)), "Fixture form does not restrict ordinary helmets");
+                require(!net.onixary.shapeShifterCurseForge.power.MissingPowerEvents.isArmorRestricted(player, slot, goggles), "SSC rejected goggles");
+                var headSlot = player.inventoryMenu.slots.stream().filter(s -> s.container == player.getInventory() && s.getSlotIndex() == 39).findFirst().orElseThrow();
+                require(headSlot.mayPlace(goggles), "SSC inventory slot rejected goggles");
+                player.setItemSlot(slot, goggles);
+                net.onixary.shapeShifterCurseForge.power.MissingPowerEvents.onFormChanged(player);
+                require(player.getItemBySlot(slot).is(goggles.getItem()), "SSC removed equipped goggles");
+                proof.put("sscRestrictedFormAllowsGogglesInHelmetSlot", true);
+                net.onixary.shapeShifterCurseForge.form.FormManager.setForm(player, "shape-shifter-curse:anubis_wolf_3");
+                player.setGameMode(GameType.SURVIVAL);
             }
         }
         private static ItemStack stack(LegacyRuntime runtime, String key, String marker) {

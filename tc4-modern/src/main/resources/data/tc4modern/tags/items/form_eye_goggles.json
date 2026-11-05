@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "thaumcraft:item_goggles",
+    { "id": "taintedmagic:item_warped_goggles", "required": false },
+    { "id": "taintedmagic:item_voidmetal_goggles", "required": false }
+  ]
+}

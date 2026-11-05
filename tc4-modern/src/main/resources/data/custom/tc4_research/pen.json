@@ -1,0 +1,46 @@
+{
+  "type": "tc4modern:research",
+  "key": "pen",
+  "name": {
+    "zh_CN": "钢笔",
+    "en_US": "Fountain Pen"
+  },
+  "category": "Modern",
+  "position": [
+    3,
+    -4
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:fountain_pen"
+  },
+  "aspects": {
+    "cognitio": 3,
+    "ordo": 1
+  },
+  "note_aspects": {
+    "cognitio": 1,
+    "ordo": 1
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "钢笔一次只能存放一管钢笔芯，但一管能够书写更久。手持右键打开笔内的替芯槽，把钢笔芯放进去；它会保存在笔中，供现代研究台书写时自动消耗。<BR>笔芯耗尽后会从槽中消失，放入新的笔芯即可继续书写。",
+        "en_US": "A fountain pen holds only one refill, but it lasts longer. Use the pen in your hand to open its refill slot and place a refill inside. It stays in the pen and is used automatically at the modern research desk.<BR>When the ink runs out, insert a new refill to keep writing."
+      }
+    },
+    {
+      "text": {
+        "zh_CN": "两块钢锭竖直放在一管钢笔芯上方，可以合成钢笔；新笔内已有一管笔芯。可使用属于钢锭标签的钢锭。<BR>三个墨囊和一桶水无序合成九管钢笔芯，水桶会保留。",
+        "en_US": "Place two steel ingots vertically above a pen refill to craft a fountain pen. A new pen contains one refill. Any ingot in the steel ingot tag can be used.<BR>Three ink sacs and a water bucket make nine refills in any arrangement; the bucket is returned."
+      }
+    }
+  ],
+  "parents": [
+    "pencil"
+  ],
+  "subtitle": {
+    "zh_CN": "经久耐用的笔尖",
+    "en_US": "A longer-lasting nib"
+  }
+}
