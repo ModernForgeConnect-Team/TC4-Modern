@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "thaumcraft:blocks/planks_greatwood"
+    },
+    {
+      "type": "single",
+      "resource": "thaumcraft:blocks/planks_silverwood"
+    }
+  ]
+}

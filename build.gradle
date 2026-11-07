@@ -20,6 +20,18 @@ if (localMfclApi.isPresent() && !file(localMfclApi.get()).isFile()) {
 ext.mfclApiDependency = localMfclApi.isPresent()
         ? files(file(localMfclApi.get()))
         : "github.com.gengyoubo.mfcl:mfcl-api:${mfcl_api_version}"
+// The full MFCL mod: a local build when mfclRuntimeJar is set, otherwise the Maven release.
+def localMfclRuntime = devProperty('mfclRuntimeJar')
+if (localMfclRuntime.isPresent()) {
+    def jarName = file(localMfclRuntime.get()).name
+    def coordinates = (jarName =~ /^(.+?)-(\d.+)\.jar$/)
+    if (!coordinates.matches()) throw new GradleException("Local MFCL JAR must have a name-version.jar filename: ${jarName}")
+    ext.mfclRuntimeVersion = coordinates[0][2]
+    ext.mfclRuntimeDependency = "local.mfcl:${coordinates[0][1]}:${mfclRuntimeVersion}"
+} else {
+    ext.mfclRuntimeVersion = mfcl_version
+    ext.mfclRuntimeDependency = "github.com.gengyoubo.mfcl:ModernForgeConnectLoader:${mfclRuntimeVersion}"
+}
 
 subprojects {
     apply plugin: 'java-library'
@@ -40,11 +52,29 @@ subprojects {
             url = 'https://raw.githubusercontent.com/gengyoubo/ModernForgeConnectLoader/master/mcmodsrepo/'
             content { includeGroup 'github.com.gengyoubo.mfcl' }
         }
+        if (rootProject.devProperty('mfclRuntimeJar').isPresent()) {
+            flatDir {
+                dirs rootProject.file(rootProject.devProperty('mfclRuntimeJar').get()).parentFile
+                content { includeGroup 'local.mfcl' }
+            }
+        }
     }
     minecraft { mappings channel: 'official', version: rootProject.minecraft_version }
+    // Besides the plain JAR, build <name>-<version>-with-mfcl.jar with the unmodified MFCL mod nested inside.
+    // Forge keeps one copy when MFCL is also installed separately or nested in the other mod.
+    jarJar.enable()
+    tasks.named('jarJar') {
+        archiveClassifier = 'with-mfcl'
+        finalizedBy 'reobfJarJar'
+    }
+    reobf.create('jarJar')
     dependencies {
         minecraft "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
         compileOnly rootProject.mfclApiDependency
+        jarJar(rootProject.mfclRuntimeDependency) {
+            transitive = false
+            jarJar.ranged(it, "[${rootProject.mfclRuntimeVersion},)")
+        }
     }
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'

@@ -176,6 +176,23 @@ public final class NativeLeavesSmokeProbe {
             require(countLeaves(level,at,leaves)>0,"Modern feature omitted native leaves: "+tree);
         }
         proof.put("bothModernTreeFeaturesGenerateNativeLeaves",true);
+        // Exercise growth, persisted progress and the original pure-node tiles on a real server level.
+        var giantAt = origin.offset(0, 0, 64);
+        for (int cx = (giantAt.getX()-24)>>4; cx <= (giantAt.getX()+24)>>4; cx++)
+            for (int cz = (giantAt.getZ()-24)>>4; cz <= (giantAt.getZ()+24)>>4; cz++) level.getChunk(cx, cz);
+        level.setBlock(giantAt.below(), Blocks.DIRT.defaultBlockState(), 3);
+        var giant = github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.MEGA_SILVERWOOD_SAPLING.get();
+        level.setBlock(giantAt, giant.defaultBlockState(), 3);
+        var generator = (github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity)level.getBlockEntity(giantAt);
+        generator.start();
+        for (int i=0; i<1000 && level.getBlockState(giantAt).is(giant); i++)
+            github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.tick(level,giantAt,level.getBlockState(giantAt),generator);
+        require(!level.getBlockState(giantAt).is(giant), "Giant silverwood did not finish");
+        for (int y : new int[]{3, 26}) {
+            var node = giantAt.above(y);
+            require(level.getBlockEntity(node) != null, "Giant silverwood node missing at " + node);
+        }
+        proof.put("giantSilverwoodGrowthAndNodes", true);
         player.teleportTo(level,origin.getX()+12.5,origin.getY()+7,origin.getZ()+9,145,8);
     }
     private static int countLeaves(ServerLevel level,BlockPos origin,Block leaves) {

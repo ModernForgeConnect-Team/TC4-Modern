@@ -33,6 +33,16 @@ public final class MagicBoneMealItem extends Item {
     @Override public InteractionResult useOn(UseOnContext context) {
         var level = context.getLevel();
         var pos = context.getClickedPos();
+        var clicked = level.getBlockState(pos);
+        if (clicked.getBlock() instanceof GiantSaplingBlock sapling) {
+            if (level instanceof ServerLevel server) {
+                if (server.random.nextFloat() < GROWTH_CHANCE) sapling.performBonemeal(server, server.random, pos, clicked);
+                var player = context.getPlayer();
+                if (player == null || !player.getAbilities().instabuild) context.getItemInHand().shrink(1);
+                server.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 0);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         var runtime = TcModernApi.runtime().orElse(null);
         if (runtime == null) return InteractionResult.PASS;
         int species = species(runtime, level.getBlockState(pos));

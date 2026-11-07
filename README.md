@@ -129,6 +129,8 @@ bash gradlew build
 正式安装时在现代 `mods/` 中放入完整 MFCL、`tc-modern-lib` 和 `tc4-modern` 模组 JAR；Curios 为可选，安装后优先于旧版 Baubles。
 `implementation project(':tc-modern-lib')` 仅建立工程依赖，不将 Lib 合并进 TC4 JAR。
 
+`build` / `assemble` 为两个模组各生成两种 JAR：`<名称>-<版本>.jar` 不含 MFCL，需另装；`<名称>-<版本>-with-mfcl.jar` 通过 Forge Jar-in-Jar 内置未修改的完整 MFCL，可免装，但 `tc-modern-lib` 与 `tc4-modern` 仍须都安装（任一个用内置版即可）。内置的 MFCL 取自与开发运行相同的来源：设置了 `mfclRuntimeJar` 时为该本地 JAR，否则为 `mfcl_version` 对应的 Maven 版本；对外发布前请确认未指向本地构建。发布到 Maven 的仍只有不含 MFCL 的 JAR。
+
 ### 前置 / Prerequisites
 
 - 现代侧：Minecraft 1.20.1、Forge 47.4.28、完整 MFCL 0.2.9+（低于 0.3.0，必需；使用开发者 API v2）、Curios 5.9.1+（可选，安装后优先于旧版 Baubles）。
@@ -149,6 +151,10 @@ bash gradlew build
 ## 银树与宏伟之木树叶 / Magical leaves
 
 两种树叶使用原生 `LeavesBlock`，沿用原方块 ID、物品、贴图和树苗。支持现代距离腐烂、玩家放置持久性与含水状态，兼容旧存档元数据；原树苗和现代世界生成都会放置同一实现。普通采集和自然消失按原版概率掉落树苗，剪刀／精准采集掉落对应树叶。需配套支持原生方块 SPI 的 MFCL `0.2.11-dev2`，详见 [树叶实现与验证](docs/native-leaves.md)。
+
+## 宏伟之木与银树围栏 / Magical wood fences
+
+`tc4modern` 提供两种木材的围栏和围栏门，用各自的原版木板按原版配方合成（围栏一次 3 个）。贴图在运行时引用 MFCL 导出的原版木板贴图，本项目不包含这些贴图；硬度和抗爆沿用原版木板，其余行为与原版木围栏相同。
 
 ## 魔导手册 / Thaumonomicon
 

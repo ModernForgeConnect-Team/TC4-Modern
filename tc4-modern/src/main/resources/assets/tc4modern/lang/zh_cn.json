@@ -181,5 +181,15 @@
   "item.tc4modern.pen_refill": "钢笔芯",
   "writing.tc4modern.title": "替芯：%s",
   "writing.tc4modern.remaining": "剩余书写量：%s / %s",
-  "writing.tc4modern.hint": "替芯保存在笔中，书写时自动消耗"
+  "writing.tc4modern.hint": "替芯保存在笔中，书写时自动消耗",
+  "block.tc4modern.greatwood_fence": "宏伟之木围栏",
+  "block.tc4modern.greatwood_fence_gate": "宏伟之木围栏门",
+  "block.tc4modern.silverwood_fence": "银树围栏",
+  "block.tc4modern.silverwood_fence_gate": "银树围栏门",
+  "block.tc4modern.mega_greatwood_sapling": "巨型宏伟树树苗",
+  "block.tc4modern.sacred_greatwood_sapling": "神圣宏伟树树苗",
+  "block.tc4modern.enchanted_sacred_greatwood_sapling": "附魔神圣宏伟树树苗",
+  "block.tc4modern.mega_silverwood_sapling": "巨型银树树苗",
+  "block.tc4modern.sacred_silverwood_sapling": "神圣银树树苗",
+  "block.tc4modern.enchanted_sacred_silverwood_sapling": "附魔神圣银树树苗"
 }

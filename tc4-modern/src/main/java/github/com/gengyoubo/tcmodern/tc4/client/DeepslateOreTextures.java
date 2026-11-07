@@ -60,6 +60,10 @@ public final class DeepslateOreTextures {
         Path directory = FMLPaths.GAMEDIR.get().resolve("tc4modern/generated-pack");
         Path textures = directory.resolve("assets/tc4modern/textures/block");
         Files.createDirectories(textures);
+        for (String wood : new String[]{"greatwood", "silverwood"}) {
+            var sapling = MfclApi.legacyResource(BLOCKS + wood + "sapling.png");
+            if (sapling.isPresent()) Files.write(textures.resolve(wood + "_sapling.png"), sapling.get());
+        }
         Files.writeString(directory.resolve("pack.mcmeta"),
                 "{\"pack\":{\"pack_format\":15,\"description\":\"Ore overlays derived from the installed Thaumcraft\"}}", StandardCharsets.UTF_8);
         try (var base = read(stone.get())) {

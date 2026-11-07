@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "forge:item_exists",
+      "item": "thaumcraft:block_custom_plant/meta_0"
+    }
+  ],
+  "pattern": [
+    "SS",
+    "SS"
+  ],
+  "key": {
+    "S": {
+      "item": "thaumcraft:block_custom_plant/meta_0"
+    }
+  },
+  "result": {
+    "item": "tc4modern:mega_greatwood_sapling"
+  }
+}

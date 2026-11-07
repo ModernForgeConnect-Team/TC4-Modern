@@ -32,6 +32,12 @@ public final class Tc4BlockEntities {
     public static final RegistryObject<BlockEntityType<PrimalFurnaceBlockEntity>> PRIMAL_FURNACE = TYPES.register("primal_furnace",
             () -> BlockEntityType.Builder.of(PrimalFurnaceBlockEntity::new, Tc4Blocks.PRIMAL_FURNACE.get()).build(null));
 
+    @SuppressWarnings("DataFlowIssue")
+    public static final RegistryObject<BlockEntityType<github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity>> GIANT_SAPLING = TYPES.register("giant_sapling",
+            () -> BlockEntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity::new,
+                Tc4Blocks.MEGA_GREATWOOD_SAPLING.get(), Tc4Blocks.SACRED_GREATWOOD_SAPLING.get(), Tc4Blocks.ENCHANTED_SACRED_GREATWOOD_SAPLING.get(),
+                Tc4Blocks.MEGA_SILVERWOOD_SAPLING.get(), Tc4Blocks.SACRED_SILVERWOOD_SAPLING.get(), Tc4Blocks.ENCHANTED_SACRED_SILVERWOOD_SAPLING.get()).build(null));
+
     private Tc4BlockEntities() { }
 
     public static void register(IEventBus modBus) { TYPES.register(modBus); }
