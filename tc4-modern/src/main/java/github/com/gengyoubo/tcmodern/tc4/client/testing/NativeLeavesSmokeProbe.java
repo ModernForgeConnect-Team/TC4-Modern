@@ -216,6 +216,18 @@ public final class NativeLeavesSmokeProbe {
         for(var pos:BlockPos.betweenClosed(giantAt.offset(-20,20,-20),giantAt.offset(20,52,20)))
             if(level.getBlockState(pos).is(leaves)) foliage++;
         require(foliage>100,"MFR tree produced too little foliage: "+foliage);
+        long shapeHash=0xcbf29ce484222325L; int treeBlocks=0;
+        for(var pos:BlockPos.betweenClosed(giantAt.offset(-20,0,-20),giantAt.offset(20,52,20))) {
+            var treeState=level.getBlockState(pos);
+            if (!treeState.is(originalLogs[0].getBlock()) && !treeState.is(originalLogs[3].getBlock()) && !treeState.is(leaves)) continue;
+            shapeHash=(shapeHash ^ (pos.getX()-giantAt.getX()))*0x100000001b3L;
+            shapeHash=(shapeHash ^ (pos.getY()-giantAt.getY()))*0x100000001b3L;
+            shapeHash=(shapeHash ^ (pos.getZ()-giantAt.getZ()))*0x100000001b3L;
+            shapeHash=(shapeHash ^ treeState.toString().hashCode())*0x100000001b3L;
+            treeBlocks++;
+        }
+        proof.put("mfrMegaSeed42ShapeHash",Long.toUnsignedString(shapeHash));
+        proof.put("mfrMegaSeed42BlockCount",treeBlocks);
         proof.put("mfrMegaSeed42Reference",result.toString());
         proof.put("mfrMassiveDensityUncapped",true);
         var grownAt = giantAt.offset(0,0,80);
@@ -239,6 +251,70 @@ public final class NativeLeavesSmokeProbe {
         var positions=new java.util.HashSet<BlockPos>();
         for(int i=0;i<75;i++) require(positions.add(github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.randomNodePosition(origin,150,11,true,12345L,i)),"Duplicate node position");
         proof.put("silverwoodNodeRandomnessAndUniquePositions",true);
+        // BEGIN temporary enchanted-tree no-op-write differential benchmark.
+        var oldAt=new BlockPos(400,level.getMaxBuildHeight()-81,400);
+        var newAt=oldAt.offset(320,0,0);
+        for (var at : List.of(oldAt,newAt)) {
+            for (int cx=(at.getX()-112)>>4;cx<=(at.getX()+112)>>4;cx++)
+                for (int cz=(at.getZ()-112)>>4;cz<=(at.getZ()+112)>>4;cz++) level.getChunk(cx,cz);
+            level.setBlock(at.below(),Blocks.DIRT.defaultBlockState(),3);
+            for (int[] d : new int[][] {{12,45,12},{-25,52,4},{30,58,-10},{-14,72,-18},{2,70,31}})
+                level.setBlock(at.offset(d[0],d[1],d[2]),Blocks.BEDROCK.defaultBlockState(),3);
+        }
+        long before=System.nanoTime();
+        var prior=github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTreeBeforeNoOpFixture.generate(level,oldAt,
+                (net.minecraftforge.common.IPlantable)sapling,originalLogs,referenceLeaves,
+                github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTreeBeforeNoOpFixture.Kind.ENCHANTED_SACRED,0,9876L);
+        long oldTime=System.nanoTime()-before;
+        before=System.nanoTime();
+        var after=github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.generate(level,newAt,
+                (net.minecraftforge.common.IPlantable)sapling,originalLogs,referenceLeaves,
+                github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.ENCHANTED_SACRED,0,9876L);
+        long newTime=System.nanoTime()-before;
+        require(prior.generated() && after.generated() && prior.heightLimit()==80 && after.heightLimit()==80
+                && prior.trunkHeight()==after.trunkHeight() && prior.density()==after.density()
+                && prior.leafNodes()==after.leafNodes(),"Enchanted tree generation parameters differ");
+        long compared=0;
+        for (int dx=-110;dx<=110;dx++) for(int dy=0;dy<80;dy++) for(int dz=-110;dz<=110;dz++) {
+            var a=level.getBlockState(oldAt.offset(dx,dy,dz)); var b=level.getBlockState(newAt.offset(dx,dy,dz));
+            require(a.equals(b),"Enchanted tree differs at "+dx+","+dy+","+dz+": "+a+" / "+b);
+            compared++;
+        }
+        proof.put("mfrEnchantedDifferentialBlocks",compared);
+        proof.put("mfrEnchantedBaselineMs",oldTime/1000000L);
+        proof.put("mfrEnchantedOptimizedMs",newTime/1000000L);
+        proof.put("mfrEnchantedLeafNodes",after.leafNodes());
+        // With Forge snapshot capture enabled, compare the ordered snapshots too.
+        var snapA=new BlockPos(1100,120,400); var snapB=snapA.offset(80,0,0);
+        for (var at:List.of(snapA,snapB)) {
+            for(int cx=(at.getX()-24)>>4;cx<=(at.getX()+24)>>4;cx++)
+                for(int cz=(at.getZ()-24)>>4;cz<=(at.getZ()+24)>>4;cz++) level.getChunk(cx,cz);
+            level.setBlock(at.below(),Blocks.DIRT.defaultBlockState(),3);
+        }
+        level.captureBlockSnapshots=true;
+        try {
+            github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTreeBeforeNoOpFixture.generate(level,snapA,
+                    (net.minecraftforge.common.IPlantable)sapling,originalLogs,referenceLeaves,
+                    github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTreeBeforeNoOpFixture.Kind.MEGA,4,42L);
+            var snapshots=new java.util.ArrayList<>(level.capturedBlockSnapshots);
+            level.capturedBlockSnapshots.clear();
+            github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.generate(level,snapB,
+                    (net.minecraftforge.common.IPlantable)sapling,originalLogs,referenceLeaves,
+                    github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.MEGA,4,42L);
+            var optimizedSnapshots=level.capturedBlockSnapshots;
+            require(!snapshots.isEmpty() && snapshots.size()==optimizedSnapshots.size(),"Snapshot count differs");
+            for(int i=0;i<snapshots.size();i++) {
+                var a=snapshots.get(i); var b=optimizedSnapshots.get(i);
+                require(a.getPos().subtract(snapA).equals(b.getPos().subtract(snapB))
+                        && a.getReplacedBlock().equals(b.getReplacedBlock()) && a.getFlag()==b.getFlag(),
+                        "Snapshot differs at "+i);
+            }
+            proof.put("mfrSnapshotDifferentialCount",snapshots.size());
+        } finally {
+            level.captureBlockSnapshots=false;
+            level.capturedBlockSnapshots.clear();
+        }
+        // END temporary enchanted-tree no-op-write differential benchmark.
         player.setNoGravity(true);
         player.teleportTo(level,giantAt.getX()+23.5,giantAt.getY()+18,giantAt.getZ()+23.5,135,-19);
     }
