@@ -18,15 +18,19 @@ public final class GiantSaplingEntity extends BlockEntity {
     private static final int[] HEIGHT = {54, 96, 160}, RADIUS = {18, 52, 140}, BRANCHES = {40, 180, 600}, NODES = {2, 5, 12};
     private static final int BUDGET = 256;
     private boolean active;
+    // Only the tested 80-block enchanted tree uses this resumable path for now.
+    private boolean tickTreeActive;
+    private github.com.gengyoubo.tcmodern.tc4.world.MfrTickTree.Job tickTree;
+    private CompoundTag savedTickTree;
     private int phase, index, step;
     private long seed;
     private boolean mfrShape, massiveShape;
     private int heightLimit, trunkHeight, nodeCount;
     private boolean spreadNodes, randomNodes;
     public GiantSaplingEntity(BlockPos pos, BlockState state) { super(Tc4BlockEntities.GIANT_SAPLING.get(), pos, state); }
-    /** Newly started trees use the original synchronous MFR generation order; existing jobs keep their old state machine. */
+    /** The tested 80-block enchanted tree runs incrementally; other variants retain their existing generators. */
     public void start() {
-        if (active || level == null || level.isClientSide || !(getBlockState().getBlock() instanceof GiantSaplingBlock sapling)) return;
+        if (active || tickTreeActive || level == null || level.isClientSide || !(getBlockState().getBlock() instanceof GiantSaplingBlock sapling)) return;
         var runtime = TcModernApi.runtime().orElse(null);
         if (runtime == null) return;
         int species = sapling.silver() ? 1 : 0;
@@ -46,6 +50,13 @@ public final class GiantSaplingEntity extends BlockEntity {
                 : github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.ENCHANTED_SACRED;
         int scale = variant == 0 ? 4 + level.random.nextInt(3) : variant == 1 ? 6 + level.random.nextInt(4) : 0;
         long treeSeed = level.random.nextLong();
+        if (variant == 2 && level.getMaxBuildHeight() - 1 - worldPosition.getY() == 80) {
+            try {
+                tickTree = github.com.gengyoubo.tcmodern.tc4.world.MfrTickTree.begin(level, worldPosition, sapling, logs, leaves, treeSeed);
+                if (tickTree != null) { tickTreeActive = true; setChanged(); }
+            } catch (RuntimeException failure) { LogUtils.getLogger().error("Could not start tick-budgeted tree at {}", worldPosition, failure); }
+            return;
+        }
         Level world = level;
         BlockPos origin = worldPosition;
         BlockState original = getBlockState();
@@ -79,8 +90,22 @@ public final class GiantSaplingEntity extends BlockEntity {
             runtime.accessor(Nodes.class).create(legacyWorld, pos.getX(), pos.getY(), pos.getZ(), legacyRandom, true, false, false);
         }
     }
-    @Override protected void saveAdditional(CompoundTag tag) { super.saveAdditional(tag); tag.putBoolean("Active", active); tag.putInt("Phase", phase); tag.putInt("Index", index); tag.putInt("Step", step); tag.putLong("Seed", seed); tag.putBoolean("MfrShape", mfrShape); tag.putBoolean("MassiveShape", massiveShape); tag.putInt("HeightLimit", heightLimit); tag.putInt("TrunkHeight", trunkHeight); tag.putInt("NodeCount", nodeCount); tag.putBoolean("SpreadNodes", spreadNodes); tag.putBoolean("RandomNodes", randomNodes); }
-    @Override public void load(CompoundTag tag) { super.load(tag); active = tag.getBoolean("Active"); phase = tag.getInt("Phase"); index = tag.getInt("Index"); step = tag.getInt("Step"); seed = tag.getLong("Seed"); mfrShape = tag.getBoolean("MfrShape");
+    @Override protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        if (tickTreeActive) {
+            tag.putBoolean("TickTreeActive", true);
+            if (tickTree != null) tag.put("TickTree", tickTree.saveProgress());
+            else if (savedTickTree != null) tag.put("TickTree", savedTickTree.copy());
+        }
+        tag.putBoolean("Active", active); tag.putInt("Phase", phase); tag.putInt("Index", index); tag.putInt("Step", step);
+        tag.putLong("Seed", seed); tag.putBoolean("MfrShape", mfrShape); tag.putBoolean("MassiveShape", massiveShape);
+        tag.putInt("HeightLimit", heightLimit); tag.putInt("TrunkHeight", trunkHeight); tag.putInt("NodeCount", nodeCount);
+        tag.putBoolean("SpreadNodes", spreadNodes); tag.putBoolean("RandomNodes", randomNodes);
+    }
+    @Override public void load(CompoundTag tag) { super.load(tag);
+        tickTreeActive = tag.getBoolean("TickTreeActive");
+        savedTickTree = tickTreeActive && tag.contains("TickTree", 10) ? tag.getCompound("TickTree").copy() : null;
+        active = tag.getBoolean("Active"); phase = tag.getInt("Phase"); index = tag.getInt("Index"); step = tag.getInt("Step"); seed = tag.getLong("Seed"); mfrShape = tag.getBoolean("MfrShape");
         // Saves from the earlier mapping did not store the shape; preserve their progress.
         massiveShape = tag.contains("MassiveShape") ? tag.getBoolean("MassiveShape")
                 : getBlockState().getBlock() instanceof GiantSaplingBlock sapling && sapling.size() == 1;
@@ -91,7 +116,50 @@ public final class GiantSaplingEntity extends BlockEntity {
         randomNodes = tag.getBoolean("RandomNodes");
     }
 
+    @Override public void setRemoved() {
+        if (tickTree != null) {
+            if (tickTreeActive) savedTickTree = tickTree.saveProgress();
+            tickTree.close(); tickTree = null;
+        }
+        super.setRemoved();
+    }
+
+    private void tickBudgeted(GiantSaplingBlock sapling, LegacyRuntime runtime) {
+        try {
+            int species = sapling.silver() ? 1 : 0;
+            BlockState[] logs = new BlockState[4];
+            for (int axis = 0; axis < 3; axis++) logs[axis] = runtime.hostBlock("Thaumcraft:blockMagicalLog", species | axis * 4, BlockState.class).orElseThrow();
+            logs[3] = (sapling.silver() ? github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.SILVERWOOD_WOOD.get()
+                    : github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get()).defaultBlockState();
+            var leaves = runtime.hostBlock("Thaumcraft:blockMagicalLeaves", species, BlockState.class).orElseThrow();
+            if (tickTree == null) {
+                if (savedTickTree == null) throw new IllegalStateException("Missing saved tree progress");
+                tickTree = github.com.gengyoubo.tcmodern.tc4.world.MfrTickTree.Job.restore(level, worldPosition, sapling, logs, leaves, savedTickTree);
+                savedTickTree = null;
+            }
+            tickTree.step(4_000_000L);
+            setChanged();
+            if (tickTree.done) {
+                var result = tickTree.result();
+                tickTree.close(); tickTree = null; tickTreeActive = false;
+                Level world = level;
+                BlockPos origin = worldPosition;
+                world.setBlock(origin, logs[0], Block.UPDATE_CLIENTS);
+                if (sapling.silver()) createSilverwoodNodes(world, origin, result, runtime, logs[0]);
+            }
+        } catch (RuntimeException failure) {
+            if (tickTree != null) { tickTree.close(); tickTree = null; }
+            tickTreeActive = false; savedTickTree = null; setChanged();
+            LogUtils.getLogger().error("Tick-budgeted tree failed at {}", worldPosition, failure);
+        }
+    }
+
     public static void tick(Level level, BlockPos origin, BlockState state, GiantSaplingEntity tree) {
+        if (tree.tickTreeActive && state.getBlock() instanceof GiantSaplingBlock sapling) {
+            var runtime = TcModernApi.runtime().orElse(null);
+            if (runtime != null) tree.tickBudgeted(sapling, runtime);
+            return;
+        }
         if (!tree.active || !(state.getBlock() instanceof GiantSaplingBlock sapling)) return;
         var runtime = TcModernApi.runtime().orElse(null); if (runtime == null) return;
         int species = sapling.silver() ? 1 : 0, size = sapling.size();

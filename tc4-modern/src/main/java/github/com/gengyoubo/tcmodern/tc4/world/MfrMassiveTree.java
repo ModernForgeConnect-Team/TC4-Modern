@@ -79,15 +79,10 @@ public final class MfrMassiveTree {
         var tree = new MfrMassiveTree(level, origin, sapling, logs, leaves, kind, scale, seed);
         if (!tree.validLocation()) return new Result(false, 0, 0, tree.trunkRadius, tree.sloped, seed, 0, 0);
         tree.setup();
-        long profileStart=System.nanoTime();
-        tree.generateLeafNodes(); long profileNodes=System.nanoTime();
-        tree.generateLeaves(); long profileLeaves=System.nanoTime();
-        tree.generateBranches(); long profileBranches=System.nanoTime();
-        tree.generateTrunk(); long profileTrunk=System.nanoTime();
-        if (kind == Kind.ENCHANTED_SACRED && tree.heightLimit == 80)
-            System.out.println("MFR_PROFILE MfrMassiveTree.java " + (profileNodes-profileStart)/1000000 + " "
-                    + (profileLeaves-profileNodes)/1000000 + " " + (profileBranches-profileLeaves)/1000000 + " "
-                    + (profileTrunk-profileBranches)/1000000);
+        tree.generateLeafNodes();
+        tree.generateLeaves();
+        tree.generateBranches();
+        tree.generateTrunk();
         return new Result(true, tree.heightLimit, tree.height, tree.trunkRadius, tree.sloped, seed, tree.density, tree.nodes.size());
     }
 
