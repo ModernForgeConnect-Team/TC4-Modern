@@ -1,1 +1,19 @@
-{"replace":false,"values":[{"id":"thaumcraft:block_magical_log","required":false},{"id":"thaumcraft:block_magical_log/meta_0","required":false},{"id":"thaumcraft:block_magical_log/meta_1","required":false}]}
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "thaumcraft:block_magical_log",
+      "required": false
+    },
+    {
+      "id": "thaumcraft:block_magical_log/meta_0",
+      "required": false
+    },
+    {
+      "id": "thaumcraft:block_magical_log/meta_1",
+      "required": false
+    },
+    "tc4modern:greatwood_wood",
+    "tc4modern:silverwood_wood"
+  ]
+}

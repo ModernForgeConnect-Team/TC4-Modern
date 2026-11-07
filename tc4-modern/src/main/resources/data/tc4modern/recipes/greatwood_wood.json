@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "forge:item_exists",
+      "item": "thaumcraft:block_magical_log/meta_0"
+    }
+  ],
+  "category": "building",
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": {
+      "item": "thaumcraft:block_magical_log/meta_0"
+    }
+  },
+  "result": {
+    "item": "tc4modern:greatwood_wood",
+    "count": 3
+  }
+}

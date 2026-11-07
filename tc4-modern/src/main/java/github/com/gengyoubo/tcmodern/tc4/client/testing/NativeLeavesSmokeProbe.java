@@ -56,7 +56,7 @@ public final class NativeLeavesSmokeProbe {
             require(System.nanoTime() < deadline, "Native leaves acceptance timed out at " + stage);
             if (stage == 0 && mc.screen instanceof TitleScreen && mc.getOverlay() == null) {
                 org.lwjgl.glfw.GLFW.glfwHideWindow(mc.getWindow().getWindow());
-                mc.options.pauseOnLostFocus = false; mc.options.renderDistance().set(3);
+                mc.options.pauseOnLostFocus = false; mc.options.renderDistance().set(8);
                 mc.createWorldOpenFlows().createFreshLevel("tc4modern-native-leaves-" + System.currentTimeMillis(),
                         new LevelSettings("Native leaves", GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
                                 new GameRules(), WorldDataConfiguration.DEFAULT), new WorldOptions(42,false,false),
@@ -66,8 +66,8 @@ public final class NativeLeavesSmokeProbe {
                 var id = mc.player.getUUID(); var server = mc.getSingleplayerServer();
                 pending = server.submit(() -> validate(server.getPlayerList().getPlayer(id))); stage = 2;
             } else if (stage == 2 && pending.isDone()) {
-                pending.join(); stage = 3; frames = 0;
-            } else if (stage == 3 && ++frames > 20) {
+                pending.join(); mc.options.hideGui = true; stage = 3; frames = 0;
+            } else if (stage == 3 && ++frames > 100) {
                 var path = mc.gameDirectory.toPath().resolve("screenshots/native-magical-leaves.png");
                 Files.createDirectories(path.getParent());
                 try (var image = net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget())) { image.writeToFile(path); }
@@ -82,6 +82,24 @@ public final class NativeLeavesSmokeProbe {
         proof.put("mfclRuntime", loader.getOwningFile().getFile().getFilePath().toString());
         level.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set(0, level.getServer()); level.setDayTime(6000);
         var origin = player.blockPosition().offset(0,30,8);
+        for (String wood : List.of("greatwood", "silverwood")) {
+            var bark = wood.equals("greatwood") ? github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get()
+                    : github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.SILVERWOOD_WOOD.get();
+            var state = bark.defaultBlockState();
+            require(state.is(BlockTags.LOGS) && state.is(BlockTags.MINEABLE_WITH_AXE), "Bark wood block tags missing: " + wood);
+            require(new ItemStack(bark).is(net.minecraft.tags.ItemTags.LOGS_THAT_BURN), "Bark wood is not a wooden fuel: " + wood);
+            require(bark.getFlammability(state,level,origin,net.minecraft.core.Direction.UP)==5, "Wrong bark flammability: " + wood);
+            var drops=Block.getDrops(state,level,origin,null,player,ItemStack.EMPTY);
+            require(drops.size()==1 && drops.get(0).is(bark.asItem()), "Bark wood drop incorrect: " + wood);
+            var recipes=level.getServer().getRecipeManager();
+            var woodRecipe=recipes.byKey(ResourceLocation.fromNamespaceAndPath("tc4modern",wood+"_wood")).orElseThrow();
+            var planksRecipe=recipes.byKey(ResourceLocation.fromNamespaceAndPath("tc4modern",wood+"_planks_from_wood")).orElseThrow();
+            require(woodRecipe.getResultItem(level.registryAccess()).is(bark.asItem())
+                    && woodRecipe.getResultItem(level.registryAccess()).getCount()==3, "Bark crafting output incorrect: " + wood);
+            require(planksRecipe.getIngredients().get(0).test(new ItemStack(bark))
+                    && planksRecipe.getResultItem(level.registryAccess()).getCount()==4, "Bark planks recipe incorrect: " + wood);
+        }
+        proof.put("bothBarkWoodsTagsDropsAndRecipes", true);
         var nativeState = runtime.hostBlock("Thaumcraft:blockMagicalLeaves",0,BlockState.class).orElseThrow();
         require(nativeState.getBlock() instanceof MagicalLeavesBlock, "Original leaf ID is not a native LeavesBlock");
         var leaves = (MagicalLeavesBlock) nativeState.getBlock();
@@ -176,89 +194,53 @@ public final class NativeLeavesSmokeProbe {
             require(countLeaves(level,at,leaves)>0,"Modern feature omitted native leaves: "+tree);
         }
         proof.put("bothModernTreeFeaturesGenerateNativeLeaves",true);
-        // Exercise growth and the original node tiles on a real server level.
-        var giantAt = origin.offset(0, 0, 64);
-        for (int cx = (giantAt.getX()-24)>>4; cx <= (giantAt.getX()+24)>>4; cx++)
-            for (int cz = (giantAt.getZ()-24)>>4; cz <= (giantAt.getZ()+24)>>4; cz++) level.getChunk(cx, cz);
-        level.setBlock(giantAt.below(), Blocks.DIRT.defaultBlockState(), 3);
-        var giant = github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.MEGA_SILVERWOOD_SAPLING.get();
-        level.setBlock(giantAt, giant.defaultBlockState(), 3);
-        var generator = (github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity)level.getBlockEntity(giantAt);
-        generator.start();
-        for (int i=0; i<1000 && level.getBlockState(giantAt).is(giant); i++)
-            github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.tick(level,giantAt,level.getBlockState(giantAt),generator);
-        require(!level.getBlockState(giantAt).is(giant), "Giant silverwood did not finish");
-        for (int i=0; i<16; i++) {
-            var node = github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.nodePosition(giantAt,54,16,i);
-            require(level.getBlockEntity(node) != null, "Giant silverwood node missing at " + node);
+        // Compare the new generator with the 1.7.10 factory parameters on an empty real world.
+        require(github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.candidateDensity(3F,250)==3329,
+                "Massive-tree density was capped or differs from MFR");
+        var giantAt = origin.offset(0,-30,80);
+        for (int cx=(giantAt.getX()-32)>>4;cx<=(giantAt.getX()+32)>>4;cx++)
+            for (int cz=(giantAt.getZ()-32)>>4;cz<=(giantAt.getZ()+32)>>4;cz++) level.getChunk(cx,cz);
+        level.setBlock(giantAt.below(),Blocks.DIRT.defaultBlockState(),3);
+        BlockState[] originalLogs = new BlockState[4];
+        for (int axis=0;axis<3;axis++) originalLogs[axis]=runtime.hostBlock("Thaumcraft:blockMagicalLog",axis*4,BlockState.class).orElseThrow();
+        originalLogs[3]=github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get().defaultBlockState();
+        var referenceLeaves=runtime.hostBlock("Thaumcraft:blockMagicalLeaves",0,BlockState.class).orElseThrow();
+        var sapling=github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.MEGA_GREATWOOD_SAPLING.get();
+        var result=github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.generate(level,giantAt,
+                (net.minecraftforge.common.IPlantable)sapling, originalLogs,referenceLeaves,
+                github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.MEGA,4,42L);
+        require(result.generated() && result.heightLimit()==48 && result.trunkHeight()==38
+                && result.density()==8 && result.leafNodes()==137, "MFR mega reference mismatch: "+result);
+        require(level.getBlockState(giantAt).is(originalLogs[0].getBlock()), "MFR tree did not build its trunk");
+        int foliage=0;
+        for(var pos:BlockPos.betweenClosed(giantAt.offset(-20,20,-20),giantAt.offset(20,52,20)))
+            if(level.getBlockState(pos).is(leaves)) foliage++;
+        require(foliage>100,"MFR tree produced too little foliage: "+foliage);
+        proof.put("mfrMegaSeed42Reference",result.toString());
+        proof.put("mfrMassiveDensityUncapped",true);
+        var grownAt = giantAt.offset(0,0,80);
+        for (int cx=(grownAt.getX()-32)>>4;cx<=(grownAt.getX()+32)>>4;cx++)
+            for (int cz=(grownAt.getZ()-32)>>4;cz<=(grownAt.getZ()+32)>>4;cz++) level.getChunk(cx,cz);
+        level.setBlock(grownAt.below(),Blocks.DIRT.defaultBlockState(),3);
+        var silverSapling=github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.MEGA_SILVERWOOD_SAPLING.get();
+        level.setBlock(grownAt,silverSapling.defaultBlockState(),3);
+        var treeEntity=(github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity)level.getBlockEntity(grownAt);
+        treeEntity.start();
+        var silverLog=runtime.hostBlock("Thaumcraft:blockMagicalLog",1,BlockState.class).orElseThrow();
+        require(level.getBlockState(grownAt).is(silverLog.getBlock()),"Mega silverwood sapling did not grow with MFR generator");
+        proof.put("mfrSilverwoodSaplingGrowth",true);
+        // New silverwood node selection remains random, bounded and reproducible.
+        var nodeCounts=new java.util.HashSet<Integer>();
+        for(long seed=0;seed<256;seed++) {
+            int count=github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.randomNodeCount(seed,250);
+            require(count>=0&&count<=75,"Node count exceeded height-based maximum"); nodeCounts.add(count);
         }
-        proof.put("giantSilverwoodGrowthAndNodes", true);
-        var springAt = origin.offset(0, 0, 160);
-        for (int cx = (springAt.getX()-48)>>4; cx <= (springAt.getX()+48)>>4; cx++)
-            for (int cz = (springAt.getZ()-48)>>4; cz <= (springAt.getZ()+48)>>4; cz++) level.getChunk(cx, cz);
-        level.setBlock(springAt.below(), Blocks.DIRT.defaultBlockState(), 3);
-        var spring = github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.SACRED_SILVERWOOD_SAPLING.get();
-        level.setBlock(springAt, spring.defaultBlockState(), 3);
-        var springEntity = (github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity) level.getBlockEntity(springAt);
-        springEntity.start();
-        github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.tick(level,springAt,level.getBlockState(springAt),springEntity);
-        var savedProgress = springEntity.saveWithoutMetadata();
-        var restored = new github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity(springAt, spring.defaultBlockState());
-        restored.load(savedProgress);
-        require(restored.saveWithoutMetadata().equals(savedProgress), "Giant sapling progress did not round trip");
-        require(savedProgress.getBoolean("MfrShape") && savedProgress.getInt("HeightLimit") >= 72
-                && savedProgress.getInt("HeightLimit") <= 108, "Sacred sapling did not use MFR spring scale");
-        var canopyProgress = savedProgress.copy();
-        canopyProgress.putInt("Phase", 1); canopyProgress.putInt("Index", 0); canopyProgress.putInt("Step", 0);
-        springEntity.load(canopyProgress);
-        for (int i=0; i<2; i++)
-            github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.tick(level,springAt,level.getBlockState(springAt),springEntity);
-        int canopyLeaves = 0;
-        var canopyCenter = springAt.above(savedProgress.getInt("HeightLimit")-4);
-        for (var at : BlockPos.betweenClosed(canopyCenter.offset(-3,0,-3),canopyCenter.offset(3,3,3)))
-            if (level.getBlockState(at).is(leaves)) canopyLeaves++;
-        require(canopyLeaves > 0, "Sacred sapling did not generate its spring canopy");
-        require(!savedProgress.getBoolean("MassiveShape"), "Sacred sapling selected massive geometry");
-        var oldSpring = savedProgress.copy(); oldSpring.remove("MassiveShape");
-        var oldEnchantedState = github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.ENCHANTED_SACRED_SILVERWOOD_SAPLING.get().defaultBlockState();
-        var oldRestored = new github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity(springAt, oldEnchantedState);
-        oldRestored.load(oldSpring);
-        require(!oldRestored.saveWithoutMetadata().getBoolean("MassiveShape"), "Old enchanted spring did not retain its geometry");
-        var massiveAt = springAt.offset(0,0,80);
-        level.getChunk(massiveAt); level.setBlock(massiveAt.below(), Blocks.DIRT.defaultBlockState(), 3);
-        var massive = github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.ENCHANTED_SACRED_SILVERWOOD_SAPLING.get();
-        level.setBlock(massiveAt, massive.defaultBlockState(), 3);
-        var massiveEntity = (github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity) level.getBlockEntity(massiveAt);
-        massiveEntity.start();
-        var massiveProgress = massiveEntity.saveWithoutMetadata();
-        require(massiveProgress.getBoolean("Active") && massiveProgress.getBoolean("MassiveShape")
-                && massiveProgress.getInt("HeightLimit") == 250, "Enchanted sapling did not select massive geometry");
-        var oldMassive = massiveProgress.copy(); oldMassive.remove("MassiveShape");
-        var oldSacredState = spring.defaultBlockState();
-        var oldMassiveRestored = new github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity(massiveAt, oldSacredState);
-        oldMassiveRestored.load(oldMassive);
-        require(oldMassiveRestored.saveWithoutMetadata().getBoolean("MassiveShape"), "Old sacred massive tree did not retain its geometry");
-        int springNodes = savedProgress.getInt("HeightLimit") * 3 / 10;
-        require(springNodes >= 21 && springNodes <= 32, "Wrong sacred silverwood node scaling");
-        validateGiantNodes(level, runtime, springAt, springEntity, savedProgress, springNodes);
-        validateGiantNodes(level, runtime, massiveAt, massiveEntity, massiveProgress, 75);
-        proof.put("sacredAndEnchantedShapesCanopyNodesAndSavedProgress", true);
-        player.teleportTo(level,origin.getX()+12.5,origin.getY()+7,origin.getZ()+9,145,8);
-    }
-    private static void validateGiantNodes(ServerLevel level, LegacyRuntime runtime, BlockPos origin,
-            github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity entity, CompoundTag saved, int count) {
-        var log = runtime.hostBlock("Thaumcraft:blockMagicalLog",1,BlockState.class).orElseThrow();
-        int height = saved.getInt("TrunkHeight");
-        require(saved.getInt("NodeCount") == count, "Wrong planned node count");
-        for (int i=0; i<count; i++) level.setBlock(github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.nodePosition(origin,height,count,i),log,3);
-        var ready = saved.copy(); ready.putInt("Phase",2); ready.putInt("Index",0); ready.putInt("Step",0);
-        entity.load(ready);
-        for (int tick=0; tick<(count+1)/2; tick++)
-            github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.tick(level,origin,level.getBlockState(origin),entity);
-        for (int i=0; i<count; i++) {
-            var at = github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.nodePosition(origin,height,count,i);
-            require(level.getBlockEntity(at) != null, "Missing silverwood node " + i + " at " + at);
-        }
+        require(nodeCounts.size()>1&&nodeCounts.contains(0),"Node count is not random or cannot be zero");
+        var positions=new java.util.HashSet<BlockPos>();
+        for(int i=0;i<75;i++) require(positions.add(github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity.randomNodePosition(origin,150,11,true,12345L,i)),"Duplicate node position");
+        proof.put("silverwoodNodeRandomnessAndUniquePositions",true);
+        player.setNoGravity(true);
+        player.teleportTo(level,giantAt.getX()+23.5,giantAt.getY()+18,giantAt.getZ()+23.5,135,-19);
     }
     private static int countLeaves(ServerLevel level,BlockPos origin,Block leaves) {
         int count=0;for(var pos:BlockPos.betweenClosed(origin.offset(-10,0,-10),origin.offset(10,35,10)))if(level.getBlockState(pos).is(leaves))count++;

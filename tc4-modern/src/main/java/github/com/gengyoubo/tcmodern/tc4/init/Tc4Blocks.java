@@ -17,6 +17,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -61,6 +63,8 @@ public final class Tc4Blocks {
     public static final RegistryObject<Block> DECONSTRUCTION_Y = withItem("deconstruction_y", () -> new ModernDeconstructionBlock(true));
     public static final RegistryObject<Block> NODE_REACTOR = withItem("node_reactor", NodeReactorBlock::new);
     public static final RegistryObject<Block> PRIMAL_FURNACE = withItem("primal_furnace", PrimalFurnaceBlock::new);
+    public static final RegistryObject<Block> GREATWOOD_WOOD = barkWood("greatwood_wood", MapColor.TERRACOTTA_BLACK);
+    public static final RegistryObject<Block> SILVERWOOD_WOOD = barkWood("silverwood_wood", MapColor.WOOL);
     public static final RegistryObject<Block> GREATWOOD_FENCE = fence("greatwood_fence", MapColor.TERRACOTTA_BLACK);
     public static final RegistryObject<Block> GREATWOOD_FENCE_GATE = fenceGate("greatwood_fence_gate", MapColor.TERRACOTTA_BLACK);
     public static final RegistryObject<Block> SILVERWOOD_FENCE = fence("silverwood_fence", MapColor.WOOL);
@@ -85,6 +89,14 @@ public final class Tc4Blocks {
             }
         });
         return block;
+    }
+
+    /** Six bark faces, with the orientation and fire behavior of vanilla wood. */
+    private static RegistryObject<Block> barkWood(String id, MapColor color) {
+        return withItem(id, () -> new RotatedPillarBlock(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).mapColor(color)) {
+            @Override public int getFlammability(BlockState state, BlockGetter level, BlockPos pos, Direction face) { return 5; }
+            @Override public int getFireSpreadSpeed(BlockState state, BlockGetter level, BlockPos pos, Direction face) { return 5; }
+        });
     }
 
     private static RegistryObject<Block> fence(String id, MapColor color) {

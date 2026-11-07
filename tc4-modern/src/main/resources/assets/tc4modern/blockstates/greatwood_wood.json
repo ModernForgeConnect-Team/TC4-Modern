@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "tc4modern:block/greatwood_wood"
+    },
+    "axis=z": {
+      "model": "tc4modern:block/greatwood_wood",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "tc4modern:block/greatwood_wood",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

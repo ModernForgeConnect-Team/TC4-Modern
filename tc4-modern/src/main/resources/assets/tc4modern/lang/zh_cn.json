@@ -191,5 +191,7 @@
   "block.tc4modern.enchanted_sacred_greatwood_sapling": "附魔神圣宏伟树树苗",
   "block.tc4modern.mega_silverwood_sapling": "巨型银树树苗",
   "block.tc4modern.sacred_silverwood_sapling": "神圣银树树苗",
-  "block.tc4modern.enchanted_sacred_silverwood_sapling": "附魔神圣银树树苗"
+  "block.tc4modern.enchanted_sacred_silverwood_sapling": "附魔神圣银树树苗",
+  "block.tc4modern.greatwood_wood": "宏伟木",
+  "block.tc4modern.silverwood_wood": "银木"
 }

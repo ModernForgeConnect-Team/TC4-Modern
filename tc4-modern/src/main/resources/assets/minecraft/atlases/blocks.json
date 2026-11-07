@@ -7,6 +7,14 @@
     {
       "type": "single",
       "resource": "thaumcraft:blocks/planks_silverwood"
+    },
+    {
+      "type": "single",
+      "resource": "thaumcraft:blocks/greatwoodside"
+    },
+    {
+      "type": "single",
+      "resource": "thaumcraft:blocks/silverwoodside"
     }
   ]
 }

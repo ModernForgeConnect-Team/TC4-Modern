@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "conditions": [
+    {
+      "type": "forge:item_exists",
+      "item": "thaumcraft:block_wooden_device/meta_6"
+    }
+  ],
+  "category": "building",
+  "ingredients": [
+    {
+      "item": "tc4modern:greatwood_wood"
+    }
+  ],
+  "result": {
+    "item": "thaumcraft:block_wooden_device/meta_6",
+    "count": 4
+  }
+}

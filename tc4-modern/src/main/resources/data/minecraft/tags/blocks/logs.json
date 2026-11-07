@@ -1,1 +1,11 @@
-{"replace":false,"values":[{"id":"thaumcraft:block_magical_log","required":false}]}
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "thaumcraft:block_magical_log",
+      "required": false
+    },
+    "tc4modern:greatwood_wood",
+    "tc4modern:silverwood_wood"
+  ]
+}

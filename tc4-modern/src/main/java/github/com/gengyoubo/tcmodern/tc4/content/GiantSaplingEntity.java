@@ -22,38 +22,64 @@ public final class GiantSaplingEntity extends BlockEntity {
     private long seed;
     private boolean mfrShape, massiveShape;
     private int heightLimit, trunkHeight, nodeCount;
-    private boolean spreadNodes;
+    private boolean spreadNodes, randomNodes;
     public GiantSaplingEntity(BlockPos pos, BlockState state) { super(Tc4BlockEntities.GIANT_SAPLING.get(), pos, state); }
+    /** Newly started trees use the original synchronous MFR generation order; existing jobs keep their old state machine. */
     public void start() {
-        if (active || level == null || !(getBlockState().getBlock() instanceof GiantSaplingBlock sapling)) return;
-        int size = sapling.size();
-        long nextSeed = level.random.nextLong();
-        var random = new java.util.Random(nextSeed);
-        boolean massive = size == 2;
-        int requested = size == 0 ? 54 : massive ? 250 : 12 * (6 + random.nextInt(4));
-        int available = level.getMaxBuildHeight() - worldPosition.getY() - 1;
-        int limit = Math.min(requested, available);
-        if (limit < (size == 0 ? 54 : massive ? 80 : requested / 2)) return;
-        // A blocked central trunk must not consume the sapling or start an incomplete tree.
-        for (int y = 1; y < limit; y++) {
-            var at = worldPosition.above(y);
-            var existing = level.getBlockState(at);
-            if (!existing.isAir() && !existing.is(BlockTags.LEAVES) && !existing.canBeReplaced()) return;
-            if (!existing.getFluidState().isEmpty() || existing.hasBlockEntity()) return;
+        if (active || level == null || level.isClientSide || !(getBlockState().getBlock() instanceof GiantSaplingBlock sapling)) return;
+        var runtime = TcModernApi.runtime().orElse(null);
+        if (runtime == null) return;
+        int species = sapling.silver() ? 1 : 0;
+        BlockState[] logs = new BlockState[4];
+        for (int axis = 0; axis < 3; axis++) {
+            logs[axis] = runtime.hostBlock("Thaumcraft:blockMagicalLog", species | axis * 4, BlockState.class).orElse(null);
+            if (logs[axis] == null) return;
         }
-        seed = nextSeed;
-        heightLimit = limit;
-        int base = (int)(limit * (massive ? 0.45F : 0.35F));
-        trunkHeight = base + random.nextInt(Math.max(1, limit - base));
-        mfrShape = size != 0;
-        massiveShape = massive;
-        // TC4's 7–11-block silverwood can contain up to about three nodes.
-        // Scale that upper bound with the final tree height, not just its variant.
-        nodeCount = Math.max(1, limit * 3 / 10);
-        spreadNodes = true;
-        active = true; setChanged();
+        // MFR uses a six-bark-face wood state on branch and trunk ends.
+        logs[3] = (sapling.silver() ? github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.SILVERWOOD_WOOD.get()
+                : github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get()).defaultBlockState();
+        var leaves = runtime.hostBlock("Thaumcraft:blockMagicalLeaves", species, BlockState.class).orElse(null);
+        if (leaves == null) return;
+        int variant = sapling.size();
+        var kind = variant == 0 ? github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.MEGA
+                : variant == 1 ? github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.SACRED
+                : github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.ENCHANTED_SACRED;
+        int scale = variant == 0 ? 4 + level.random.nextInt(3) : variant == 1 ? 6 + level.random.nextInt(4) : 0;
+        long treeSeed = level.random.nextLong();
+        Level world = level;
+        BlockPos origin = worldPosition;
+        BlockState original = getBlockState();
+        // MFR removes the sapling before checking the central line and restores it if validation fails.
+        world.removeBlock(origin, false);
+        try {
+            var result = github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.generate(
+                    world, origin, sapling, logs, leaves, kind, scale, treeSeed);
+            if (!result.generated()) {
+                world.setBlock(origin, original, Block.UPDATE_ALL);
+                return;
+            }
+            if (sapling.silver()) createSilverwoodNodes(world, origin, result, runtime, logs[0]);
+        } catch (RuntimeException failure) {
+            if (world.isEmptyBlock(origin)) world.setBlock(origin, original, Block.UPDATE_ALL);
+            LogUtils.getLogger().error("MFR-style magical tree generation failed at {}", origin, failure);
+        }
     }
-    @Override protected void saveAdditional(CompoundTag tag) { super.saveAdditional(tag); tag.putBoolean("Active", active); tag.putInt("Phase", phase); tag.putInt("Index", index); tag.putInt("Step", step); tag.putLong("Seed", seed); tag.putBoolean("MfrShape", mfrShape); tag.putBoolean("MassiveShape", massiveShape); tag.putInt("HeightLimit", heightLimit); tag.putInt("TrunkHeight", trunkHeight); tag.putInt("NodeCount", nodeCount); tag.putBoolean("SpreadNodes", spreadNodes); }
+
+    private static void createSilverwoodNodes(Level level, BlockPos origin,
+            github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Result tree, LegacyRuntime runtime, BlockState log) {
+        int count = randomNodeCount(tree.seed(), tree.heightLimit());
+        var knot = runtime.hostBlock("Thaumcraft:blockMagicalLog", 2, BlockState.class).orElse(null);
+        if (knot == null) return;
+        var legacyWorld = runtime.mappings().toLegacy(LegacyMappings.WORLD, level).orElseThrow();
+        var legacyRandom = runtime.accessor(MagicBoneMealItem.OldWorld.class, legacyWorld).random();
+        for (int i = 0; i < count; i++) {
+            var pos = randomNodePosition(origin, tree.trunkHeight(), tree.trunkRadius(), tree.sloped(), tree.seed(), i);
+            if (!level.getBlockState(pos).is(log.getBlock())) continue;
+            level.setBlock(pos, knot, Block.UPDATE_ALL);
+            runtime.accessor(Nodes.class).create(legacyWorld, pos.getX(), pos.getY(), pos.getZ(), legacyRandom, true, false, false);
+        }
+    }
+    @Override protected void saveAdditional(CompoundTag tag) { super.saveAdditional(tag); tag.putBoolean("Active", active); tag.putInt("Phase", phase); tag.putInt("Index", index); tag.putInt("Step", step); tag.putLong("Seed", seed); tag.putBoolean("MfrShape", mfrShape); tag.putBoolean("MassiveShape", massiveShape); tag.putInt("HeightLimit", heightLimit); tag.putInt("TrunkHeight", trunkHeight); tag.putInt("NodeCount", nodeCount); tag.putBoolean("SpreadNodes", spreadNodes); tag.putBoolean("RandomNodes", randomNodes); }
     @Override public void load(CompoundTag tag) { super.load(tag); active = tag.getBoolean("Active"); phase = tag.getInt("Phase"); index = tag.getInt("Index"); step = tag.getInt("Step"); seed = tag.getLong("Seed"); mfrShape = tag.getBoolean("MfrShape");
         // Saves from the earlier mapping did not store the shape; preserve their progress.
         massiveShape = tag.contains("MassiveShape") ? tag.getBoolean("MassiveShape")
@@ -62,6 +88,7 @@ public final class GiantSaplingEntity extends BlockEntity {
         int size = getBlockState().getBlock() instanceof GiantSaplingBlock sapling ? sapling.size() : 0;
         nodeCount = tag.contains("NodeCount") ? tag.getInt("NodeCount") : mfrShape ? (massiveShape ? 12 : 5) : NODES[size];
         spreadNodes = tag.getBoolean("SpreadNodes");
+        randomNodes = tag.getBoolean("RandomNodes");
     }
 
     public static void tick(Level level, BlockPos origin, BlockState state, GiantSaplingEntity tree) {
@@ -143,7 +170,9 @@ public final class GiantSaplingEntity extends BlockEntity {
                 int height = tree.mfrShape ? tree.trunkHeight : HEIGHT[size];
                 if (!sapling.silver() || tree.index >= tree.nodeCount) { tree.phase = 3; continue; }
                 if (nodesProcessed >= 2) break;
-                target = tree.spreadNodes ? nodePosition(origin, height, tree.nodeCount, tree.index)
+                int radius = tree.mfrShape ? (tree.massiveShape ? 11 : springTrunkRadius(tree.seed)) : size + 2;
+                target = tree.randomNodes ? randomNodePosition(origin, height, radius, tree.mfrShape && tree.massiveShape, tree.seed, tree.index)
+                        : tree.spreadNodes ? nodePosition(origin, height, tree.nodeCount, tree.index)
                         : origin.above(3 + tree.index * Math.max(4, (height-8)/tree.nodeCount));
                 if (!level.hasChunkAt(target)) break;
                 var knot = runtime.hostBlock("Thaumcraft:blockMagicalLog", 2, BlockState.class).orElse(null);
@@ -163,6 +192,30 @@ public final class GiantSaplingEntity extends BlockEntity {
             }
         }
         if (tree.active) tree.setChanged();
+    }
+    /** Uniformly choose a count from zero through the height-based upper bound. */
+    public static int randomNodeCount(long seed, int height) {
+        int maximum = Math.max(0, height * 3 / 10);
+        return new java.util.Random(seed ^ 0x4E4F4445434F554EL).nextInt(maximum + 1);
+    }
+    /** Seeded shuffle without replacement keeps placement irregular, distinct, and stable across saves. */
+    public static BlockPos randomNodePosition(BlockPos origin, int height, int radius, boolean sloped, long seed, int index) {
+        var random = new java.util.Random(seed ^ 0x4E4F4445504F534CL);
+        // Limit the number of sampled columns so shuffling a very large trunk stays cheap.
+        var columns = new java.util.ArrayList<int[]>();
+        for (int x = -radius; x <= radius; x++) for (int z = -radius; z <= radius; z++)
+            if (x*x + z*z <= radius*radius) columns.add(new int[] {x,z});
+        java.util.Collections.shuffle(columns, random);
+        if (columns.size() > 25) columns.subList(25, columns.size()).clear();
+        var candidates = new java.util.ArrayList<BlockPos>();
+        for (var column : columns) {
+            int top = sloped ? slopedTrunk(column[0], column[1], radius, height) : height;
+            int first = 2 + random.nextInt(2);
+            for (int y = first; y < top; y += 2)
+                candidates.add(origin.offset(column[0], y, column[1]));
+        }
+        java.util.Collections.shuffle(candidates, random);
+        return candidates.get(index);
     }
     /** Distribute knots across trunk columns when height alone cannot provide four blocks of spacing. */
     public static BlockPos nodePosition(BlockPos origin, int height, int count, int index) {
