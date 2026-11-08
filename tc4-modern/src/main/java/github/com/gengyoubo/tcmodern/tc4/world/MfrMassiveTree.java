@@ -13,7 +13,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraftforge.common.IPlantable;
+
+import static github.com.gengyoubo.tcmodern.tc4.Tc4Modern.LOGGER;
 
 /**
  * Port of the 1.7.10 MFR WorldGenMassiveTree algorithm.
@@ -27,12 +31,16 @@ public final class MfrMassiveTree {
                          int density, int leafNodes) { }
     private record LeafNode(int x, int y, int z, int branchY) { }
     private static final int[] OTHER = {2, 0, 0, 1, 2, 1};
+    private static final Heightmap.Types[] SECTION_HEIGHTMAPS = {Heightmap.Types.MOTION_BLOCKING,
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,Heightmap.Types.OCEAN_FLOOR,Heightmap.Types.WORLD_SURFACE};
     // Same dx-major, dz-minor order as the original leaf-layer loops.
     private static final int[] LEAF_OFFSETS_2 = leafOffsets(2), LEAF_OFFSETS_3 = leafOffsets(3);
     private final Level level;
     private final BlockPos origin;
     private final BlockState[] logs;
     private final BlockState leaves;
+    private final boolean useSectionWrites;
+    private long sectionWrites, fallbackWrites;
     private final boolean nativeLeaves, nativeBark;
     private final IPlantable sapling;
     private final Random random;
@@ -54,8 +62,9 @@ public final class MfrMassiveTree {
     private boolean sloped, safe;
 
     private MfrMassiveTree(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves,
-                           Kind kind, int scale, long seed) {
+                           Kind kind, int scale, long seed, boolean sectionWrites) {
         this.level = level; this.origin = origin; this.sapling = sapling; this.logs = logs; this.leaves = leaves;
+        this.useSectionWrites = sectionWrites && kind == Kind.ENCHANTED_SACRED && level.getClass() == ServerLevel.class;
         this.nativeLeaves = leaves.getBlock() instanceof github.com.gengyoubo.tcmodern.tc4.content.MagicalLeavesBlock;
         this.nativeBark = logs[3].is(github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get())
                 || logs[3].is(github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.SILVERWOOD_WOOD.get());
@@ -76,13 +85,20 @@ public final class MfrMassiveTree {
     /** A generator instance is single-use; as in MFR, generation itself is synchronous and has no density cap. */
     public static Result generate(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves,
                                   Kind kind, int scale, long seed) {
-        var tree = new MfrMassiveTree(level, origin, sapling, logs, leaves, kind, scale, seed);
+        return generate(level,origin,sapling,logs,leaves,kind,scale,seed,true);
+    }
+
+    /** The explicit flag also permits controlled comparisons with normal world writes. */
+    public static Result generate(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves,
+                                  Kind kind, int scale, long seed, boolean sectionWrites) {
+        var tree = new MfrMassiveTree(level, origin, sapling, logs, leaves, kind, scale, seed, sectionWrites);
         if (!tree.validLocation()) return new Result(false, 0, 0, tree.trunkRadius, tree.sloped, seed, 0, 0);
         tree.setup();
         tree.generateLeafNodes();
         tree.generateLeaves();
         tree.generateBranches();
         tree.generateTrunk();
+        if (tree.useSectionWrites) LOGGER.info("Synchronous enchanted tree at {}: sectionWrites={} fallbackWrites={}", origin, tree.sectionWrites, tree.fallbackWrites);
         return new Result(true, tree.heightLimit, tree.height, tree.trunkRadius, tree.sloped, seed, tree.density, tree.nodes.size());
     }
 
@@ -265,6 +281,34 @@ public final class MfrMassiveTree {
     private void put(BlockPos pos, BlockState state) {
         // onPlace and neighbouring callbacks can change any block, so even a cached hit is invalid after a write.
         readCached = false;
-        if (!level.isOutsideBuildHeight(pos)) level.setBlock(pos, state, Block.UPDATE_CLIENTS);
+        System.out.println(pos);
+        if (level.isOutsideBuildHeight(pos)) return;
+        if (useSectionWrites && putInAirSection(pos, state)) { sectionWrites++; return; }
+        if (useSectionWrites) fallbackWrites++;
+        level.setBlock(pos, state, Block.UPDATE_CLIENTS);
+    }
+
+    /** Direct section write for air only; keep the normal height, light, block and neighbour notifications. */
+    private boolean putInAirSection(BlockPos pos, BlockState state) {
+        if (level.captureBlockSnapshots || level.isDebug() || state.hasBlockEntity()) return false;
+        var chunk = level.getChunkAt(pos);
+        var section = chunk.getSection(chunk.getSectionIndex(pos.getY()));
+        int x=pos.getX()&15, y=pos.getY(), z=pos.getZ()&15;
+        if (section.getBlockState(x,y&15,z) != Blocks.AIR.defaultBlockState()) return false;
+        boolean wasEmpty=section.hasOnlyAir();
+        var old=section.setBlockState(x,y&15,z,state);
+        chunk.setUnsaved(true);
+        for (var type : SECTION_HEIGHTMAPS) chunk.getOrCreateHeightmapUnprimed(type).update(x,y,z,state);
+        boolean isEmpty=section.hasOnlyAir();
+        if(wasEmpty!=isEmpty) level.getChunkSource().getLightEngine().updateSectionStatus(pos,isEmpty);
+        if(LightEngine.hasDifferentLightProperties(chunk,pos,old,state)) {
+            chunk.getSkyLightSources().update(chunk,x,y,z);
+            level.getChunkSource().getLightEngine().checkBlock(pos);
+        }
+        old.onRemove(level,pos,state,false);
+        if(!section.getBlockState(x,y&15,z).is(state.getBlock())) return true;
+        state.onPlace(level,pos,old,false);
+        level.markAndNotifyBlock(pos,chunk,old,state,Block.UPDATE_CLIENTS,512);
+        return true;
     }
 }

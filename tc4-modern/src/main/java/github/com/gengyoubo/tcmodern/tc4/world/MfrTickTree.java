@@ -29,6 +29,7 @@ public final class MfrTickTree {
     private final BlockState[] logs;
     private final BlockState leaves;
     private final boolean staticLeaves;
+    private MassiveLeafSectionBatch leafSectionBatch;
     private final boolean nativeLeaves, nativeBark;
     private final IPlantable sapling;
     private static final class SavedRandom extends Random {
@@ -53,6 +54,9 @@ public final class MfrTickTree {
     private static final java.util.concurrent.atomic.AtomicLong NEXT_TICKET=new java.util.concurrent.atomic.AtomicLong();
     private final long ticketId=NEXT_TICKET.incrementAndGet();
     private net.minecraft.world.level.ChunkPos pendingChunk; private final java.util.LinkedHashSet<net.minecraft.world.level.ChunkPos> heldTickets=new java.util.LinkedHashSet<>(); private int requests, waits, maxOutstanding, maxHeld; private boolean cooperative;
+    // Diagnostic history is separate from held tickets: only actual addRegionTicket calls count.
+    private final it.unimi.dsi.fastutil.longs.LongOpenHashSet requestedChunks = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+    private long repeatRequests, ticketEvictions;
     private static final class AwaitChunk extends RuntimeException { private static final AwaitChunk INSTANCE=new AwaitChunk(); private AwaitChunk(){super(null,null,false,false);} }
     private void ensureChunk(int x,int z) {
         var server=(ServerLevel)level; var cache=server.getChunkSource(); int cx=x>>4,cz=z>>4;
@@ -60,8 +64,10 @@ public final class MfrTickTree {
         var target=new net.minecraft.world.level.ChunkPos(cx,cz);
         if(pendingChunk==null) {
             if(!heldTickets.contains(target)) {
-                if(heldTickets.size()>=192) { var oldest=heldTickets.iterator().next(); cache.removeRegionTicket(TREE_TICKET,oldest,0,ticketId); heldTickets.remove(oldest); }
-                cache.addRegionTicket(TREE_TICKET,target,0,ticketId); heldTickets.add(target); requests++; maxHeld=Math.max(maxHeld,heldTickets.size());
+                if(heldTickets.size()>=192) { var oldest=heldTickets.iterator().next(); cache.removeRegionTicket(TREE_TICKET,oldest,0,ticketId); heldTickets.remove(oldest); ticketEvictions++; }
+                cache.addRegionTicket(TREE_TICKET,target,0,ticketId); heldTickets.add(target); requests++;
+                if (!requestedChunks.add(target.toLong())) repeatRequests++;
+                maxHeld=Math.max(maxHeld,heldTickets.size());
             }
             pendingChunk=target; maxOutstanding=1;
         }
@@ -121,31 +127,60 @@ public final class MfrTickTree {
 
     public static final class Job implements TreeGenerationTask {
         private final MfrTickTree tree;
+        private final boolean compactLeafBatches;
+        private final boolean sectionLeafBatches;
         private java.util.concurrent.CompletableFuture<int[]> coordinates;
         private int cursor, branchCursor, phase, relativeY, y, candidateIndex, trunkColumn, leafNodeCursor, batchEnd; private boolean candidatePending; private int candidateX,candidateZ;
+        private boolean batchCounted;
+        private long batchedDuplicatePositions;
         public long maxStepNanos, totalStepNanos, prepareNanos, candidateNanos, nodeHash, trunkNanos;
         public final long[] phaseMaxNanos=new long[4]; public int steps, candidateCount, nodes;
+        private long measuredSteps;
         public boolean done;
         private boolean cancelled;
         public long chunkMaxNanos() { return tree.chunkMaxNanos; }
         public long chunkTotalNanos() { return tree.chunkTotalNanos; }
         public int chunkCalls() { return tree.chunkCalls; }
-        public String progress() {return "phase="+phase+" candidates="+candidateCount+" steps="+steps+" requests="+tree.requests+" waits="+tree.waits+" pending="+tree.pendingChunk;}
+        public String progress() {return "phase="+phase+" candidates="+candidateCount+" steps="+steps
+                +" measuredSteps="+measuredSteps+" totalStepNanos="+totalStepNanos+" maxStepNanos="+maxStepNanos+" requests="+tree.requests
+                +" waits="+tree.waits+" repeatRequests="+tree.repeatRequests+" uniqueRequestedChunks="+tree.requestedChunks.size()
+                +" ticketEvictions="+tree.ticketEvictions+" heldTickets="+tree.heldTickets.size()+" pending="+tree.pendingChunk
+                +" compactLeafBatches="+compactLeafBatches+" batchedDuplicatePositions="+batchedDuplicatePositions
+                +" sectionLeafBatches="+sectionLeafBatches
+                +" sectionFastWrites="+(tree.leafSectionBatch==null?0:tree.leafSectionBatch.fastWrites)
+                +" sectionFallbackWrites="+(tree.leafSectionBatch==null?0:tree.leafSectionBatch.fallbackWrites)
+                +" sectionMaxFlushNanos="+(tree.leafSectionBatch==null?0:tree.leafSectionBatch.maxFlushNanos);}
         public int requests() {return tree.requests;} public int waits(){return tree.waits;} public int maxOutstanding(){return tree.maxOutstanding;} public int maxHeld(){return tree.maxHeld;} public boolean ticketReleased(){return tree.pendingChunk==null && tree.heldTickets.isEmpty();} @Override public void cancel(){cancelled=true;if(coordinates!=null)coordinates.cancel(false);tree.releaseChunk();}
         public MfrMassiveTree.Result result(){return new MfrMassiveTree.Result(done,tree.heightLimit,tree.height,tree.trunkRadius,tree.sloped,tree.seed,tree.density,tree.nodes.size());}
-        private Job(MfrTickTree tree) {
-            this.tree=tree; tree.cooperative=true; tree.setup(); int top=tree.origin.getY()+tree.heightLimit-tree.leafDistance;
+        private Job(MfrTickTree tree, boolean compactLeafBatches, boolean sectionLeafBatches) {
+            this.tree=tree; this.compactLeafBatches=compactLeafBatches; this.sectionLeafBatches=sectionLeafBatches;
+            if(sectionLeafBatches) tree.leafSectionBatch=new MassiveLeafSectionBatch((ServerLevel)tree.level,tree.leaves);
+            tree.cooperative=true; tree.setup(); int top=tree.origin.getY()+tree.heightLimit-tree.leafDistance;
             tree.nodes.add(new LeafNode(tree.origin.getX(),top,tree.origin.getZ(),tree.origin.getY()+tree.height));
             relativeY=top-tree.origin.getY(); y=top-1;
         }
         @Override public void save(net.minecraft.nbt.CompoundTag tag) {
             tag.putBoolean("StaticLeaves",tree.staticLeaves);
+            tag.putBoolean("CompactLeafBatches",compactLeafBatches);
+            tag.putBoolean("SectionLeafBatches",sectionLeafBatches);
+            if(tree.leafSectionBatch!=null) {
+                tag.putLong("SectionFastWrites",tree.leafSectionBatch.fastWrites);
+                tag.putLong("SectionFallbackWrites",tree.leafSectionBatch.fallbackWrites);
+                tag.putLong("SectionMaxFlushNanos",tree.leafSectionBatch.maxFlushNanos);
+            }
+            tag.putBoolean("LeafBatchCounted",batchCounted); tag.putLong("BatchedDuplicatePositions",batchedDuplicatePositions);
             tag.putLong("Seed",tree.seed); tag.putLong("RandomState",tree.random.state);
             tag.putInt("HeightLimit",tree.heightLimit); tag.putInt("Height",tree.height); tag.putInt("LeafBases",tree.leafBases); tag.putInt("Density",tree.density);
             tag.putInt("Phase",phase); tag.putInt("RelativeY",relativeY); tag.putInt("Y",y); tag.putInt("CandidateIndex",candidateIndex);
             tag.putBoolean("CandidatePending",candidatePending); tag.putInt("CandidateX",candidateX); tag.putInt("CandidateZ",candidateZ);
             tag.putInt("LeafNodeCursor",leafNodeCursor); tag.putInt("Cursor",cursor); tag.putInt("BranchCursor",branchCursor); tag.putInt("TrunkColumn",trunkColumn);
             tag.putInt("Steps",steps); tag.putInt("CandidateCount",candidateCount);
+            var metrics = new net.minecraft.nbt.CompoundTag();
+            metrics.putLong("MeasuredSteps",measuredSteps); metrics.putLong("TotalStepNanos",totalStepNanos); metrics.putLong("MaxStepNanos",maxStepNanos);
+            metrics.putInt("Requests",tree.requests); metrics.putInt("Waits",tree.waits);
+            metrics.putLong("RepeatRequests",tree.repeatRequests); metrics.putLong("TicketEvictions",tree.ticketEvictions);
+            metrics.putLongArray("RequestedChunks",tree.requestedChunks.toLongArray());
+            tag.put("Metrics",metrics);
             int[] saved=new int[tree.nodes.size()*4]; int i=0;
             for(var node:tree.nodes){saved[i++]=node.x;saved[i++]=node.y;saved[i++]=node.z;saved[i++]=node.branchY;}
             tag.putIntArray("Nodes",saved);
@@ -155,14 +190,27 @@ public final class MfrTickTree {
             var nextTree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,saved.getLong("Seed"),saved.getBoolean("StaticLeaves"));
             nextTree.heightLimit=saved.getInt("HeightLimit");nextTree.height=saved.getInt("Height");nextTree.leafBases=saved.getInt("LeafBases");nextTree.density=saved.getInt("Density");
             nextTree.random.state=saved.getLong("RandomState");
-            var next=new Job(nextTree); next.tree.nodes.clear(); int[] data=saved.getIntArray("Nodes");
+            var next=new Job(nextTree,saved.getBoolean("CompactLeafBatches"),saved.getBoolean("SectionLeafBatches")); next.tree.nodes.clear(); int[] data=saved.getIntArray("Nodes");
+            if(next.tree.leafSectionBatch!=null) {
+                next.tree.leafSectionBatch.fastWrites=saved.getLong("SectionFastWrites");
+                next.tree.leafSectionBatch.fallbackWrites=saved.getLong("SectionFallbackWrites");
+                next.tree.leafSectionBatch.maxFlushNanos=saved.getLong("SectionMaxFlushNanos");
+            }
             if(data.length%4!=0) throw new IllegalStateException("Invalid saved node array");
             for(int i=0;i<data.length;i+=4)next.tree.nodes.add(new LeafNode(data[i],data[i+1],data[i+2],data[i+3]));
             next.phase=saved.getInt("Phase");next.relativeY=saved.getInt("RelativeY");next.y=saved.getInt("Y");next.candidateIndex=saved.getInt("CandidateIndex");
             next.candidatePending=saved.getBoolean("CandidatePending");next.candidateX=saved.getInt("CandidateX");next.candidateZ=saved.getInt("CandidateZ");
             next.leafNodeCursor=saved.getInt("LeafNodeCursor");next.branchCursor=saved.getInt("BranchCursor");next.trunkColumn=saved.getInt("TrunkColumn");
             next.steps=saved.getInt("Steps");next.candidateCount=saved.getInt("CandidateCount");
+            if (saved.contains("Metrics",10)) {
+                var metrics=saved.getCompound("Metrics");
+                next.measuredSteps=metrics.getLong("MeasuredSteps"); next.totalStepNanos=metrics.getLong("TotalStepNanos"); next.maxStepNanos=metrics.getLong("MaxStepNanos");
+                next.tree.requests=metrics.getInt("Requests"); next.tree.waits=metrics.getInt("Waits");
+                next.tree.repeatRequests=metrics.getLong("RepeatRequests"); next.tree.ticketEvictions=metrics.getLong("TicketEvictions");
+                for (long chunk : metrics.getLongArray("RequestedChunks")) next.tree.requestedChunks.add(chunk);
+            }
             if(next.phase==1) {int savedCursor=saved.getInt("Cursor");next.startBatch();next.cursor=savedCursor;}
+            next.batchCounted=saved.getBoolean("LeafBatchCounted"); next.batchedDuplicatePositions=saved.getLong("BatchedDuplicatePositions");
             return next;
         }
         private void candidate() {
@@ -194,16 +242,21 @@ public final class MfrTickTree {
             int batchStart=leafNodeCursor;
             batchEnd=Math.min(batchStart+128,tree.nodes.size());
             var snapshot=tree.nodes.subList(batchStart,batchEnd).toArray(new LeafNode[0]); int leafDistance=tree.leafDistance;
-            cursor=0;
+            cursor=0; batchCounted=false;
             coordinates=java.util.concurrent.CompletableFuture.supplyAsync(()-> {
                 long start=System.nanoTime(); int per=0;
                 for(int layer=0;layer<leafDistance;layer++) per+=(layer!=0 && layer!=leafDistance-1?LEAF_OFFSETS_3:LEAF_OFFSETS_2).length/2;
                 int[] coords=new int[Math.multiplyExact(Math.multiplyExact(snapshot.length,per),3)]; int k=0;
+                var seen=compactLeafBatches ? new it.unimi.dsi.fastutil.longs.LongOpenHashSet(snapshot.length*per) : null;
                 for(var node:snapshot) for(int layer=0;layer<leafDistance;layer++) {
                     int[] offsets=layer!=0 && layer!=leafDistance-1?LEAF_OFFSETS_3:LEAF_OFFSETS_2;
-                    for(int i=0;i<offsets.length;i+=2) {coords[k++]=node.x+offsets[i]; coords[k++]=node.y+layer; coords[k++]=node.z+offsets[i+1];}
+                    for(int i=0;i<offsets.length;i+=2) {
+                        int x=node.x+offsets[i], y=node.y+layer, z=node.z+offsets[i+1];
+                        if(seen!=null && !seen.add(BlockPos.asLong(x,y,z))) continue;
+                        coords[k++]=x; coords[k++]=y; coords[k++]=z;
+                    }
                 }
-                prepareNanos=System.nanoTime()-start; return coords;
+                prepareNanos=System.nanoTime()-start; return k==coords.length ? coords : java.util.Arrays.copyOf(coords,k);
             });
         }
         private void trunkOne() {
@@ -220,7 +273,7 @@ public final class MfrTickTree {
         @Override public boolean tick(long deadlineNanos) {
             if (done || cancelled) return true;
             tree.readCached=false; tree.scanChunk=null;
-            int initialPhase=phase; long start=System.nanoTime(), deadline=deadlineNanos; steps++;
+            int initialPhase=phase; long start=System.nanoTime(), deadline=deadlineNanos; steps++; measuredSteps++;
             try {
                 if(!tree.pollChunk()) return false;
                 if(phase==0) {
@@ -229,6 +282,11 @@ public final class MfrTickTree {
                 }
                 if(phase==1 && coordinates.isDone()) {
                     int[] c=coordinates.join();
+                    if(!batchCounted) {
+                        int per=0; for(int layer=0;layer<tree.leafDistance;layer++) per+=(layer!=0 && layer!=tree.leafDistance-1?LEAF_OFFSETS_3:LEAF_OFFSETS_2).length/2;
+                        batchedDuplicatePositions+=(long)(batchEnd-leafNodeCursor)*per-c.length/3;
+                        batchCounted=true;
+                    }
                     while(cursor<c.length && System.nanoTime()<deadline) {
                         int x=c[cursor],y=c[cursor+1],z=c[cursor+2]; tree.ensureChunk(x,z); cursor+=3; var old=tree.readState(x,y,z);
                         if((tree.safe?tree.leafReplaceable(old):!old.is(Blocks.BEDROCK)) && !(tree.nativeLeaves && old==tree.leaves && !tree.level.captureBlockSnapshots)) tree.put(new BlockPos(x,y,z),tree.leaves);
@@ -258,6 +316,7 @@ public final class MfrTickTree {
             } catch(AwaitChunk wait) {
                 // The exact candidate/placement cursor is retained until a later server tick.
             } finally {
+                if(tree.leafSectionBatch!=null) tree.leafSectionBatch.flush();
                 long elapsed=System.nanoTime()-start; totalStepNanos+=elapsed; maxStepNanos=Math.max(maxStepNanos,elapsed);
                 phaseMaxNanos[initialPhase]=Math.max(phaseMaxNanos[initialPhase],elapsed); if(initialPhase==0) candidateNanos+=elapsed;
             }
@@ -267,7 +326,7 @@ public final class MfrTickTree {
     public static Job begin(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves, long seed) {
         var tree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,seed,true);
         if(!tree.validLocation()) return null;
-        return new Job(tree);
+        return new Job(tree,true,true);
     }
 
     private void setup() {
@@ -396,6 +455,11 @@ public final class MfrTickTree {
         // The sapling is the persistent task anchor until all tree phases finish.
         if (!pos.equals(origin) && !level.isOutsideBuildHeight(pos)) {
             if (cooperative) ensureChunk(pos.getX(), pos.getZ());
+            if (leafSectionBatch != null) {
+                if (state == leaves && leafSectionBatch.tryPlace(pos)) return;
+                leafSectionBatch.flush();
+                if (state == leaves) leafSectionBatch.fallbackWrites++;
+            }
             level.setBlock(pos, state, Block.UPDATE_CLIENTS);
         }
     }
