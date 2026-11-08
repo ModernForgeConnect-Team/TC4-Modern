@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "conditions": [
+    {
+      "type": "forge:item_exists",
+      "item": "thaumcraft:block_wooden_device/meta_7"
+    }
+  ],
+  "category": "building",
+  "ingredients": [
+    {
+      "item": "tc4modern:stripped_silverwood_wood"
+    }
+  ],
+  "result": {
+    "item": "thaumcraft:block_wooden_device/meta_7",
+    "count": 4
+  }
+}

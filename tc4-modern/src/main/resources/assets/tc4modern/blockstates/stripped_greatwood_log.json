@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "tc4modern:block/stripped_greatwood_log"
+    },
+    "axis=z": {
+      "model": "tc4modern:block/stripped_greatwood_log",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "tc4modern:block/stripped_greatwood_log",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

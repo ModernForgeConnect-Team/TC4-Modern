@@ -100,6 +100,51 @@ public final class NativeLeavesSmokeProbe {
                     && planksRecipe.getResultItem(level.registryAccess()).getCount()==4, "Bark planks recipe incorrect: " + wood);
         }
         proof.put("bothBarkWoodsTagsDropsAndRecipes", true);
+        var oldHand = player.getMainHandItem().copy();
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.IRON_AXE));
+        var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(origin), net.minecraft.core.Direction.UP, origin, false);
+        var context = new net.minecraft.world.item.context.UseOnContext(player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+        for (int meta = 0; meta < 16; meta++) {
+            var original = runtime.hostBlock("Thaumcraft:blockMagicalLog", meta, BlockState.class).orElseThrow();
+            var stripped = original.getToolModifiedState(context, net.minecraftforge.common.ToolActions.AXE_STRIP, true);
+            int species = meta & 3, orientation = meta & 12;
+            if (species > 1) { require(stripped == null, "Special silverwood node was strippable: " + meta); continue; }
+            var expected = orientation == 12
+                    ? species == 0 ? github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.STRIPPED_GREATWOOD_WOOD.get() : github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.STRIPPED_SILVERWOOD_WOOD.get()
+                    : species == 0 ? github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.STRIPPED_GREATWOOD_LOG.get() : github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.STRIPPED_SILVERWOOD_LOG.get();
+            var axis = orientation == 4 ? net.minecraft.core.Direction.Axis.X : orientation == 8 ? net.minecraft.core.Direction.Axis.Z : net.minecraft.core.Direction.Axis.Y;
+            require(stripped != null && stripped.is(expected) && stripped.getValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS) == axis, "Log stripping incorrect: " + meta);
+            level.setBlock(origin, original, 3);
+            player.getMainHandItem().useOn(context);
+            require(level.getBlockState(origin) == stripped, "Axe did not apply log stripping: " + meta);
+        }
+        for (var wood : List.of(github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get(), github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.SILVERWOOD_WOOD.get())) {
+            var expected = wood == github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get()
+                    ? github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.STRIPPED_GREATWOOD_WOOD.get() : github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.STRIPPED_SILVERWOOD_WOOD.get();
+            for (var axis : net.minecraft.core.Direction.Axis.values()) {
+                var original = wood.defaultBlockState().setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, axis);
+                level.setBlock(origin, original, 3);
+                player.getMainHandItem().useOn(context);
+                var stripped = level.getBlockState(origin);
+                require(stripped.is(expected) && stripped.getValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS) == axis, "Wood axe stripping incorrect: " + wood + " " + axis);
+            }
+        }
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, oldHand);
+        for (String species : List.of("greatwood", "silverwood")) for (String kind : List.of("log", "wood")) {
+            var id = ResourceLocation.fromNamespaceAndPath("tc4modern", "stripped_" + species + "_" + kind);
+            var block = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(id);
+            require(block != null && block.defaultBlockState().is(BlockTags.LOGS) && block.defaultBlockState().is(BlockTags.MINEABLE_WITH_AXE)
+                    && new ItemStack(block).is(net.minecraft.tags.ItemTags.LOGS_THAT_BURN), "Stripped wood tags missing: " + id);
+            var drops = Block.getDrops(block.defaultBlockState(), level, origin, null, player, ItemStack.EMPTY);
+            require(drops.size() == 1 && drops.get(0).is(block.asItem()), "Stripped wood drop incorrect: " + id);
+            var recipe = level.getServer().getRecipeManager().byKey(ResourceLocation.fromNamespaceAndPath("tc4modern", species + "_planks_from_stripped_" + species + "_" + kind)).orElseThrow();
+            require(recipe.getIngredients().get(0).test(new ItemStack(block)) && recipe.getResultItem(level.registryAccess()).getCount() == 4, "Stripped planks recipe incorrect: " + id);
+            if (kind.equals("wood")) {
+                var woodRecipe = level.getServer().getRecipeManager().byKey(ResourceLocation.fromNamespaceAndPath("tc4modern", "stripped_" + species + "_wood")).orElseThrow();
+                require(woodRecipe.getResultItem(level.registryAccess()).is(block.asItem()) && woodRecipe.getResultItem(level.registryAccess()).getCount() == 3, "Stripped wood recipe incorrect: " + id);
+            }
+        }
+        proof.put("magicalWoodAxeStripping", true);
         var nativeState = runtime.hostBlock("Thaumcraft:blockMagicalLeaves",0,BlockState.class).orElseThrow();
         require(nativeState.getBlock() instanceof MagicalLeavesBlock, "Original leaf ID is not a native LeavesBlock");
         var leaves = (MagicalLeavesBlock) nativeState.getBlock();

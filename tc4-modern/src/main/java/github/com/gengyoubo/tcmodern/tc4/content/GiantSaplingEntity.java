@@ -41,7 +41,7 @@ public final class GiantSaplingEntity extends BlockEntity {
                 || player.getMainHandItem().getItem() instanceof MagicBoneMealItem || player.getOffhandItem().getItem() instanceof MagicBoneMealItem))
             player.displayClientMessage(Component.translatable(key), true);
     }
-    /** New saplings use the synchronous MFR generator. */
+    /** Enchanted sacred saplings use the resumable hybrid generator. */
     public void start() {
         if (active || tickTreeActive || level == null || level.isClientSide || !(getBlockState().getBlock() instanceof GiantSaplingBlock sapling)) return;
         var runtime = TcModernApi.runtime().orElse(null);
@@ -63,6 +63,18 @@ public final class GiantSaplingEntity extends BlockEntity {
                 : github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.ENCHANTED_SACRED;
         int scale = variant == 0 ? 4 + level.random.nextInt(3) : variant == 1 ? 6 + level.random.nextInt(4) : 0;
         long treeSeed = level.random.nextLong();
+        if (variant == 2) {
+            try {
+                tickTree = github.com.gengyoubo.tcmodern.tc4.world.MfrTickTree.beginHybrid(level, worldPosition, sapling, logs, leaves, treeSeed);
+                if (tickTree == null) { notifyNearbyBonemealUser("message.tc4modern.giant_tree.no_space"); return; }
+                tickTreeActive = true; setChanged();
+                notifyNearbyBonemealUser("message.tc4modern.giant_tree.started");
+                LogUtils.getLogger().info("Enchanted sacred hybrid generation started at {}", worldPosition);
+            } catch (RuntimeException failure) {
+                LogUtils.getLogger().error("Could not start enchanted sacred tree at {}", worldPosition, failure);
+            }
+            return;
+        }
         Level world = level;
         BlockPos origin = worldPosition;
         BlockState original = getBlockState();

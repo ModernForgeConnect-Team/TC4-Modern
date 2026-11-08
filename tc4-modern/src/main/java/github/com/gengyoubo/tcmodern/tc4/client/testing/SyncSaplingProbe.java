@@ -29,7 +29,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import java.nio.file.Files;
 import java.util.concurrent.CompletableFuture;
 
-/** Disposable-world smoke test for the synchronous 80-block sapling path. */
+/** Disposable-world smoke test for the synchronous sapling path. */
 @Mod.EventBusSubscriber(modid="tc4modern",value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
 public final class SyncSaplingProbe {
     private int stage; private CompletableFuture<String> result;
@@ -52,7 +52,9 @@ public final class SyncSaplingProbe {
                 boolean silver=Boolean.getBoolean("tc4modern.syncSaplingSilver");
                 result=mc.getSingleplayerServer().submit(()->{
                     var level=mc.getSingleplayerServer().overworld();level.noSave=true;
-                    var origin=new BlockPos(4,239,4);
+                    int testHeight=Integer.getInteger("tc4modern.syncProbeHeight",80);
+                    if(testHeight<80||testHeight>250)throw new IllegalArgumentException("Test height must be 80..250");
+                    var origin=new BlockPos(4,level.getMaxBuildHeight()-1-testHeight,4);
                     var sapling=silver?Tc4Blocks.ENCHANTED_SACRED_SILVERWOOD_SAPLING.get():Tc4Blocks.ENCHANTED_SACRED_GREATWOOD_SAPLING.get();
                     level.setBlock(origin.below(),Blocks.DIRT.defaultBlockState(),3);level.setBlock(origin,sapling.defaultBlockState(),3);
                     level.setBlock(origin.offset(10,60,10),Blocks.CHEST.defaultBlockState(),3);
@@ -60,6 +62,15 @@ public final class SyncSaplingProbe {
                     level.setBlock(origin.offset(-6,62,-6),Blocks.BEDROCK.defaultBlockState(),3);
                     var be=(GiantSaplingEntity)level.getBlockEntity(origin);level.random.setSeed(9876L);
                     boolean reference=Boolean.getBoolean("tc4modern.syncReferenceWrites");
+                    String runId=System.getProperty("tc4modern.syncProbeRunId","");
+                    if(!runId.isEmpty()&&!runId.matches("[A-Za-z0-9_-]{1,80}"))throw new IllegalArgumentException("Invalid probe run ID");
+                    java.nio.file.Path marker=null;
+                    if(!runId.isEmpty()) {
+                        marker=mc.gameDirectory.toPath().resolve("logs/tc4modern/"+runId);
+                        try {Files.createDirectories(marker.getParent());Files.writeString(marker.resolveSibling(runId+"-start.txt"),
+                                "pid="+ProcessHandle.current().pid()+"\nstartedEpochMs="+System.currentTimeMillis()+"\nheight="+testHeight+"\n");}
+                        catch(java.io.IOException failure){throw new RuntimeException(failure);}
+                    }
                     long started=System.nanoTime();
                     if(reference) {
                         var rt=TcModernApi.runtime().orElseThrow();int species=silver?1:0;var logs=new BlockState[4];
@@ -72,29 +83,31 @@ public final class SyncSaplingProbe {
                     } else be.start();
                     long elapsed=System.nanoTime()-started;
                     if(level.getBlockState(origin).is(sapling)||level.getBlockState(origin).isAir())throw new IllegalStateException("synchronous sapling did not grow");
+                    if(marker!=null)try {Files.writeString(marker.resolveSibling(runId+"-done.txt"),"generation_complete=true\nelapsed_ms="+elapsed/1_000_000.0+"\n");}
+                    catch(java.io.IOException failure){throw new RuntimeException(failure);}
                     int leaves=0;var random=new java.util.Random(9);
-                    for(int i=0;i<100000;i++) {var state=level.getBlockState(origin.offset(random.nextInt(225)-112,random.nextInt(80),random.nextInt(225)-112));
+                    for(int i=0;i<100000;i++) {var state=level.getBlockState(origin.offset(random.nextInt(225)-112,random.nextInt(testHeight),random.nextInt(225)-112));
                         if(state.getBlock() instanceof MagicalLeavesBlock){if(state.getValue(MagicalLeavesBlock.MASSIVE_STATIC))throw new IllegalStateException("synchronous tree used static batch leaves");leaves++;}}
                     if(leaves<20)throw new IllegalStateException("too few leaves: "+leaves);
                     long shapeHash=0xcbf29ce484222325L,heightHash=0xcbf29ce484222325L;var scan=new BlockPos.MutableBlockPos();
-                    for(int y=0;y<80;y++)for(int x=-112;x<=112;x++)for(int z=-112;z<=112;z++){
+                    if(testHeight==80)for(int y=0;y<80;y++)for(int x=-112;x<=112;x++)for(int z=-112;z<=112;z++){
                         shapeHash=(shapeHash^net.minecraft.world.level.block.Block.getId(level.getBlockState(scan.set(origin.getX()+x,origin.getY()+y,origin.getZ()+z))))*0x100000001b3L;
                     }
-                    for(int x=-112;x<=112;x++)for(int z=-112;z<=112;z++){
+                    if(testHeight==80)for(int x=-112;x<=112;x++)for(int z=-112;z<=112;z++){
                         heightHash=(heightHash^level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE,origin.getX()+x,origin.getZ()+z))*0x100000001b3L;
                         heightHash=(heightHash^level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,origin.getX()+x,origin.getZ()+z))*0x100000001b3L;
                     }
                     int nodes=0;
                     if(silver) {
-                        long treeSeed=new java.util.Random(9876L).nextLong();int height=36+new java.util.Random(treeSeed).nextInt(44);
+                        long treeSeed=new java.util.Random(9876L).nextLong();int base=(int)(testHeight*.45F);int height=base+new java.util.Random(treeSeed).nextInt(testHeight-base);
                         var rt=TcModernApi.runtime().orElseThrow();var world=rt.accessor(ReactorAccessors.World.class,rt.mappings().toLegacy(LegacyMappings.WORLD,level).orElseThrow());
-                        for(int i=0;i<GiantSaplingEntity.randomNodeCount(treeSeed,80);i++) {
+                        for(int i=0;i<GiantSaplingEntity.randomNodeCount(treeSeed,testHeight);i++) {
                             var p=GiantSaplingEntity.randomNodePosition(origin,height,11,true,treeSeed,i);var node=world.tile(p.getX(),p.getY(),p.getZ());
                             if(node!=null&&rt.values().isInstance(node,"thaumcraft.common.tiles.TileNode"))nodes++;
                         }
                         if(nodes==0)throw new IllegalStateException("silverwood generated no TC4 nodes");
                     }
-                    return "completed=true\nspecies="+(silver?"silverwood":"greatwood")+"\nreference="+reference+"\nheight=80\nsynchronous_ms="+elapsed/1_000_000.0+"\nsampled_leaves="+leaves+"\ntc4_nodes="+nodes+"\nshape_hash="+Long.toUnsignedString(shapeHash)+"\nheight_hash="+Long.toUnsignedString(heightHash)+"\n";
+                    return "completed=true\nspecies="+(silver?"silverwood":"greatwood")+"\nreference="+reference+"\nheight="+testHeight+"\nsynchronous_ms="+elapsed/1_000_000.0+"\nsampled_leaves="+leaves+"\ntc4_nodes="+nodes+"\nshape_hash="+(testHeight==80?Long.toUnsignedString(shapeHash):"not_measured")+"\nheight_hash="+(testHeight==80?Long.toUnsignedString(heightHash):"not_measured")+"\n";
                 });stage=2;
             } else if(stage==2&&result.isDone()) {
                 var path=mc.gameDirectory.toPath().resolve("logs/tc4modern/sync-sapling-result.txt");Files.createDirectories(path.getParent());

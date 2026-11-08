@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": {
+      "item": "tc4modern:stripped_greatwood_log"
+    }
+  },
+  "result": {
+    "item": "tc4modern:stripped_greatwood_wood",
+    "count": 3
+  }
+}

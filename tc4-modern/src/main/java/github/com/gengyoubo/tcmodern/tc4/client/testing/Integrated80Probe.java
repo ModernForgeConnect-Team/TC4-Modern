@@ -47,9 +47,7 @@ public final class Integrated80Probe {
   flush.invoke(writer);if(l.getBlockState(at)!=leaf)throw new IllegalStateException("section path did not write leaf");
   l.setBlock(at,Blocks.AIR.defaultBlockState(),3);
  }
- // This historical probe starts 250-block saplings and assumes they are incremental.
- // Do not run it against the synchronous sapling path.
- @SubscribeEvent public static void setup(FMLClientSetupEvent e){if(Boolean.getBoolean("tc4modern.integrated80"))com.mojang.logging.LogUtils.getLogger().warn("Integrated80Probe disabled: new enchanted saplings now generate synchronously");}
+ @SubscribeEvent public static void setup(FMLClientSetupEvent e){if(Boolean.getBoolean("tc4modern.integrated80")){var probe=new Integrated80Probe();MinecraftForge.EVENT_BUS.addListener(probe::server);MinecraftForge.EVENT_BUS.addListener(probe::client);}}
  private void record(String text){try{var f=Minecraft.getInstance().gameDirectory.toPath().resolve("logs/tc4modern/integrated80-greatwood-result.txt");Files.createDirectories(f.getParent());Files.writeString(f,text);}catch(Exception ex){throw new RuntimeException(ex);}}
  private void server(TickEvent.ServerTickEvent e){if(e.phase!=TickEvent.Phase.END||level==null||done)return;try{
   if(Boolean.getBoolean("tc4modern.integrated250")) {
@@ -116,8 +114,8 @@ public final class Integrated80Probe {
     var be=(GiantSaplingEntity)level.getBlockEntity(pos);var saved=be.saveWithoutMetadata();
     if(!saved.getBoolean("TickTreeActive"))throw new IllegalStateException("job not active before reload");
     var job=saved.getCompound("TickTree");
-    if(job.getInt("Phase")>1)throw new IllegalStateException("missed leaf batch reload");
-    if(job.getInt("Phase")==1&&job.getInt("Cursor")>0){
+    if(job.getInt("Phase")>5)throw new IllegalStateException("missed hybrid plan reload");
+    if(job.getInt("Phase")==5&&(job.getInt("PlanCell")>0||job.getInt("PlanSection")>0)){
      if(job.getBoolean("CompactLeafBatches")==Boolean.getBoolean("tc4modern.testUnbatchedLeaves"))throw new IllegalStateException("unexpected leaf batch mode");
      level.removeBlockEntity(pos);var replacement=(GiantSaplingEntity)((net.minecraft.world.level.block.EntityBlock)sapling).newBlockEntity(pos,b);replacement.load(saved);level.setBlockEntity(replacement);reloaded=true;
     }

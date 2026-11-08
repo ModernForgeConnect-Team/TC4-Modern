@@ -65,6 +65,10 @@ public final class Tc4Blocks {
     public static final RegistryObject<Block> PRIMAL_FURNACE = withItem("primal_furnace", PrimalFurnaceBlock::new);
     public static final RegistryObject<Block> GREATWOOD_WOOD = barkWood("greatwood_wood", MapColor.TERRACOTTA_BLACK);
     public static final RegistryObject<Block> SILVERWOOD_WOOD = barkWood("silverwood_wood", MapColor.WOOL);
+    public static final RegistryObject<Block> STRIPPED_GREATWOOD_LOG = barkWood("stripped_greatwood_log", MapColor.TERRACOTTA_BROWN);
+    public static final RegistryObject<Block> STRIPPED_GREATWOOD_WOOD = barkWood("stripped_greatwood_wood", MapColor.TERRACOTTA_BROWN);
+    public static final RegistryObject<Block> STRIPPED_SILVERWOOD_LOG = barkWood("stripped_silverwood_log", MapColor.SAND);
+    public static final RegistryObject<Block> STRIPPED_SILVERWOOD_WOOD = barkWood("stripped_silverwood_wood", MapColor.SAND);
     public static final RegistryObject<Block> GREATWOOD_FENCE = fence("greatwood_fence", MapColor.TERRACOTTA_BLACK);
     public static final RegistryObject<Block> GREATWOOD_FENCE_GATE = fenceGate("greatwood_fence_gate", MapColor.TERRACOTTA_BLACK);
     public static final RegistryObject<Block> SILVERWOOD_FENCE = fence("silverwood_fence", MapColor.WOOL);

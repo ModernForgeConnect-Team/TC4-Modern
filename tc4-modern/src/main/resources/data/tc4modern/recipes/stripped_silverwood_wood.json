@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": {
+      "item": "tc4modern:stripped_silverwood_log"
+    }
+  },
+  "result": {
+    "item": "tc4modern:stripped_silverwood_wood",
+    "count": 3
+  }
+}

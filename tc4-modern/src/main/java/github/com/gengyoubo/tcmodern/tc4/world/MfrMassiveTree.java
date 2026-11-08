@@ -94,11 +94,25 @@ public final class MfrMassiveTree {
         var tree = new MfrMassiveTree(level, origin, sapling, logs, leaves, kind, scale, seed, sectionWrites);
         if (!tree.validLocation()) return new Result(false, 0, 0, tree.trunkRadius, tree.sloped, seed, 0, 0);
         tree.setup();
+        boolean diagnose = kind == Kind.ENCHANTED_SACRED;
+        if (diagnose) LOGGER.info("Synchronous enchanted tree at {}: height={} seed={} phase=candidates started", origin, tree.heightLimit, seed);
+        long started = System.nanoTime();
         tree.generateLeafNodes();
+        long candidates = System.nanoTime() - started;
+        if (diagnose) LOGGER.info("Synchronous enchanted tree at {}: phase=candidates elapsedMs={} acceptedNodes={}", origin, candidates / 1_000_000.0, tree.nodes.size());
+        started = System.nanoTime();
         tree.generateLeaves();
+        long leavesTime = System.nanoTime() - started;
+        if (diagnose) LOGGER.info("Synchronous enchanted tree at {}: phase=leaves elapsedMs={}", origin, leavesTime / 1_000_000.0);
+        started = System.nanoTime();
         tree.generateBranches();
+        long branches = System.nanoTime() - started;
+        if (diagnose) LOGGER.info("Synchronous enchanted tree at {}: phase=branches elapsedMs={}", origin, branches / 1_000_000.0);
+        started = System.nanoTime();
         tree.generateTrunk();
-        if (tree.useSectionWrites) LOGGER.info("Synchronous enchanted tree at {}: sectionWrites={} fallbackWrites={}", origin, tree.sectionWrites, tree.fallbackWrites);
+        long trunk = System.nanoTime() - started;
+        if (diagnose) LOGGER.info("Synchronous enchanted tree at {}: candidatesMs={} leavesMs={} branchesMs={} trunkMs={} sectionWrites={} fallbackWrites={}",
+                origin, candidates / 1_000_000.0, leavesTime / 1_000_000.0, branches / 1_000_000.0, trunk / 1_000_000.0, tree.sectionWrites, tree.fallbackWrites);
         return new Result(true, tree.heightLimit, tree.height, tree.trunkRadius, tree.sloped, seed, tree.density, tree.nodes.size());
     }
 
@@ -281,7 +295,7 @@ public final class MfrMassiveTree {
     private void put(BlockPos pos, BlockState state) {
         // onPlace and neighbouring callbacks can change any block, so even a cached hit is invalid after a write.
         readCached = false;
-        System.out.println(pos);
+        //System.out.println(pos);
         if (level.isOutsideBuildHeight(pos)) return;
         if (useSectionWrites && putInAirSection(pos, state)) { sectionWrites++; return; }
         if (useSectionWrites) fallbackWrites++;

@@ -14,6 +14,10 @@
       "required": false
     },
     "tc4modern:greatwood_wood",
-    "tc4modern:silverwood_wood"
+    "tc4modern:silverwood_wood",
+    "tc4modern:stripped_greatwood_log",
+    "tc4modern:stripped_greatwood_wood",
+    "tc4modern:stripped_silverwood_log",
+    "tc4modern:stripped_silverwood_wood"
   ]
 }

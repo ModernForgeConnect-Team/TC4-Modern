@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
@@ -41,6 +42,10 @@ public final class MfrTickTree {
     private final SavedRandom random;
     private final long seed;
     private final ArrayList<LeafNode> nodes = new ArrayList<>();
+    // New hybrid tasks use a first-read snapshot for bedrock during candidate screening.
+    private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<long[]> bedrockSnapshots = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+    private static final long[] NO_BEDROCK = new long[0];
+    private boolean hybridMode;
     // These cursors are used only by synchronous read-only scans; writes still receive immutable positions.
     private final BlockPos.MutableBlockPos readPos = new BlockPos.MutableBlockPos();
     private final int[] scanStart = new int[3], scanDelta = new int[3], scanPosition = new int[3];
@@ -54,27 +59,47 @@ public final class MfrTickTree {
     private static final java.util.concurrent.atomic.AtomicLong NEXT_TICKET=new java.util.concurrent.atomic.AtomicLong();
     private final long ticketId=NEXT_TICKET.incrementAndGet();
     private net.minecraft.world.level.ChunkPos pendingChunk; private final java.util.LinkedHashSet<net.minecraft.world.level.ChunkPos> heldTickets=new java.util.LinkedHashSet<>(); private int requests, waits, maxOutstanding, maxHeld; private boolean cooperative;
+    private final java.util.LinkedHashSet<net.minecraft.world.level.ChunkPos> prefetchPending=new java.util.LinkedHashSet<>();
     // Diagnostic history is separate from held tickets: only actual addRegionTicket calls count.
     private final it.unimi.dsi.fastutil.longs.LongOpenHashSet requestedChunks = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
     private long repeatRequests, ticketEvictions;
     private static final class AwaitChunk extends RuntimeException { private static final AwaitChunk INSTANCE=new AwaitChunk(); private AwaitChunk(){super(null,null,false,false);} }
+    /** Speculative requests never evict a useful ticket or wait for a chunk. */
+    private void prefetchChunk(int x,int z) {
+        var cache=((ServerLevel)level).getChunkSource();int cx=x>>4,cz=z>>4;
+        if(cache.getChunkNow(cx,cz)!=null||heldTickets.size()>=192||prefetchPending.size()>=16)return;
+        var target=new net.minecraft.world.level.ChunkPos(cx,cz);
+        if(heldTickets.add(target)) {
+            cache.addRegionTicket(TREE_TICKET,target,0,ticketId);prefetchPending.add(target);requests++;
+            if(!requestedChunks.add(target.toLong()))repeatRequests++;
+            maxOutstanding=Math.max(maxOutstanding,prefetchPending.size()+(pendingChunk!=null&&!prefetchPending.contains(pendingChunk)?1:0));
+            maxHeld=Math.max(maxHeld,heldTickets.size());
+        }
+    }
+    private void prefetchCandidateChunk(int x,int z) {
+        if(!bedrockSnapshots.containsKey(SectionPos.asLong(x>>4,level.getMinSection(),z>>4)))prefetchChunk(x,z);
+    }
     private void ensureChunk(int x,int z) {
         var server=(ServerLevel)level; var cache=server.getChunkSource(); int cx=x>>4,cz=z>>4;
         if(cache.getChunkNow(cx,cz)!=null) return;
         var target=new net.minecraft.world.level.ChunkPos(cx,cz);
         if(pendingChunk==null) {
             if(!heldTickets.contains(target)) {
-                if(heldTickets.size()>=192) { var oldest=heldTickets.iterator().next(); cache.removeRegionTicket(TREE_TICKET,oldest,0,ticketId); heldTickets.remove(oldest); ticketEvictions++; }
+                if(heldTickets.size()>=192) { var oldest=heldTickets.iterator().next(); cache.removeRegionTicket(TREE_TICKET,oldest,0,ticketId); heldTickets.remove(oldest);prefetchPending.remove(oldest); ticketEvictions++; }
                 cache.addRegionTicket(TREE_TICKET,target,0,ticketId); heldTickets.add(target); requests++;
                 if (!requestedChunks.add(target.toLong())) repeatRequests++;
                 maxHeld=Math.max(maxHeld,heldTickets.size());
             }
-            pendingChunk=target; maxOutstanding=1;
+            pendingChunk=target; maxOutstanding=Math.max(maxOutstanding,prefetchPending.size()+(prefetchPending.contains(target)?0:1));
         }
         else if(!pendingChunk.equals(target)) throw new IllegalStateException("More than one pending chunk");
         waits++; throw AwaitChunk.INSTANCE;
     }
     private boolean pollChunk() {
+        if(!prefetchPending.isEmpty()) {
+            var cache=((ServerLevel)level).getChunkSource();
+            prefetchPending.removeIf(pos->cache.getChunkNow(pos.x,pos.z)!=null);
+        }
         if(pendingChunk==null) return true;
         var cache=((ServerLevel)level).getChunkSource();
         if(cache.getChunkNow(pendingChunk.x,pendingChunk.z)==null) {waits++;return false;}
@@ -83,7 +108,7 @@ public final class MfrTickTree {
     private void releaseChunk() {
         var cache=((ServerLevel)level).getChunkSource();
         for(var pos:heldTickets) cache.removeRegionTicket(TREE_TICKET,pos,0,ticketId);
-        heldTickets.clear(); pendingChunk=null;
+        heldTickets.clear(); prefetchPending.clear(); pendingChunk=null;
     }
     private void ensureLineChunks(int ax,int ay,int az,int bx,int by,int bz) {
         int[] a={ax,ay,az}, delta={bx-ax,by-ay,bz-az}, p=new int[3]; int major=0;
@@ -129,12 +154,17 @@ public final class MfrTickTree {
         private final MfrTickTree tree;
         private final boolean compactLeafBatches;
         private final boolean sectionLeafBatches;
+        private final boolean hybrid;
+        private java.util.concurrent.CompletableFuture<HybridPlan> planFuture;
+        private HybridPlan plan;
+        private final java.util.concurrent.atomic.AtomicBoolean planCancelled = new java.util.concurrent.atomic.AtomicBoolean();
+        private int planSection, planCell, soilColumn;
         private java.util.concurrent.CompletableFuture<int[]> coordinates;
         private int cursor, branchCursor, phase, relativeY, y, candidateIndex, trunkColumn, leafNodeCursor, batchEnd; private boolean candidatePending; private int candidateX,candidateZ;
         private boolean batchCounted;
         private long batchedDuplicatePositions;
         public long maxStepNanos, totalStepNanos, prepareNanos, candidateNanos, nodeHash, trunkNanos;
-        public final long[] phaseMaxNanos=new long[4]; public int steps, candidateCount, nodes;
+        public final long[] phaseMaxNanos=new long[7]; public int steps, candidateCount, nodes;
         private long measuredSteps;
         public boolean done;
         private boolean cancelled;
@@ -144,16 +174,18 @@ public final class MfrTickTree {
         public String progress() {return "phase="+phase+" candidates="+candidateCount+" steps="+steps
                 +" measuredSteps="+measuredSteps+" totalStepNanos="+totalStepNanos+" maxStepNanos="+maxStepNanos+" requests="+tree.requests
                 +" waits="+tree.waits+" repeatRequests="+tree.repeatRequests+" uniqueRequestedChunks="+tree.requestedChunks.size()
-                +" ticketEvictions="+tree.ticketEvictions+" heldTickets="+tree.heldTickets.size()+" pending="+tree.pendingChunk
+                +" ticketEvictions="+tree.ticketEvictions+" heldTickets="+tree.heldTickets.size()+" pending="+tree.pendingChunk+" prefetchPending="+tree.prefetchPending.size()
                 +" compactLeafBatches="+compactLeafBatches+" batchedDuplicatePositions="+batchedDuplicatePositions
                 +" sectionLeafBatches="+sectionLeafBatches
                 +" sectionFastWrites="+(tree.leafSectionBatch==null?0:tree.leafSectionBatch.fastWrites)
                 +" sectionFallbackWrites="+(tree.leafSectionBatch==null?0:tree.leafSectionBatch.fallbackWrites)
-                +" sectionMaxFlushNanos="+(tree.leafSectionBatch==null?0:tree.leafSectionBatch.maxFlushNanos);}
-        public int requests() {return tree.requests;} public int waits(){return tree.waits;} public int maxOutstanding(){return tree.maxOutstanding;} public int maxHeld(){return tree.maxHeld;} public boolean ticketReleased(){return tree.pendingChunk==null && tree.heldTickets.isEmpty();} @Override public void cancel(){cancelled=true;if(coordinates!=null)coordinates.cancel(false);tree.releaseChunk();}
+                +" sectionMaxFlushNanos="+(tree.leafSectionBatch==null?0:tree.leafSectionBatch.maxFlushNanos)
+                +" hybrid="+hybrid+" snapshotSections="+tree.bedrockSnapshots.size()+" planSection="+planSection+" planCell="+planCell
+                +" planSections="+(plan==null?0:plan.keys.length);}
+        public int requests() {return tree.requests;} public int waits(){return tree.waits;} public int maxOutstanding(){return tree.maxOutstanding;} public int maxHeld(){return tree.maxHeld;} public boolean ticketReleased(){return tree.pendingChunk==null && tree.heldTickets.isEmpty();} @Override public void cancel(){cancelled=true;planCancelled.set(true);if(coordinates!=null)coordinates.cancel(false);if(planFuture!=null)planFuture.cancel(false);tree.releaseChunk();}
         public MfrMassiveTree.Result result(){return new MfrMassiveTree.Result(done,tree.heightLimit,tree.height,tree.trunkRadius,tree.sloped,tree.seed,tree.density,tree.nodes.size());}
-        private Job(MfrTickTree tree, boolean compactLeafBatches, boolean sectionLeafBatches) {
-            this.tree=tree; this.compactLeafBatches=compactLeafBatches; this.sectionLeafBatches=sectionLeafBatches;
+        private Job(MfrTickTree tree, boolean compactLeafBatches, boolean sectionLeafBatches, boolean hybrid) {
+            this.tree=tree; this.compactLeafBatches=compactLeafBatches; this.sectionLeafBatches=sectionLeafBatches; this.hybrid=hybrid;tree.hybridMode=hybrid;
             if(sectionLeafBatches) tree.leafSectionBatch=new MassiveLeafSectionBatch((ServerLevel)tree.level,tree.leaves);
             tree.cooperative=true; tree.setup(); int top=tree.origin.getY()+tree.heightLimit-tree.leafDistance;
             tree.nodes.add(new LeafNode(tree.origin.getX(),top,tree.origin.getZ(),tree.origin.getY()+tree.height));
@@ -163,6 +195,15 @@ public final class MfrTickTree {
             tag.putBoolean("StaticLeaves",tree.staticLeaves);
             tag.putBoolean("CompactLeafBatches",compactLeafBatches);
             tag.putBoolean("SectionLeafBatches",sectionLeafBatches);
+            tag.putBoolean("HybridPlan",hybrid);tag.putInt("PlanSection",planSection);tag.putInt("PlanCell",planCell);tag.putInt("SoilColumn",soilColumn);
+            if(hybrid&&!tree.bedrockSnapshots.isEmpty()) {
+                var empty=new it.unimi.dsi.fastutil.longs.LongArrayList();var populated=new net.minecraft.nbt.ListTag();
+                for(var entry:tree.bedrockSnapshots.long2ObjectEntrySet()) {
+                    if(entry.getValue().length==0)empty.add(entry.getLongKey());
+                    else {var item=new net.minecraft.nbt.CompoundTag();item.putLong("Section",entry.getLongKey());item.putLongArray("Bits",entry.getValue());populated.add(item);}
+                }
+                tag.putLongArray("EmptyBedrockSections",empty.toLongArray());tag.put("BedrockSections",populated);
+            }
             if(tree.leafSectionBatch!=null) {
                 tag.putLong("SectionFastWrites",tree.leafSectionBatch.fastWrites);
                 tag.putLong("SectionFallbackWrites",tree.leafSectionBatch.fallbackWrites);
@@ -181,23 +222,46 @@ public final class MfrTickTree {
             metrics.putLong("RepeatRequests",tree.repeatRequests); metrics.putLong("TicketEvictions",tree.ticketEvictions);
             metrics.putLongArray("RequestedChunks",tree.requestedChunks.toLongArray());
             tag.put("Metrics",metrics);
-            int[] saved=new int[tree.nodes.size()*4]; int i=0;
-            for(var node:tree.nodes){saved[i++]=node.x;saved[i++]=node.y;saved[i++]=node.z;saved[i++]=node.branchY;}
-            tag.putIntArray("Nodes",saved);
+            if(hybrid) {
+                long[] packed=new long[tree.nodes.size()];int i=0;
+                for(var node:tree.nodes) {
+                    int dx=node.x-tree.origin.getX(),dz=node.z-tree.origin.getZ(),dy=node.y-tree.origin.getY(),branch=node.branchY-tree.origin.getY();
+                    if(dx< -512||dx>511||dz< -512||dz>511||dy<0||dy>255||branch< -256||branch>255)throw new IllegalStateException("Tree node exceeds packed range");
+                    packed[i++]=(dx&1023L)|((dz&1023L)<<10)|((long)dy<<20)|((branch&511L)<<28);
+                }
+                tag.putLongArray("NodesPacked",packed);
+            } else {
+                int[] saved=new int[tree.nodes.size()*4];int i=0;
+                for(var node:tree.nodes){saved[i++]=node.x;saved[i++]=node.y;saved[i++]=node.z;saved[i++]=node.branchY;}
+                tag.putIntArray("Nodes",saved);
+            }
         }
-        public int phase() { return phase; }
+        public int phase() { return hybrid&&phase>=4 ? (phase==4?0:phase==5?1:3) : phase; }
         public static Job restore(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves, net.minecraft.nbt.CompoundTag saved) {
             var nextTree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,saved.getLong("Seed"),saved.getBoolean("StaticLeaves"));
             nextTree.heightLimit=saved.getInt("HeightLimit");nextTree.height=saved.getInt("Height");nextTree.leafBases=saved.getInt("LeafBases");nextTree.density=saved.getInt("Density");
             nextTree.random.state=saved.getLong("RandomState");
-            var next=new Job(nextTree,saved.getBoolean("CompactLeafBatches"),saved.getBoolean("SectionLeafBatches")); next.tree.nodes.clear(); int[] data=saved.getIntArray("Nodes");
+            var next=new Job(nextTree,saved.getBoolean("CompactLeafBatches"),saved.getBoolean("SectionLeafBatches"),saved.getBoolean("HybridPlan")); next.tree.nodes.clear(); int[] data=saved.getIntArray("Nodes");
+            if(next.hybrid) {
+                for(long key:saved.getLongArray("EmptyBedrockSections"))nextTree.bedrockSnapshots.put(key,NO_BEDROCK);
+                var sections=saved.getList("BedrockSections",10);for(int j=0;j<sections.size();j++){var item=sections.getCompound(j);var bits=item.getLongArray("Bits");if(bits.length!=64)throw new IllegalStateException("Invalid bedrock snapshot");nextTree.bedrockSnapshots.put(item.getLong("Section"),bits);}
+                next.planSection=saved.getInt("PlanSection");next.planCell=saved.getInt("PlanCell");next.soilColumn=saved.getInt("SoilColumn");
+            }
             if(next.tree.leafSectionBatch!=null) {
                 next.tree.leafSectionBatch.fastWrites=saved.getLong("SectionFastWrites");
                 next.tree.leafSectionBatch.fallbackWrites=saved.getLong("SectionFallbackWrites");
                 next.tree.leafSectionBatch.maxFlushNanos=saved.getLong("SectionMaxFlushNanos");
             }
-            if(data.length%4!=0) throw new IllegalStateException("Invalid saved node array");
-            for(int i=0;i<data.length;i+=4)next.tree.nodes.add(new LeafNode(data[i],data[i+1],data[i+2],data[i+3]));
+            if(saved.contains("NodesPacked",12)) {
+                for(long packed:saved.getLongArray("NodesPacked")) {
+                    int dx=(int)(packed&1023),dz=(int)((packed>>>10)&1023),dy=(int)((packed>>>20)&255),branch=(int)((packed>>>28)&511);
+                    if(dx>=512)dx-=1024;if(dz>=512)dz-=1024;if(branch>=256)branch-=512;
+                    next.tree.nodes.add(new LeafNode(origin.getX()+dx,origin.getY()+dy,origin.getZ()+dz,origin.getY()+branch));
+                }
+            } else {
+                if(data.length%4!=0) throw new IllegalStateException("Invalid saved node array");
+                for(int i=0;i<data.length;i+=4)next.tree.nodes.add(new LeafNode(data[i],data[i+1],data[i+2],data[i+3]));
+            }
             next.phase=saved.getInt("Phase");next.relativeY=saved.getInt("RelativeY");next.y=saved.getInt("Y");next.candidateIndex=saved.getInt("CandidateIndex");
             next.candidatePending=saved.getBoolean("CandidatePending");next.candidateX=saved.getInt("CandidateX");next.candidateZ=saved.getInt("CandidateZ");
             next.leafNodeCursor=saved.getInt("LeafNodeCursor");next.branchCursor=saved.getInt("BranchCursor");next.trunkColumn=saved.getInt("TrunkColumn");
@@ -210,6 +274,7 @@ public final class MfrTickTree {
                 for (long chunk : metrics.getLongArray("RequestedChunks")) next.tree.requestedChunks.add(chunk);
             }
             if(next.phase==1) {int savedCursor=saved.getInt("Cursor");next.startBatch();next.cursor=savedCursor;}
+            if(next.hybrid&&(next.phase==4||next.phase==5)){next.startPlan();next.phase=4;}
             next.batchCounted=saved.getBoolean("LeafBatchCounted"); next.batchedDuplicatePositions=saved.getLong("BatchedDuplicatePositions");
             return next;
         }
@@ -235,8 +300,54 @@ public final class MfrTickTree {
             }
             candidateIndex=0; relativeY--; y--;
         }
+        private void prefetchCandidates() {
+            // Copy the RNG: looking ahead must not alter candidate order or the saved state.
+            var random=new SavedRandom(0);random.state=tree.random.state;
+            int layerY=relativeY,index=candidateIndex;
+            if(candidatePending){tree.prefetchCandidateChunk(candidateX,candidateZ);if(++index>=tree.density){index=0;layerY--;}}
+            for(int n=0;n<32&&layerY>=0;n++) {
+                float layer=tree.layerSize(layerY);
+                if(layer<=0){layerY--;index=0;continue;}
+                float distance=tree.scaleWidth*layer*(random.nextFloat()+.328F);
+                float angle=random.nextFloat()*2F*(float)Math.PI;
+                tree.prefetchCandidateChunk(Mth.floor(distance*Math.sin(angle)+tree.origin.getX()+.5F),
+                        Mth.floor(distance*Math.cos(angle)+tree.origin.getZ()+.5F));
+                if(++index>=tree.density){index=0;layerY--;}
+            }
+        }
         private void startWorker() {
             startBatch();
+        }
+        private void startPlan() {
+            // The worker receives immutable tree coordinates and RNG state; it never accesses the world.
+            var snapshot=tree.nodes.toArray(new LeafNode[0]);
+            int ox=tree.origin.getX(),oy=tree.origin.getY(),oz=tree.origin.getZ();
+            int minY=tree.level.getMinBuildHeight(),maxY=tree.level.getMaxBuildHeight();
+            int height=tree.height,heightLimit=tree.heightLimit,radius=tree.trunkRadius,leafDistance=tree.leafDistance;
+            long randomState=tree.random.state;
+            planFuture=java.util.concurrent.CompletableFuture.supplyAsync(()->{
+                var result=new HybridPlan(ox,oy,oz,minY,maxY);int checked=0;
+                for(var node:snapshot) {
+                    if((checked++&255)==0&&planCancelled.get())throw new java.util.concurrent.CancellationException();
+                    for(int layer=0;layer<leafDistance;layer++) {
+                        int[] offsets=layer!=0&&layer!=leafDistance-1?LEAF_OFFSETS_3:LEAF_OFFSETS_2;
+                        for(int i=0;i<offsets.length;i+=2)result.put(node.x+offsets[i],node.y+layer,node.z+offsets[i+1],1);
+                    }
+                }
+                int minimum=(int)(heightLimit*.2F);checked=0;
+                for(var node:snapshot) {
+                    if((checked++&255)==0&&planCancelled.get())throw new java.util.concurrent.CancellationException();
+                    if(node.branchY-oy>=minimum)result.line(ox,node.branchY,oz,node.x,node.y,node.z,true);
+                }
+                var random=new SavedRandom(0);random.state=randomState;double factor=400F/radius;
+                for(int dx=-radius;dx<=radius;dx++)for(int dz=-radius;dz<=radius;dz++) {
+                    if(planCancelled.get())throw new java.util.concurrent.CancellationException();
+                    if((dx*dx+dz*dz)*4>=radius*radius*5)continue;
+                    int top=oy+sinc(factor*dx,factor*dz,height)-(random.nextInt(3)-1);
+                    result.line(ox+dx,oy,oz+dz,ox+dx,top,oz+dz,false);result.put(ox+dx,top,oz+dz,2);
+                }
+                result.finish();return result;
+            });
         }
         private void startBatch() {
             int batchStart=leafNodeCursor;
@@ -275,10 +386,48 @@ public final class MfrTickTree {
             tree.readCached=false; tree.scanChunk=null;
             int initialPhase=phase; long start=System.nanoTime(), deadline=deadlineNanos; steps++; measuredSteps++;
             try {
+                if(hybrid&&phase==0)prefetchCandidates();
                 if(!tree.pollChunk()) return false;
                 if(phase==0) {
                     while(relativeY>=0 && System.nanoTime()<deadline) candidate();
-                    if(relativeY<0) {startWorker(); phase=1;}
+                    if(relativeY<0) {if(hybrid){tree.bedrockSnapshots.clear();tree.releaseChunk();startPlan();phase=4;}else{startWorker();phase=1;}}
+                }
+                if(phase==4&&planFuture.isDone()) {plan=planFuture.join();planFuture=null;if(planSection<0||planSection>plan.keys.length||planCell<0||planCell>4096)throw new IllegalStateException("Invalid saved tree plan cursor");phase=5;}
+                if(phase==5) {
+                    // The sorted plan visits each chunk as a group; prepare a small window ahead.
+                    long previous=Long.MIN_VALUE;int prefetched=0;
+                    for(int i=planSection;i<plan.keys.length&&prefetched<8;i++) {
+                        long key=plan.keys[i];int cx=SectionPos.x(key),cz=SectionPos.z(key);
+                        long chunkKey=net.minecraft.world.level.ChunkPos.asLong(cx,cz);
+                        if(chunkKey!=previous){tree.prefetchChunk(cx<<4,cz<<4);previous=chunkKey;prefetched++;}
+                    }
+                    while(planSection<plan.keys.length&&System.nanoTime()<deadline) {
+                        long key=plan.keys[planSection];int sx=SectionPos.x(key)<<4,sy=SectionPos.y(key)<<4,sz=SectionPos.z(key)<<4;
+                        tree.ensureChunk(sx,sz);byte[] cells=plan.sections.get(key);
+                        while(planCell<4096&&System.nanoTime()<deadline) {
+                            int cell=planCell,code=cells[cell]&255;
+                            if(code==0){planCell++;continue;}
+                            int x=sx+(cell&15),y=sy+((cell>>>8)&15),z=sz+((cell>>>4)&15);
+                            var state=code==1?tree.leaves:tree.logs[code==2?3:code-3];
+                            var old=tree.readState(x,y,z);
+                            if((code!=1||!old.is(Blocks.BEDROCK))&&(old!=state||tree.level.captureBlockSnapshots))tree.put(new BlockPos(x,y,z),state);
+                            planCell++;
+                        }
+                        if(planCell==4096){planCell=0;planSection++;}
+                    }
+                    if(planSection==plan.keys.length){plan=null;phase=6;}
+                }
+                if(phase==6) {
+                    int side=tree.trunkRadius*2+1,r=tree.trunkRadius;
+                    while(soilColumn<side*side&&System.nanoTime()<deadline) {
+                        int dx=soilColumn/side-r,dz=soilColumn%side-r;
+                        if((dx*dx+dz*dz)*4<r*r*5) {
+                            int x=tree.origin.getX()+dx,z=tree.origin.getZ()+dz,y=tree.origin.getY()-1;tree.ensureChunk(x,z);
+                            var ground=tree.readState(x,y,z);if(ground.is(Blocks.GRASS_BLOCK)||ground.is(Blocks.MYCELIUM)||ground.is(Blocks.PODZOL))tree.put(new BlockPos(x,y,z),Blocks.DIRT.defaultBlockState());
+                        }
+                        soilColumn++;
+                    }
+                    if(soilColumn==side*side){done=true;tree.releaseChunk();}
                 }
                 if(phase==1 && coordinates.isDone()) {
                     int[] c=coordinates.join();
@@ -326,7 +475,39 @@ public final class MfrTickTree {
     public static Job begin(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves, long seed) {
         var tree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,seed,true);
         if(!tree.validLocation()) return null;
-        return new Job(tree,true,true);
+        return new Job(tree,true,true,false);
+    }
+
+    public static Job beginHybrid(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves, long seed) {
+        var tree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,seed,true);
+        if(!tree.validLocation())return null;
+        return new Job(tree,true,true,true);
+    }
+
+    /** One byte per position, allocated only for sections touched by the final plan. */
+    private static final class HybridPlan {
+        private static final int MAX_SECTIONS=16384;
+        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<byte[]> sections=new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+        final int ox,oy,oz,minY,maxY; long[] keys;
+        HybridPlan(int ox,int oy,int oz,int minY,int maxY){this.ox=ox;this.oy=oy;this.oz=oz;this.minY=minY;this.maxY=maxY;}
+        void put(int x,int y,int z,int code) {
+            if(y<minY||y>=maxY||(x==ox&&y==oy&&z==oz))return;
+            long key=SectionPos.asLong(x>>4,y>>4,z>>4);var section=sections.get(key);
+            if(section==null){if(sections.size()>=MAX_SECTIONS)throw new IllegalStateException("Tree plan exceeds section memory limit");section=new byte[4096];sections.put(key,section);}
+            section[((y&15)<<8)|((z&15)<<4)|(x&15)]=(byte)code;
+        }
+        void line(int ax,int ay,int az,int bx,int by,int bz,boolean branches) {
+            int[] a={ax,ay,az},d={bx-ax,by-ay,bz-az},p=new int[3];int major=0;
+            for(int i=1;i<3;i++)if(Math.abs(d[i])>Math.abs(d[major]))major=i;
+            if(d[major]==0)return;
+            int u=OTHER[major],v=OTHER[major+3],sign=d[major]>0?1:-1;float du=(float)d[u]/d[major],dv=(float)d[v]/d[major];
+            for(int n=0;n!=d[major]+sign;n+=sign) {
+                p[major]=Mth.floor(a[major]+n+.5F);p[u]=Mth.floor(a[u]+n*du+.5F);p[v]=Mth.floor(a[v]+n*dv+.5F);
+                int axis=0;if(!branches){int dx=Math.abs(p[0]-a[0]),dz=Math.abs(p[2]-a[2]);axis=Math.max(dx,dz)==0?0:dx>=dz?1:2;}
+                put(p[0],p[1],p[2],branches?2:3+axis);
+            }
+        }
+        void finish(){keys=sections.keySet().toLongArray();java.util.Arrays.sort(keys);}
     }
 
     private void setup() {
@@ -414,6 +595,28 @@ public final class MfrTickTree {
     /** Empty sections cannot contain bedrock; avoid per-block lookups without caching their contents. */
     private boolean isBedrock(int x, int y, int z) {
         if (y < level.getMinBuildHeight() || y >= level.getMaxBuildHeight()) return false;
+        if(hybridMode&&cooperative&&level.getClass()==ServerLevel.class) {
+            long key=SectionPos.asLong(x>>4,y>>4,z>>4);long[] bits=bedrockSnapshots.get(key);
+            if(bits==null) {
+                ensureChunk(x,z);var chunk=((ServerLevel)level).getChunkSource().getChunkNow(x>>4,z>>4);
+                // Snapshot the entire loaded column once so later candidate heights do not
+                // repeatedly reload the same chunk after its ticket has been released.
+                for(int sy=level.getMinSection();sy<level.getMaxSection();sy++) {
+                    long sectionKey=SectionPos.asLong(x>>4,sy,z>>4);
+                    if(bedrockSnapshots.containsKey(sectionKey))continue;
+                    var section=chunk.getSection(chunk.getSectionIndex(sy<<4));long[] snapshot;
+                    if(!section.maybeHas(state->state.is(Blocks.BEDROCK)))snapshot=NO_BEDROCK;
+                    else {
+                        snapshot=new long[64];
+                        for(int i=0;i<4096;i++)if(section.getBlockState(i&15,(i>>>8)&15,(i>>>4)&15).is(Blocks.BEDROCK))snapshot[i>>>6]|=1L<<(i&63);
+                    }
+                    bedrockSnapshots.put(sectionKey,snapshot);
+                }
+                bits=bedrockSnapshots.get(key);
+            }
+            if(bits.length==0)return false;
+            int i=((y&15)<<8)|((z&15)<<4)|(x&15);return (bits[i>>>6]&(1L<<(i&63)))!=0;
+        }
         // Subclasses may override getBlockState, so retain the normal query for them.
         if (level.getClass() != ServerLevel.class) return readState(x, y, z).is(Blocks.BEDROCK);
         int cx = x >> 4, cz = z >> 4;
