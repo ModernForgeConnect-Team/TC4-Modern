@@ -12,13 +12,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Items;
 
 /** Builds one bounded amount of work per tick. Progress is persisted in the sapling's chunk. */
 public final class GiantSaplingEntity extends BlockEntity {
     private static final int[] HEIGHT = {54, 96, 160}, RADIUS = {18, 52, 140}, BRANCHES = {40, 180, 600}, NODES = {2, 5, 12};
     private static final int BUDGET = 256;
     private boolean active;
-    // Only the tested 80-block enchanted tree uses this resumable path for now.
+    // Enchanted sacred trees use the resumable path at all supported heights.
     private boolean tickTreeActive;
     private github.com.gengyoubo.tcmodern.tc4.world.MfrTickTree.Job tickTree;
     private CompoundTag savedTickTree;
@@ -28,7 +30,18 @@ public final class GiantSaplingEntity extends BlockEntity {
     private int heightLimit, trunkHeight, nodeCount;
     private boolean spreadNodes, randomNodes;
     public GiantSaplingEntity(BlockPos pos, BlockState state) { super(Tc4BlockEntities.GIANT_SAPLING.get(), pos, state); }
-    /** The tested 80-block enchanted tree runs incrementally; other variants retain their existing generators. */
+    public boolean isTreeGenerating() { return tickTreeActive; }
+    public Component generationStatus() {
+        int current = tickTree != null ? tickTree.phase() : savedTickTree != null ? savedTickTree.getInt("Phase") : 0;
+        return Component.translatable("message.tc4modern.giant_tree.phase." + Math.max(0, Math.min(3, current)));
+    }
+    private void notifyNearbyBonemealUser(String key) {
+        var player = level.getNearestPlayer(worldPosition.getX() + .5, worldPosition.getY() + .5, worldPosition.getZ() + .5, 8, false);
+        if (player != null && (player.getMainHandItem().is(Items.BONE_MEAL) || player.getOffhandItem().is(Items.BONE_MEAL)
+                || player.getMainHandItem().getItem() instanceof MagicBoneMealItem || player.getOffhandItem().getItem() instanceof MagicBoneMealItem))
+            player.displayClientMessage(Component.translatable(key), true);
+    }
+    /** Enchanted trees run incrementally; other variants retain their existing generators. */
     public void start() {
         if (active || tickTreeActive || level == null || level.isClientSide || !(getBlockState().getBlock() instanceof GiantSaplingBlock sapling)) return;
         var runtime = TcModernApi.runtime().orElse(null);
@@ -50,10 +63,17 @@ public final class GiantSaplingEntity extends BlockEntity {
                 : github.com.gengyoubo.tcmodern.tc4.world.MfrMassiveTree.Kind.ENCHANTED_SACRED;
         int scale = variant == 0 ? 4 + level.random.nextInt(3) : variant == 1 ? 6 + level.random.nextInt(4) : 0;
         long treeSeed = level.random.nextLong();
-        if (variant == 2 && level.getMaxBuildHeight() - 1 - worldPosition.getY() == 80) {
+        if (variant == 2) {
             try {
                 tickTree = github.com.gengyoubo.tcmodern.tc4.world.MfrTickTree.begin(level, worldPosition, sapling, logs, leaves, treeSeed);
-                if (tickTree != null) { tickTreeActive = true; setChanged(); }
+                if (tickTree != null) {
+                    tickTreeActive = true; setChanged();
+                    LogUtils.getLogger().info("Enchanted sacred tree generation started at {}, height limit {}", worldPosition, tickTree.result().heightLimit());
+                    notifyNearbyBonemealUser("message.tc4modern.giant_tree.started");
+                } else {
+                    LogUtils.getLogger().info("Enchanted sacred tree at {} cannot grow: insufficient height or obstructed trunk", worldPosition);
+                    notifyNearbyBonemealUser("message.tc4modern.giant_tree.no_space");
+                }
             } catch (RuntimeException failure) { LogUtils.getLogger().error("Could not start tick-budgeted tree at {}", worldPosition, failure); }
             return;
         }
@@ -94,7 +114,7 @@ public final class GiantSaplingEntity extends BlockEntity {
         super.saveAdditional(tag);
         if (tickTreeActive) {
             tag.putBoolean("TickTreeActive", true);
-            if (tickTree != null) tag.put("TickTree", tickTree.saveProgress());
+            if (tickTree != null) { var progress = new CompoundTag(); tickTree.save(progress); tag.put("TickTree", progress); }
             else if (savedTickTree != null) tag.put("TickTree", savedTickTree.copy());
         }
         tag.putBoolean("Active", active); tag.putInt("Phase", phase); tag.putInt("Index", index); tag.putInt("Step", step);
@@ -118,8 +138,8 @@ public final class GiantSaplingEntity extends BlockEntity {
 
     @Override public void setRemoved() {
         if (tickTree != null) {
-            if (tickTreeActive) savedTickTree = tickTree.saveProgress();
-            tickTree.close(); tickTree = null;
+            if (tickTreeActive) { savedTickTree = new CompoundTag(); tickTree.save(savedTickTree); }
+            tickTree.cancel(); tickTree = null;
         }
         super.setRemoved();
     }
@@ -137,18 +157,20 @@ public final class GiantSaplingEntity extends BlockEntity {
                 tickTree = github.com.gengyoubo.tcmodern.tc4.world.MfrTickTree.Job.restore(level, worldPosition, sapling, logs, leaves, savedTickTree);
                 savedTickTree = null;
             }
-            tickTree.step(4_000_000L);
+            boolean finished = tickTree.tick(System.nanoTime() + 4_000_000L);
+            if (tickTree.steps % 600 == 0) LogUtils.getLogger().info("Enchanted sacred tree at {}: {}", worldPosition, tickTree.progress());
             setChanged();
-            if (tickTree.done) {
+            if (finished) {
                 var result = tickTree.result();
-                tickTree.close(); tickTree = null; tickTreeActive = false;
+                tickTree.cancel(); tickTree = null; tickTreeActive = false;
                 Level world = level;
                 BlockPos origin = worldPosition;
                 world.setBlock(origin, logs[0], Block.UPDATE_CLIENTS);
                 if (sapling.silver()) createSilverwoodNodes(world, origin, result, runtime, logs[0]);
+                LogUtils.getLogger().info("Enchanted sacred tree generation completed at {}", origin);
             }
         } catch (RuntimeException failure) {
-            if (tickTree != null) { tickTree.close(); tickTree = null; }
+            if (tickTree != null) { tickTree.cancel(); tickTree = null; }
             tickTreeActive = false; savedTickTree = null; setChanged();
             LogUtils.getLogger().error("Tick-budgeted tree failed at {}", worldPosition, failure);
         }

@@ -19,8 +19,12 @@ public final class Tc4NativeBlocks implements LegacyBlockProvider {
             @Override public Object update(Object previousState, int metadata) {
                 var previous = (BlockState) previousState;
                 var state = leaves.fromLegacy(metadata);
-                if (previous.is(leaves)) state = state.setValue(LeavesBlock.DISTANCE, previous.getValue(LeavesBlock.DISTANCE))
-                        .setValue(LeavesBlock.WATERLOGGED, previous.getValue(LeavesBlock.WATERLOGGED));
+                if (previous.is(leaves)) {
+                    state = state.setValue(LeavesBlock.DISTANCE, previous.getValue(LeavesBlock.DISTANCE))
+                            .setValue(LeavesBlock.WATERLOGGED, previous.getValue(LeavesBlock.WATERLOGGED));
+                    if (previous.getValue(MagicalLeavesBlock.MASSIVE_STATIC))
+                        state = state.setValue(MagicalLeavesBlock.MASSIVE_STATIC, true).setValue(LeavesBlock.PERSISTENT, true);
+                }
                 return state;
             }
             @Override public Object placement(Object placementState, int metadata) {

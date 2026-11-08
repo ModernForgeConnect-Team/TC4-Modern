@@ -2,6 +2,11 @@ package github.com.gengyoubo.tcmodern.tc4.content;
 
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4BlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.*;
@@ -32,6 +37,15 @@ public final class GiantSaplingBlock extends BushBlock implements EntityBlock, B
     @Override public boolean isValidBonemealTarget(LevelReader l, BlockPos p, BlockState s, boolean client) { return true; }
     @Override public boolean isBonemealSuccess(Level l, RandomSource r, BlockPos p, BlockState s) { return r.nextFloat() < 0.45F; }
     @Override public void performBonemeal(ServerLevel l, RandomSource r, BlockPos p, BlockState s) { start(l, p); }
+    @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        var held = player.getItemInHand(hand);
+        if (size == 2 && (held.isEmpty() || held.is(Items.BONE_MEAL) || held.getItem() instanceof MagicBoneMealItem)
+                && level.getBlockEntity(pos) instanceof GiantSaplingEntity tree && tree.isTreeGenerating()) {
+            if (!level.isClientSide) player.displayClientMessage(tree.generationStatus(), true);
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        return InteractionResult.PASS;
+    }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new GiantSaplingEntity(p, s); }
     @Nullable @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> type) {
         if (l.isClientSide || type != Tc4BlockEntities.GIANT_SAPLING.get()) return null;

@@ -193,5 +193,11 @@
   "block.tc4modern.sacred_silverwood_sapling": "Sacred Silverwood Sapling",
   "block.tc4modern.enchanted_sacred_silverwood_sapling": "Enchanted Sacred Silverwood Sapling",
   "block.tc4modern.greatwood_wood": "Greatwood Wood",
-  "block.tc4modern.silverwood_wood": "Silverwood Wood"
+  "block.tc4modern.silverwood_wood": "Silverwood Wood",
+  "message.tc4modern.giant_tree.started": "The giant tree has started growing and is preparing its canopy.",
+  "message.tc4modern.giant_tree.no_space": "The giant tree cannot grow: insufficient height or an obstructed trunk.",
+  "message.tc4modern.giant_tree.phase.0": "Preparing the canopy; the sapling remains until the tree is complete.",
+  "message.tc4modern.giant_tree.phase.1": "Generating leaves.",
+  "message.tc4modern.giant_tree.phase.2": "Generating branches.",
+  "message.tc4modern.giant_tree.phase.3": "Generating the trunk."
 }

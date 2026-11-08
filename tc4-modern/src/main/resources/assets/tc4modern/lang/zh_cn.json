@@ -193,5 +193,11 @@
   "block.tc4modern.sacred_silverwood_sapling": "神圣银树树苗",
   "block.tc4modern.enchanted_sacred_silverwood_sapling": "附魔神圣银树树苗",
   "block.tc4modern.greatwood_wood": "宏伟木",
-  "block.tc4modern.silverwood_wood": "银木"
+  "block.tc4modern.silverwood_wood": "银木",
+  "message.tc4modern.giant_tree.started": "巨树已开始生长，正在准备树冠，请稍候。",
+  "message.tc4modern.giant_tree.no_space": "巨树无法生长：上方空间不足或树干路径被阻挡。",
+  "message.tc4modern.giant_tree.phase.0": "巨树正在准备树冠，完成前树苗会留在原地。",
+  "message.tc4modern.giant_tree.phase.1": "巨树正在生成树叶。",
+  "message.tc4modern.giant_tree.phase.2": "巨树正在生成树枝。",
+  "message.tc4modern.giant_tree.phase.3": "巨树正在生成树干。"
 }

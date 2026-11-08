@@ -18,22 +18,25 @@ import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.*;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 
 /** Original greatwood/silverwood identity and artwork, with native leaf state and decay. */
 public final class MagicalLeavesBlock extends LeavesBlock {
     public static final IntegerProperty LEGACY_META = IntegerProperty.create("legacy_meta", 0, 15);
+    public static final BooleanProperty MASSIVE_STATIC = BooleanProperty.create("massive_static");
     private final LegacyBlockProvider.DisplayTicks originalDisplay;
 
     public MagicalLeavesBlock(BlockBehaviour.Properties properties, LegacyBlockProvider.DisplayTicks originalDisplay) {
         super(properties.randomTicks().noOcclusion()
                 .isSuffocating((state, level, pos) -> false).isViewBlocking((state, level, pos) -> false));
         this.originalDisplay = originalDisplay;
-        registerDefaultState(defaultBlockState().setValue(LEGACY_META, 0));
+        registerDefaultState(defaultBlockState().setValue(LEGACY_META, 0).setValue(MASSIVE_STATIC, false));
     }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        super.createBlockStateDefinition(builder); builder.add(LEGACY_META);
+        super.createBlockStateDefinition(builder); builder.add(LEGACY_META, MASSIVE_STATIC);
     }
     public BlockState fromLegacy(int metadata) {
         if (metadata < 0 || metadata > 15) throw new IllegalArgumentException("Leaf metadata outside 0..15");
@@ -44,15 +47,23 @@ public final class MagicalLeavesBlock extends LeavesBlock {
     }
     private static boolean persistent(BlockState state) {
         // Old saved states only have legacy_meta; their newly introduced persistent property defaults to false.
-        return state.getValue(PERSISTENT) || (state.getValue(LEGACY_META) & 4) != 0;
+        return state.getValue(MASSIVE_STATIC) || state.getValue(PERSISTENT) || (state.getValue(LEGACY_META) & 4) != 0;
     }
     @Override public boolean isRandomlyTicking(BlockState state) { return !persistent(state) && state.getValue(DISTANCE) == DECAY_DISTANCE; }
     @Override protected boolean decaying(BlockState state) { return !persistent(state) && super.decaying(state); }
     @Override public void onPlace(BlockState state, Level level, BlockPos pos, BlockState before, boolean moving) {
         super.onPlace(state, level, pos, before, moving);
-        if (!level.isClientSide && state.getBlock() != before.getBlock()) level.scheduleTick(pos, this, 1);
+        if (!level.isClientSide && !state.getValue(MASSIVE_STATIC) && state.getBlock() != before.getBlock()) level.scheduleTick(pos, this, 1);
+    }
+    @Override public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (state.getValue(MASSIVE_STATIC)) {
+            if (state.getValue(WATERLOGGED)) level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            return state;
+        }
+        return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
     @Override public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (state.getValue(MASSIVE_STATIC)) return;
         super.tick(state.setValue(PERSISTENT, persistent(state)), level, pos, random);
         var current = level.getBlockState(pos);
         if (current.is(this)) {

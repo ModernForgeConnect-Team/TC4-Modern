@@ -12,10 +12,12 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SaplingBlock;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import github.com.gengyoubo.tcmodern.tc4.content.MagicalLeavesBlock;
 import net.minecraftforge.common.IPlantable;
 
-/** Resumable, server-thread world generation for the tested 80-block MFR tree. */
+/** Resumable MFR tree generation; all world access remains on the server thread. */
 public final class MfrTickTree {
     private enum Kind { MEGA, SACRED, ENCHANTED_SACRED }
     private record LeafNode(int x, int y, int z, int branchY) { }
@@ -26,6 +28,7 @@ public final class MfrTickTree {
     private final BlockPos origin;
     private final BlockState[] logs;
     private final BlockState leaves;
+    private final boolean staticLeaves;
     private final boolean nativeLeaves, nativeBark;
     private final IPlantable sapling;
     private static final class SavedRandom extends Random {
@@ -94,8 +97,11 @@ public final class MfrTickTree {
     private boolean sloped, safe;
 
     private MfrTickTree(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves,
-                           Kind kind, int scale, long seed) {
-        this.level = level; this.origin = origin; this.sapling = sapling; this.logs = logs; this.leaves = leaves;
+                           Kind kind, int scale, long seed, boolean staticLeaves) {
+        this.level = level; this.origin = origin; this.sapling = sapling; this.logs = logs;
+        this.staticLeaves = staticLeaves;
+        this.leaves = staticLeaves ? leaves.setValue(LeavesBlock.PERSISTENT, true)
+                .setValue(LeavesBlock.DISTANCE, 7).setValue(MagicalLeavesBlock.MASSIVE_STATIC, true) : leaves;
         this.nativeLeaves = leaves.getBlock() instanceof github.com.gengyoubo.tcmodern.tc4.content.MagicalLeavesBlock;
         this.nativeBark = logs[3].is(github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.GREATWOOD_WOOD.get())
                 || logs[3].is(github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks.SILVERWOOD_WOOD.get());
@@ -113,26 +119,27 @@ public final class MfrTickTree {
         } else sloped = true;
     }
 
-    public static final class Job {
+    public static final class Job implements TreeGenerationTask {
         private final MfrTickTree tree;
         private java.util.concurrent.CompletableFuture<int[]> coordinates;
         private int cursor, branchCursor, phase, relativeY, y, candidateIndex, trunkColumn, leafNodeCursor, batchEnd; private boolean candidatePending; private int candidateX,candidateZ;
         public long maxStepNanos, totalStepNanos, prepareNanos, candidateNanos, nodeHash, trunkNanos;
         public final long[] phaseMaxNanos=new long[4]; public int steps, candidateCount, nodes;
         public boolean done;
+        private boolean cancelled;
         public long chunkMaxNanos() { return tree.chunkMaxNanos; }
         public long chunkTotalNanos() { return tree.chunkTotalNanos; }
         public int chunkCalls() { return tree.chunkCalls; }
         public String progress() {return "phase="+phase+" candidates="+candidateCount+" steps="+steps+" requests="+tree.requests+" waits="+tree.waits+" pending="+tree.pendingChunk;}
-        public int requests() {return tree.requests;} public int waits(){return tree.waits;} public int maxOutstanding(){return tree.maxOutstanding;} public int maxHeld(){return tree.maxHeld;} public boolean ticketReleased(){return tree.pendingChunk==null && tree.heldTickets.isEmpty();} public void close(){if(coordinates!=null)coordinates.cancel(false);tree.releaseChunk();}
+        public int requests() {return tree.requests;} public int waits(){return tree.waits;} public int maxOutstanding(){return tree.maxOutstanding;} public int maxHeld(){return tree.maxHeld;} public boolean ticketReleased(){return tree.pendingChunk==null && tree.heldTickets.isEmpty();} @Override public void cancel(){cancelled=true;if(coordinates!=null)coordinates.cancel(false);tree.releaseChunk();}
         public MfrMassiveTree.Result result(){return new MfrMassiveTree.Result(done,tree.heightLimit,tree.height,tree.trunkRadius,tree.sloped,tree.seed,tree.density,tree.nodes.size());}
         private Job(MfrTickTree tree) {
             this.tree=tree; tree.cooperative=true; tree.setup(); int top=tree.origin.getY()+tree.heightLimit-tree.leafDistance;
             tree.nodes.add(new LeafNode(tree.origin.getX(),top,tree.origin.getZ(),tree.origin.getY()+tree.height));
             relativeY=top-tree.origin.getY(); y=top-1;
         }
-        public net.minecraft.nbt.CompoundTag saveProgress() {
-            var tag=new net.minecraft.nbt.CompoundTag();
+        @Override public void save(net.minecraft.nbt.CompoundTag tag) {
+            tag.putBoolean("StaticLeaves",tree.staticLeaves);
             tag.putLong("Seed",tree.seed); tag.putLong("RandomState",tree.random.state);
             tag.putInt("HeightLimit",tree.heightLimit); tag.putInt("Height",tree.height); tag.putInt("LeafBases",tree.leafBases); tag.putInt("Density",tree.density);
             tag.putInt("Phase",phase); tag.putInt("RelativeY",relativeY); tag.putInt("Y",y); tag.putInt("CandidateIndex",candidateIndex);
@@ -141,11 +148,11 @@ public final class MfrTickTree {
             tag.putInt("Steps",steps); tag.putInt("CandidateCount",candidateCount);
             int[] saved=new int[tree.nodes.size()*4]; int i=0;
             for(var node:tree.nodes){saved[i++]=node.x;saved[i++]=node.y;saved[i++]=node.z;saved[i++]=node.branchY;}
-            tag.putIntArray("Nodes",saved); return tag;
+            tag.putIntArray("Nodes",saved);
         }
         public int phase() { return phase; }
         public static Job restore(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves, net.minecraft.nbt.CompoundTag saved) {
-            var nextTree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,saved.getLong("Seed"));
+            var nextTree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,saved.getLong("Seed"),saved.getBoolean("StaticLeaves"));
             nextTree.heightLimit=saved.getInt("HeightLimit");nextTree.height=saved.getInt("Height");nextTree.leafBases=saved.getInt("LeafBases");nextTree.density=saved.getInt("Density");
             nextTree.random.state=saved.getLong("RandomState");
             var next=new Job(nextTree); next.tree.nodes.clear(); int[] data=saved.getIntArray("Nodes");
@@ -210,11 +217,12 @@ public final class MfrTickTree {
             var ground=tree.readState(x,y0-1,z);
             if(ground.is(Blocks.GRASS_BLOCK)||ground.is(Blocks.MYCELIUM)||ground.is(Blocks.PODZOL)) tree.put(new BlockPos(x,y0-1,z),Blocks.DIRT.defaultBlockState());
         }
-        public void step(long budgetNanos) {
-            if(done) return; tree.readCached=false; tree.scanChunk=null;
-            int initialPhase=phase; long start=System.nanoTime(), deadline=start+budgetNanos; steps++;
+        @Override public boolean tick(long deadlineNanos) {
+            if (done || cancelled) return true;
+            tree.readCached=false; tree.scanChunk=null;
+            int initialPhase=phase; long start=System.nanoTime(), deadline=deadlineNanos; steps++;
             try {
-                if(!tree.pollChunk()) return;
+                if(!tree.pollChunk()) return false;
                 if(phase==0) {
                     while(relativeY>=0 && System.nanoTime()<deadline) candidate();
                     if(relativeY<0) {startWorker(); phase=1;}
@@ -253,11 +261,12 @@ public final class MfrTickTree {
                 long elapsed=System.nanoTime()-start; totalStepNanos+=elapsed; maxStepNanos=Math.max(maxStepNanos,elapsed);
                 phaseMaxNanos[initialPhase]=Math.max(phaseMaxNanos[initialPhase],elapsed); if(initialPhase==0) candidateNanos+=elapsed;
             }
+            return done;
         }
     }
     public static Job begin(Level level, BlockPos origin, IPlantable sapling, BlockState[] logs, BlockState leaves, long seed) {
-        var tree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,seed);
-        if(!tree.validLocation() || tree.heightLimit!=80) return null;
+        var tree=new MfrTickTree(level,origin,sapling,logs,leaves,Kind.ENCHANTED_SACRED,0,seed,true);
+        if(!tree.validLocation()) return null;
         return new Job(tree);
     }
 
@@ -322,6 +331,7 @@ public final class MfrTickTree {
     /** Only the last read is cached; all writes invalidate it before any block callbacks can run. */
     private BlockState readState(int x, int y, int z) {
         if (readCached && x == cachedX && y == cachedY && z == cachedZ) return cachedState;
+        if (cooperative && y >= level.getMinBuildHeight() && y < level.getMaxBuildHeight()) ensureChunk(x, z);
         var state = level.getBlockState(readPos.set(x, y, z));
         cachedX = x; cachedY = y; cachedZ = z; cachedState = state; readCached = true;
         return state;
@@ -384,6 +394,9 @@ public final class MfrTickTree {
         // onPlace and neighbouring callbacks can change any block, so even a cached hit is invalid after a write.
         readCached = false;
         // The sapling is the persistent task anchor until all tree phases finish.
-        if (!pos.equals(origin) && !level.isOutsideBuildHeight(pos)) level.setBlock(pos, state, Block.UPDATE_CLIENTS);
+        if (!pos.equals(origin) && !level.isOutsideBuildHeight(pos)) {
+            if (cooperative) ensureChunk(pos.getX(), pos.getZ());
+            level.setBlock(pos, state, Block.UPDATE_CLIENTS);
+        }
     }
 }
