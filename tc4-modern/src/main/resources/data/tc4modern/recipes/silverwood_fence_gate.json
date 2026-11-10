@@ -13,7 +13,13 @@
       "item": "minecraft:stick"
     },
     "W": {
-      "item": "thaumcraft:block_wooden_device/meta_7"
+      "item": "thaumcraft:block_wooden_device/meta_7",
+      "type": "forge:partial_nbt",
+      "nbt": {
+        "mfcl_legacy": {
+          "metadata": 7
+        }
+      }
     }
   },
   "pattern": [

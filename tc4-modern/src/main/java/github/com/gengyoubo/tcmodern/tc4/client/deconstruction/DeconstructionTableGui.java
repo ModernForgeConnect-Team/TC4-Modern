@@ -35,7 +35,7 @@ public final class DeconstructionTableGui implements LegacyClientScreens.Control
     private final Map<String,TcAspect> aspects=new HashMap<>();
     private State state=EMPTY;
     private boolean closed,failed;
-    public static AutoCloseable install(LegacyRuntime runtime){return runtime.clientScreens().register("thaumcraft.client.gui.GuiDeconstructionTable",DeconstructionTableGui::new);}
+    public static AutoCloseable install(LegacyRuntime runtime){return github.com.gengyoubo.tcmodern.tc4.compat.MfclCompat.clientScreens(runtime).register("thaumcraft.client.gui.GuiDeconstructionTable",DeconstructionTableGui::new);}
     DeconstructionTableGui(LegacyClientScreens.Context context){
         this.context=context;host=context.hostScreen(AbstractContainerScreen.class);
         for(var aspect:TcAspects.snapshot(context.runtime()))aspects.put(aspect.tag(),aspect);

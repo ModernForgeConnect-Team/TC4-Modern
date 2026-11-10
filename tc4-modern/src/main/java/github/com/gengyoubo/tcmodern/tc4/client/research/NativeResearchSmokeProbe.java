@@ -80,7 +80,7 @@ public final class NativeResearchSmokeProbe {
             }else if(stage==1&&mc.level!=null&&mc.player!=null&&mc.screen==null){pending=server(mc,()->seed(mc));stage=18;}
             else if(stage==18&&pending.isDone()&&++frames>16){pending=server(mc,()->open(mc));stage=2;}
             else if(stage==2&&pending.isDone()&&ResearchTableGui.active(mc.screen)!=null&&++frames>12){
-                require(api().supports(LegacyFeatures.CLIENT_SCREENS),"Native GUI feature missing");
+                require(api().supports("client-screens"),"Native GUI feature missing");
                 require(gui(mc).state().palette().size()>25,"Fixture did not discover enough aspects to test paging");
                 clickSlot(mc,29);clickSlot(mc,0);clickSlot(mc,30);clickSlot(mc,1);stage=3;
             }else if(stage==3&&++frames>14){

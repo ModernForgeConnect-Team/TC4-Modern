@@ -13,7 +13,13 @@
   ],
   "key": {
     "#": {
-      "item": "thaumcraft:block_magical_log/meta_1"
+      "item": "thaumcraft:block_magical_log/meta_1",
+      "type": "forge:partial_nbt",
+      "nbt": {
+        "mfcl_legacy": {
+          "metadata": 1
+        }
+      }
     }
   },
   "result": {

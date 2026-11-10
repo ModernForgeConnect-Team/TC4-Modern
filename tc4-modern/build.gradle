@@ -89,12 +89,99 @@ dependencies {
         runtimeOnly fg.deobf("maven.modrinth:jade:${rootProject.jade_version}")
     }
     implementation fg.deobf(rootProject.mfclRuntimeDependency)
-    testImplementation rootProject.mfclApiDependency
+    // A local API JAR still needs to be visible to tests; the CurseForge mod JAR above already contains the API.
+    if (!(rootProject.mfclApiDependency instanceof CharSequence)) testImplementation rootProject.mfclApiDependency
     testImplementation fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+// Compile-only copies of MFCL API types added after MFCL 0.2.10 (client screens, native block and item providers).
+// Never packaged: Forge rejects a package split across two mods, and at runtime every use is guarded by a
+// presence/feature check, so MFCL 0.2.10 keeps the hosted original GUIs, blocks and items.
+sourceSets { mfclStubs }
+dependencies {
+    mfclStubsCompileOnly rootProject.mfclApiDependency
+    compileOnly sourceSets.mfclStubs.output
+    testImplementation sourceSets.mfclStubs.output
+}
+def checkNoMfclStubs = tasks.register('checkNoMfclStubs') {
+    def archive = tasks.named('jar').flatMap { it.archiveFile }
+    inputs.file(archive)
+    doLast {
+        zipTree(archive.get()).matching { include 'github/com/gengyoubo/mfcl/**' }.each {
+            throw new GradleException("MFCL API stubs must not be packaged: ${it}")
+        }
+    }
+}
+tasks.named('check') { dependsOn checkNoMfclStubs }
+
+// Temporary backport of MFCL 1.0.8 fixes onto the CurseForge MFCL 0.2.10 file, applied at load time.
+// src/mfclPatch holds the MFCL classes that changed (0.2.10 + fix commits, see src/mfclPatch/README.md),
+// src/mfclPatchLegacy the changed classes of MFCL's old-runtime helper JAR. MfclPatchTool turns them into
+// class copies the mixin plugin (github.com.gengyoubo.tcmodern.tc4.mfclpatch) moves into the original classes.
+// Always built against the CurseForge file, whatever mfclRuntimeJar points at: that is what the patch targets.
+configurations {
+    mfclPatchBase { transitive = false }
+    mfclPatchRaw { transitive = false }
+}
+sourceSets {
+    mfclPatch
+    mfclPatchLegacy
+    mfclPatchTool
+}
+dependencies {
+    mfclPatchBase fg.deobf(rootProject.mfclCurseDependency)
+    mfclPatchRaw rootProject.mfclCurseDependency
+    mfclPatchToolImplementation 'org.ow2.asm:asm-commons:9.7.1'
+    mfclPatchToolImplementation 'org.ow2.asm:asm-tree:9.7.1'
+    mfclPatchLegacyCompileOnly 'net.minecraft:launchwrapper:1.12'
+    mfclPatchLegacyCompileOnly 'org.ow2.asm:asm-debug-all:5.0.3'
+    mfclPatchLegacyCompileOnly 'com.google.guava:guava:17.0'
+    mfclPatchLegacyCompileOnly 'net.minecraftforge:forge:1.7.10-10.13.4.1614-1.7.10:universal'
+}
+configurations.mfclPatchCompileClasspath.extendsFrom(configurations.minecraft, configurations.mfclPatchBase)
+tasks.named('compileMfclPatchLegacyJava', JavaCompile) { options.release = 8 }
+def mfclPatchDir = layout.buildDirectory.dir('mfclpatch')
+// MFCL 0.2.10's own old-runtime helper JAR, the base the legacy patch is compiled against and merged into.
+def extractMfclLegacy = tasks.register('extractMfclLegacy', Sync) {
+    from({ zipTree(configurations.mfclPatchRaw.singleFile) }) { include 'mfcl/mfcl-legacy-runtime.jar' }
+    into mfclPatchDir.map { it.dir('original') }
+}
+def mfclLegacyOriginal = files(mfclPatchDir.map { it.file('original/mfcl/mfcl-legacy-runtime.jar') }).builtBy(extractMfclLegacy)
+dependencies { mfclPatchLegacyCompileOnly mfclLegacyOriginal }
+def mfclPatchLegacyJar = tasks.register('mfclPatchLegacyJar', Jar) {
+    archiveFileName = 'mfcl-legacy-runtime.jar'
+    destinationDirectory = mfclPatchDir.map { it.dir('legacy/tc4modern/mfclpatch') }
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    def patched = sourceSets.mfclPatchLegacy.output
+    from(patched)
+    from({ zipTree(mfclLegacyOriginal.singleFile) }) {
+        // Keep the original manifest; drop every class the patch provides.
+        exclude { element ->
+            element.path.endsWith('.class') && patched.classesDirs.any { new File(it, element.path).isFile() }
+        }
+    }
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+def generateMfclPatch = tasks.register('generateMfclPatch', JavaExec) {
+    def classes = sourceSets.mfclPatch.output.classesDirs
+    def out = mfclPatchDir.map { it.dir('generated') }
+    inputs.files(classes).withPropertyName('patchClasses')
+    inputs.files(configurations.mfclPatchBase).withPropertyName('mfcl')
+    outputs.dir(out)
+    classpath = sourceSets.mfclPatchTool.runtimeClasspath
+    mainClass = 'github.com.gengyoubo.tcmodern.tc4.mfclpatch.tool.MfclPatchTool'
+    // Classes and the index both go to one resources directory, so dev runs and the JAR see the same files.
+    argumentProviders.add({ [classes.singleFile.absolutePath, configurations.mfclPatchBase.singleFile.absolutePath,
+                             out.get().asFile.absolutePath, out.get().asFile.absolutePath] } as CommandLineArgumentProvider)
+}
+sourceSets.main.resources.srcDir(generateMfclPatch)
+sourceSets.main.resources.srcDir(files(mfclPatchDir.map { it.dir('legacy') }).builtBy(mfclPatchLegacyJar))
+tasks.named('jar', Jar) { manifest.attributes('MixinConfigs': 'tc4modern.mfclpatch.mixins.json') }
+tasks.named('jarJar') { manifest.attributes('MixinConfigs': 'tc4modern.mfclpatch.mixins.json') }
 
 // Independently implemented binary compatibility API, loaded only in MFCL's old class loader.
 // The tiny compile stubs are never packaged or added to the modern class path.
@@ -149,6 +236,7 @@ minecraft {
             property 'forge.logging.console.level', 'info'
             // Dependencies that use Mixin (Curios) ship SRG refmaps; remap them in development runs.
             property 'mixin.env.remapRefMap', 'true'
+            args '-mixin.config=tc4modern.mfclpatch.mixins.json'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             if (providers.gradleProperty('jeiSmokeTest').isPresent()) {
                 property 'tc4modern.jeiSmokeTest', 'true'

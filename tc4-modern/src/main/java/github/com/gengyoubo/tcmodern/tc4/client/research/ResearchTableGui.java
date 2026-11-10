@@ -42,7 +42,7 @@ public final class ResearchTableGui implements LegacyClientScreens.Controller {
     private record Link(ResearchTableState.Cell a,ResearchTableState.Cell b) {}
     private record Rune(Hex hex,int glyph,long start,long end) {}
     private enum Sound {BUTTON,ASPECT,COMBINE,WRITE,ERASE,PAGE}
-    static AutoCloseable install(LegacyRuntime runtime){return runtime.clientScreens().register("thaumcraft.client.gui.GuiResearchTable",ResearchTableGui::new);}
+    static AutoCloseable install(LegacyRuntime runtime){return github.com.gengyoubo.tcmodern.tc4.compat.MfclCompat.clientScreens(runtime).register("thaumcraft.client.gui.GuiResearchTable",ResearchTableGui::new);}
     ResearchTableGui(LegacyClientScreens.Context context){
         this.context=context;host=context.hostScreen(AbstractContainerScreen.class);
         for(var aspect:TcAspects.snapshot(context.runtime()))aspects.put(aspect.tag(),aspect);

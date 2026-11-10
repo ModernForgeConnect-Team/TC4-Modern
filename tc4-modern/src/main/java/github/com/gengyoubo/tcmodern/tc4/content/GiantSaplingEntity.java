@@ -38,7 +38,8 @@ public final class GiantSaplingEntity extends BlockEntity {
     private void notifyNearbyBonemealUser(String key) {
         var player = level.getNearestPlayer(worldPosition.getX() + .5, worldPosition.getY() + .5, worldPosition.getZ() + .5, 8, false);
         if (player != null && (player.getMainHandItem().is(Items.BONE_MEAL) || player.getOffhandItem().is(Items.BONE_MEAL)
-                || player.getMainHandItem().getItem() instanceof MagicBoneMealItem || player.getOffhandItem().getItem() instanceof MagicBoneMealItem))
+                || player.getMainHandItem().getItem() instanceof MagicBoneMealItem || player.getOffhandItem().getItem() instanceof MagicBoneMealItem
+                || GiantSaplingBlock.isGrowthHoe(player.getMainHandItem()) || GiantSaplingBlock.isGrowthHoe(player.getOffhandItem())))
             player.displayClientMessage(Component.translatable(key), true);
     }
     /** Enchanted sacred saplings use the resumable hybrid generator. */

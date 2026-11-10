@@ -14,6 +14,11 @@
   ],
   "result": {
     "item": "thaumcraft:block_wooden_device/meta_6",
-    "count": 4
+    "count": 4,
+    "nbt": {
+      "mfcl_legacy": {
+        "metadata": 6
+      }
+    }
   }
 }

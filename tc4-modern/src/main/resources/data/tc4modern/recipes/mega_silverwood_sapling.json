@@ -12,7 +12,13 @@
   ],
   "key": {
     "S": {
-      "item": "thaumcraft:block_custom_plant/meta_1"
+      "item": "thaumcraft:block_custom_plant/meta_1",
+      "type": "forge:partial_nbt",
+      "nbt": {
+        "mfcl_legacy": {
+          "metadata": 1
+        }
+      }
     }
   },
   "result": {

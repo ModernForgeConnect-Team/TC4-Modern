@@ -109,7 +109,7 @@ bash gradlew build
 
 ## 联调与独立发布
 
-完整 MFCL 模组（含旧运行时加载器与 Developer API）由 Gradle 从 MFCL Maven 仓库解析（版本见 `gradle.properties` 的 `mfcl_version`），无需手动放入 `libs/`。MFCL 模组不包含原版 TC4、Baubles 或私有 Minecraft/Forge 1.7.10 运行时；这些输入仍须单独准备。
+完整 MFCL 模组（含旧运行时加载器与 Developer API）由 Gradle 通过 CurseMaven 解析 CurseForge 上的 MFCL 0.2.10（文件编号见 `gradle.properties` 的 `mfcl_curse_file`），无需手动放入 `libs/`。0.2.10 尚无原生界面（client-screens）、原生方块与物品拆分 API：tc4-modern 只用不打包的编译桩（`tc4-modern/src/mfclStubs`）编译这些类型，运行时检测不到时保留原版托管的 GUI、树叶与物品（见 `MfclCompat`）。MFCL 模组不包含原版 TC4、Baubles 或私有 Minecraft/Forge 1.7.10 运行时；这些输入仍须单独准备。
 复制 `gradle-local.properties.example` 为 `gradle-local.properties`，按需填写 `gameDir`、`legacyRuntimeDir`；该本地配置不提交 Git。刷新 Gradle 后即可执行 `:tc4-modern:runClient`。
 
 ```powershell
@@ -129,7 +129,7 @@ bash gradlew build
 正式安装时在现代 `mods/` 中放入完整 MFCL、`tc-modern-lib` 和 `tc4-modern` 模组 JAR；Curios 为可选，安装后优先于旧版 Baubles。
 `implementation project(':tc-modern-lib')` 仅建立工程依赖，不将 Lib 合并进 TC4 JAR。
 
-`build` / `assemble` 为两个模组各生成两种 JAR：`<名称>-<版本>.jar` 不含 MFCL，需另装；`<名称>-<版本>-with-mfcl.jar` 通过 Forge Jar-in-Jar 内置未修改的完整 MFCL，可免装，但 `tc-modern-lib` 与 `tc4-modern` 仍须都安装（任一个用内置版即可）。内置的 MFCL 取自与开发运行相同的来源：设置了 `mfclRuntimeJar` 时为该本地 JAR，否则为 `mfcl_version` 对应的 Maven 版本；对外发布前请确认未指向本地构建。发布到 Maven 的仍只有不含 MFCL 的 JAR。
+`build` / `assemble` 为两个模组各生成两种 JAR：`<名称>-<版本>.jar` 不含 MFCL，需另装；`<名称>-<版本>-with-mfcl.jar` 通过 Forge Jar-in-Jar 内置未修改的完整 MFCL，可免装，但 `tc-modern-lib` 与 `tc4-modern` 仍须都安装（任一个用内置版即可）。内置的 MFCL 取自与开发运行相同的来源：设置了 `mfclRuntimeJar` 时为该本地 JAR，否则为 `mfcl_curse_file` 对应的 CurseForge 文件；对外发布前请确认未指向本地构建。发布到 Maven 的仍只有不含 MFCL 的 JAR。
 
 ### 前置 / Prerequisites
 
