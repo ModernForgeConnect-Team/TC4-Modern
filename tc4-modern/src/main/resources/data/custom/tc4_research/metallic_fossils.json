@@ -1,0 +1,48 @@
+{
+  "type": "tc4modern:research",
+  "key": "Metallic_fossils",
+  "name": {
+    "zh_CN": "金属化石",
+    "en_US": "Metallic Fossils"
+  },
+  "category": "ALCHEMY",
+  "position": [
+    -1,
+    7
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "minecraft:ancient_debris"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "cognitio": 1,
+    "ordo": 1,
+    "antiquitas": 1,
+    "metallum": 1,
+    "terra": 1
+  },
+  "flags": [
+    "auto_unlock"
+  ],
+  "subtitle": {
+    "zh_CN": "沉睡于岩层的金属",
+    "en_US": "Metal asleep in the rock"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "根据多年研究，你发现了远古残骸这个物质也可以可以通过坩埚来获得。但是由于过于稀有，所以需要的要素同样不少",
+        "en_US": "Based on years of research, you have discovered that ‘Ancient Remnants’ can also be obtained using a crucible. However, as it is extremely rare, a considerable number of ingredients are required."
+      }
+    },
+    {
+      "crucible": {
+        "item": "minecraft:ancient_debris"
+      }
+    }
+  ],
+  "parents": [
+    "THAUMIUM"
+  ]
+}

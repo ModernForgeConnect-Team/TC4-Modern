@@ -89,7 +89,8 @@ dependencies {
         runtimeOnly fg.deobf("maven.modrinth:jade:${rootProject.jade_version}")
     }
     implementation fg.deobf(rootProject.mfclRuntimeDependency)
-    testImplementation rootProject.mfclApiDependency
+    // A local API JAR still needs to be visible to tests; the CurseForge mod JAR above already contains the API.
+    if (!(rootProject.mfclApiDependency instanceof CharSequence)) testImplementation rootProject.mfclApiDependency
     testImplementation fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -140,7 +141,7 @@ tasks.named('check') { dependsOn tasks.named('legacyBaublesTest') }
 
 tasks.named('test') { useJUnitPlatform() }
 
-// The full MFCL runtime is resolved from the MFCL Maven repository (see dependencies above).
+// The full MFCL runtime is resolved from CurseMaven (see dependencies above).
 minecraft {
     copyIdeResources = true
     runs {
@@ -158,6 +159,9 @@ minecraft {
             }
             if (providers.gradleProperty('cinnabarSmokeTest').isPresent()) {
                 property 'tc4modern.cinnabarSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('wandTabSmokeTest').isPresent()) {
+                property 'tc4modern.wandTabSmokeTest', 'true'
             }
             if (providers.gradleProperty('workbookSmokeTest').isPresent()) {
                 property 'tc4modern.workbookSmokeTest', 'true'

@@ -55,6 +55,12 @@ public final class NativeLeavesSmokeProbe {
         try {
             require(System.nanoTime() < deadline, "Native leaves acceptance timed out at " + stage);
             if (stage == 0 && mc.screen instanceof TitleScreen && mc.getOverlay() == null) {
+                var atlas = mc.getTextureAtlas(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
+                for (String species : List.of("greatwood", "silverwood")) {
+                    var id = ResourceLocation.fromNamespaceAndPath("thaumcraft", "blocks/" + species + "top");
+                    require(atlas.apply(id).contents().name().equals(id), "Missing stripped log end texture: " + id);
+                }
+                proof.put("strippedLogEndTextures", true);
                 org.lwjgl.glfw.GLFW.glfwHideWindow(mc.getWindow().getWindow());
                 mc.options.pauseOnLostFocus = false; mc.options.renderDistance().set(8);
                 mc.createWorldOpenFlows().createFreshLevel("tc4modern-native-leaves-" + System.currentTimeMillis(),
@@ -98,8 +104,33 @@ public final class NativeLeavesSmokeProbe {
                     && woodRecipe.getResultItem(level.registryAccess()).getCount()==3, "Bark crafting output incorrect: " + wood);
             require(planksRecipe.getIngredients().get(0).test(new ItemStack(bark))
                     && planksRecipe.getResultItem(level.registryAccess()).getCount()==4, "Bark planks recipe incorrect: " + wood);
+            int plankMeta = wood.equals("greatwood") ? 6 : 7;
+            var plank = runtime.mappings().toHost(LegacyMappings.ITEM_STACK,
+                    runtime.stack(new LegacyStack("Thaumcraft:blockWoodenDevice", plankMeta, 1, "")), ItemStack.class).orElseThrow();
+            for (String variant : List.of("fence", "fence_gate")) {
+                var recipe = (net.minecraft.world.item.crafting.CraftingRecipe) recipes.byKey(ResourceLocation.fromNamespaceAndPath("tc4modern", wood + "_" + variant)).orElseThrow();
+                var ingredient = recipe.getIngredients().stream().filter(i -> i.test(plank)).findFirst().orElseThrow();
+                var shown = ingredient.getItems();
+                require(shown.length == 1, "Missing JEI plank ingredient for " + wood + " " + variant);
+                identity(runtime, shown[0], "Thaumcraft:blockWoodenDevice", plankMeta);
+                var wrongMeta = plank.copy(); wrongMeta.getOrCreateTagElement("mfcl_legacy").putInt("metadata", 0);
+                require(!ingredient.test(wrongMeta), "Fence recipe accepted bellows metadata: " + wood);
+                var grid = new net.minecraft.world.inventory.TransientCraftingContainer(player.inventoryMenu, 3, 3);
+                for (int row=0; row<2; row++) for (int col=0; col<3; col++) {
+                    boolean middle = variant.equals("fence_gate") ? col==1 : col!=1;
+                    grid.setItem(row*3+col, middle ? plank.copy() : new ItemStack(Items.STICK));
+                }
+                require(recipe.matches(grid, level), "Cannot craft " + wood + " " + variant + " with correct planks");
+            }
+            for (String suffix : List.of("wood", "stripped_" + wood + "_log", "stripped_" + wood + "_wood")) {
+                var recipe = recipes.byKey(ResourceLocation.fromNamespaceAndPath("tc4modern", wood + "_planks_from_" + suffix)).orElseThrow();
+                var result = recipe.getResultItem(level.registryAccess()).copy();
+                require(result.getCount()==4, "Wrong planks count for " + suffix); result.setCount(1);
+                identity(runtime, result, "Thaumcraft:blockWoodenDevice", plankMeta);
+            }
         }
         proof.put("bothBarkWoodsTagsDropsAndRecipes", true);
+        proof.put("fenceRecipePlankMetadataAndCrafting", true);
         var oldHand = player.getMainHandItem().copy();
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.IRON_AXE));
         var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(origin), net.minecraft.core.Direction.UP, origin, false);

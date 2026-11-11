@@ -1,0 +1,10 @@
+{
+  "type": "tc4modern:intermediate_crucible",
+  "research": "intermediate_crucible",
+  "ingredients": [
+    {"legacy_item": "Thaumcraft:ItemResource", "metadata": 2},
+    {"item": "minecraft:netherite_ingot"}
+  ],
+  "aspects": {"antiquitas": 2, "praecantatio": 4},
+  "result": {"item": "tc4modern:ancient_thaumium_ingot"}
+}

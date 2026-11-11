@@ -1,0 +1,50 @@
+{
+  "type": "tc4modern:research",
+  "key": "intermediate_crucible",
+  "name": {
+    "zh_CN": "中级坩埚",
+    "en_US": "Intermediate Crucible"
+  },
+  "category": "ALCHEMY",
+  "position": [
+    -1,
+    9
+  ],
+  "complexity": 2,
+  "icon": {
+    "item": "tc4modern:intermediate_crucible"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "antiquitas": 1,
+    "permutatio": 1,
+    "aqua": 1,
+    "ignis": 1
+  },
+  "parents": [
+    "Metallic_fossils"
+  ],
+  "subtitle": {
+    "zh_CN": "熔古铸新",
+    "en_US": "Melting the old into the new"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "中级坩埚和普通坩埚一样，需要装满水，并放在火、岩浆或者灯火之上加热。水沸腾后才会工作，溶解的要素也会像普通坩埚那样慢慢蒸发，溢出时会产生咒波。<BR>用法杖右键坩埚可以在分解模式与合成模式之间切换；潜行时用法杖右键会倒空坩埚。<BR>分解模式：丢进去的物品都会被分解为要素。",
+        "en_US": "Like the common crucible, the intermediate crucible must be filled with water and heated by fire, lava or a nitor below it. It works only once the water boils; dissolved essentia slowly boils off as in the common crucible, and overflowing essentia becomes flux.<BR>Right-click the crucible with a wand to switch between decomposition and synthesis mode; sneak while doing so to empty it.<BR>Decomposition mode: every item thrown in dissolves into its aspects."
+      }
+    },
+    {
+      "text": {
+        "zh_CN": "合成模式：坩埚最多容纳两种材料。最后一种材料放入一分钟后，或者空手右键坩埚时，材料会与溶解的要素发生反应。<BR>如果材料和要素符合一个你已掌握的配方，就会得到产物；否则材料会被毁掉，坩埚上方会冒出咒波粘浆或咒波瓦斯。<BR>例如：神秘锭与下界合金锭，加上 2 份古代与 4 份魔力，可以炼成远古神秘锭。",
+        "en_US": "Synthesis mode: the crucible holds up to two materials. A minute after the last one went in, or when you right-click the crucible with an empty hand, they react with the dissolved essentia.<BR>If the materials and essentia match a recipe you know, the result rises out of the crucible; otherwise the materials are ruined and flux goo or flux gas spills out.<BR>For example, a thaumium ingot and a netherite ingot with 2 Antiquitas and 4 Praecantatio make an ancient thaumium ingot."
+      }
+    },
+    {
+      "arcane": {
+        "item": "tc4modern:intermediate_crucible"
+      }
+    }
+  ]
+}

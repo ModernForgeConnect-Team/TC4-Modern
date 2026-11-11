@@ -15,6 +15,14 @@
     {
       "type": "single",
       "resource": "thaumcraft:blocks/silverwoodside"
+    },
+    {
+      "type": "single",
+      "resource": "thaumcraft:blocks/greatwoodtop"
+    },
+    {
+      "type": "single",
+      "resource": "thaumcraft:blocks/silverwoodtop"
     }
   ]
 }

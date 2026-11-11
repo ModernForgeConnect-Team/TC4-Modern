@@ -31,7 +31,8 @@
   "jei.tc4modern.aspect.primal": "原初要素",
   "jei.tc4modern.aspect.components": "由 %s 组成",
   "jei.tc4modern.aspect.lookup": "R：查看组成 · U：查看用途",
-  "jei.tc4modern.alchemy_furnace": "炼金炉",
+  "jei.tc4modern.thaumometer": "魔导透镜",
+  "jei.tc4modern.intermediate_crucible": "中级坩埚合成",
   "jei.tc4modern.wand_conversion": "法杖交互",
   "jei.tc4modern.item_in_fluid": "物品丢入流体",
   "jei.tc4modern.item_in_fluid.source": "丢入一格静止水源",
@@ -205,5 +206,10 @@
   "message.tc4modern.giant_tree.phase.0": "巨树正在准备树冠，完成前树苗会留在原地。",
   "message.tc4modern.giant_tree.phase.1": "巨树正在生成树叶。",
   "message.tc4modern.giant_tree.phase.2": "巨树正在生成树枝。",
-  "message.tc4modern.giant_tree.phase.3": "巨树正在生成树干。"
+  "message.tc4modern.giant_tree.phase.3": "巨树正在生成树干。",
+  "block.tc4modern.intermediate_crucible": "中级坩埚",
+  "item.tc4modern.ancient_thaumium_ingot": "远古神秘锭",
+  "intermediate_crucible.tc4modern.mode.decompose": "分解模式：丢入的物品会被分解为要素",
+  "intermediate_crucible.tc4modern.mode.synthesis": "合成模式：最多容纳两种材料",
+  "intermediate_crucible.tc4modern.failed": "合成失败，咒波溢出了"
 }

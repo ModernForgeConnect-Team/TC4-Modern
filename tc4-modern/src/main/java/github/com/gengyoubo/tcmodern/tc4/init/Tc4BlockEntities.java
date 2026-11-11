@@ -33,6 +33,10 @@ public final class Tc4BlockEntities {
             () -> BlockEntityType.Builder.of(PrimalFurnaceBlockEntity::new, Tc4Blocks.PRIMAL_FURNACE.get()).build(null));
 
     @SuppressWarnings("DataFlowIssue")
+    public static final RegistryObject<BlockEntityType<github.com.gengyoubo.tcmodern.tc4.content.IntermediateCrucibleBlockEntity>> INTERMEDIATE_CRUCIBLE = TYPES.register("intermediate_crucible",
+            () -> BlockEntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.content.IntermediateCrucibleBlockEntity::new, Tc4Blocks.INTERMEDIATE_CRUCIBLE.get()).build(null));
+
+    @SuppressWarnings("DataFlowIssue")
     public static final RegistryObject<BlockEntityType<github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity>> GIANT_SAPLING = TYPES.register("giant_sapling",
             () -> BlockEntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.content.GiantSaplingEntity::new,
                 Tc4Blocks.MEGA_GREATWOOD_SAPLING.get(), Tc4Blocks.SACRED_GREATWOOD_SAPLING.get(), Tc4Blocks.ENCHANTED_SACRED_GREATWOOD_SAPLING.get(),

@@ -29,14 +29,15 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
     static final int MAX_COMPONENTS = 16;
     private static final ResourceLocation BOOK = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/gui/gui_researchbook.png");
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/gui/gui_researchbook_overlay.png");
-    private static final int WIDTH = 160, HEIGHT = 140;
+    static final int WIDTH = 160, HEIGHT = 140;
     /**
      * Original page size relative to this one; the original page content is 112 px wide. 9/16 turns the arcane
      * grid's 32 px cells into vanilla's 18 px slot spacing and keeps the page shorter than JEI's usual limit.
      */
     private static final float SCALE = 0.5625F;
     private static final int LEFT = Math.round((WIDTH - 112 * SCALE) / 2), TOP = 4;
-    private static final int RESEARCH_Y = HEIGHT - 12, INSTABILITY_Y = RESEARCH_Y - 11, ASPECT = 18;
+    static final int RESEARCH_Y = HEIGHT - 12;
+    private static final int INSTABILITY_Y = RESEARCH_Y - 11, ASPECT = 18;
     /** Original page text colour. */
     private static final int INK = 0xFF505050;
     private final RecipeType<JeiTcRecipe> type;
@@ -94,11 +95,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
                     overlay(graphics, 0, 164, 0, 0, 68, 76, 12, 12);
                     graphics.setColor(1, 1, 1, 1);
                 }
-                case CRUCIBLE -> {
-                    overlay(graphics, 0, 28, 0, 0, 0, 3, 56, 17);
-                    overlay(graphics, 0, 92, 0, 0, 0, 20, 56, 48);
-                    overlay(graphics, 42, 76, 0, 0, 100, 84, 11, 13);
-                }
+                case CRUCIBLE -> crucibleArt(graphics);
                 case INFUSION -> {
                     overlay(graphics, 0, 20, 0, 0, 0, 3, 56, 17);
                     overlay(graphics, 0, 58, 0, 0, 200, 77, 60, 44);
@@ -136,16 +133,17 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
     static boolean hasBookArt() { return available(BOOK) && available(OVERLAY); }
 
     /** The research's own name where Thaumcraft's language files have one, else its key. */
-    private static Component research(TcRecipe recipe) {
-        String key = recipe.research();
+    private static Component research(TcRecipe recipe) { return research(recipe.research()); }
+
+    static Component research(String key) {
         if (key.isEmpty()) return Component.translatable("jei.tc4modern.no_research");
         String name = "tc.research_name." + key;
         return Component.translatable("jei.tc4modern.research", I18n.exists(name) ? I18n.get(name) : key);
     }
 
     /** Original page coordinate to this page, for a 16 px item whose centre keeps its place. */
-    private static int itemX(float x) { return Math.round(LEFT + (x + 8) * SCALE) - 8; }
-    private static int itemY(float y) { return Math.round(TOP + (y + 8) * SCALE) - 8; }
+    static int itemX(float x) { return Math.round(LEFT + (x + 8) * SCALE) - 8; }
+    static int itemY(float y) { return Math.round(TOP + (y + 8) * SCALE) - 8; }
 
     private static int[] position(TcRecipe recipe, int index) {
         return switch (recipe.kind()) {
@@ -178,11 +176,30 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
         int inRow = Math.min(perRow, count - row * perRow);
         int top = switch (recipe.kind()) {
             case ARCANE_SHAPED, ARCANE_SHAPELESS -> itemY(172);
-            case CRUCIBLE -> itemY(128) - ASPECT / 2 * (rows - 1);
+            case CRUCIBLE -> crucibleAspectTop(rows);
             case INFUSION -> Math.min(itemY(164), INSTABILITY_Y - 2 - ASPECT * rows);
         };
         int left = WIDTH / 2 - (inRow * ASPECT - 2) / 2;
         return new int[]{left + index % perRow * ASPECT, top + row * ASPECT};
+    }
+
+    /** The top of the aspect rows inside the crucible outline, rows of {@link #CRUCIBLE_ASPECTS_PER_ROW}. */
+    static int crucibleAspectTop(int rows) { return itemY(128) - ASPECT / 2 * (rows - 1); }
+    static final int CRUCIBLE_ASPECTS_PER_ROW = 5;
+
+    /** Aspect {@code index} of {@code count} inside the crucible outline, in centred rows as the original page. */
+    static int[] crucibleAspect(int count, int index) {
+        int perRow = CRUCIBLE_ASPECTS_PER_ROW, rows = (count + perRow - 1) / perRow, row = index / perRow;
+        int inRow = Math.min(perRow, count - row * perRow);
+        int left = WIDTH / 2 - (inRow * ASPECT - 2) / 2;
+        return new int[]{left + index % perRow * ASPECT, crucibleAspectTop(rows) + row * ASPECT};
+    }
+
+    /** The crucible page art: the result frame, the crucible outline and the arrow dropping a catalyst into it. */
+    static void crucibleArt(GuiGraphics graphics) {
+        overlay(graphics, 0, 28, 0, 0, 0, 3, 56, 17);
+        overlay(graphics, 0, 92, 0, 0, 0, 20, 56, 48);
+        overlay(graphics, 42, 76, 0, 0, 100, 84, 11, 13);
     }
 
     /**
@@ -198,7 +215,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
         pose.popPose();
     }
 
-    private static void centered(GuiGraphics graphics, String text, int y) {
+    static void centered(GuiGraphics graphics, String text, int y) {
         var font = Minecraft.getInstance().font;
         text = font.plainSubstrByWidth(text, WIDTH - 8);
         graphics.drawString(font, text, (WIDTH - font.width(text)) / 2, y, INK, false);
@@ -212,7 +229,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
         return recipe.kind() == TcRecipe.Kind.ARCANE_SHAPED || recipe.kind() == TcRecipe.Kind.ARCANE_SHAPELESS;
     }
 
-    private static void frame(GuiGraphics graphics, int x, int y) {
+    static void frame(GuiGraphics graphics, int x, int y) {
         graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFF777777);
         graphics.fill(x, y, x + 16, y + 16, 0xFFE8E8E8);
     }

@@ -27,5 +27,6 @@ public final class DeskClient {
 
     @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(Tc4BlockEntities.RESEARCH_DESK.get(), ResearchDeskRenderer::new);
+        event.registerBlockEntityRenderer(Tc4BlockEntities.INTERMEDIATE_CRUCIBLE.get(), github.com.gengyoubo.tcmodern.tc4.client.crucible.IntermediateCrucibleRenderer::new);
     }
 }

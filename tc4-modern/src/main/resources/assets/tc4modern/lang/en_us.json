@@ -31,7 +31,8 @@
   "jei.tc4modern.aspect.primal": "Primal aspect",
   "jei.tc4modern.aspect.components": "Made of %s",
   "jei.tc4modern.aspect.lookup": "R: what makes it · U: what uses it",
-  "jei.tc4modern.alchemy_furnace": "Alchemical Furnace",
+  "jei.tc4modern.thaumometer": "Thaumometer",
+  "jei.tc4modern.intermediate_crucible": "Intermediate Crucible Synthesis",
   "jei.tc4modern.wand_conversion": "Wand Interaction",
   "jei.tc4modern.item_in_fluid": "Item into Fluid",
   "jei.tc4modern.item_in_fluid.source": "Drop into a still water source",
@@ -205,5 +206,10 @@
   "message.tc4modern.giant_tree.phase.0": "Preparing the canopy; the sapling remains until the tree is complete.",
   "message.tc4modern.giant_tree.phase.1": "Generating leaves.",
   "message.tc4modern.giant_tree.phase.2": "Generating branches.",
-  "message.tc4modern.giant_tree.phase.3": "Generating the trunk."
+  "message.tc4modern.giant_tree.phase.3": "Generating the trunk.",
+  "block.tc4modern.intermediate_crucible": "Intermediate Crucible",
+  "item.tc4modern.ancient_thaumium_ingot": "Ancient Thaumium Ingot",
+  "intermediate_crucible.tc4modern.mode.decompose": "Decomposition mode: items thrown in dissolve into aspects",
+  "intermediate_crucible.tc4modern.mode.synthesis": "Synthesis mode: holds up to two materials",
+  "intermediate_crucible.tc4modern.failed": "The synthesis failed and spilled flux"
 }

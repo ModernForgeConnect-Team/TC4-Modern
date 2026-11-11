@@ -40,6 +40,7 @@ public final class Tc4Modern {
         Tc4RecipeSerializers.register(modBus);
         Tc4Features.register(modBus);
         modBus.addListener(this::commonSetup);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(github.com.gengyoubo.tcmodern.tc4.content.IntermediateCrucibleBlock::onRightClickBlock);
         // Aspects first: everything after may read or assign them.
         TcModernApi.whenReady(Tc4Aspects::install);
         TcModernApi.whenReady(Tc4ScanDefaults::install);

@@ -130,6 +130,20 @@ public final class ModernScannerSmokeProbe {
         proof.put("mainBlockAndOreInheritance",true);
         require(!rules.containsKey(ScanKey.entity("minecraft:marker"))&&!rules.containsKey(ScanKey.item("minecraft:debug_stick")),"Unassigned content received fallback aspects");
         proof.put("unassignedContentHasNoAspects",true);
+        // The netherite series carries this mod's antiquitas aspect, items and their block forms alike.
+        var antiquitas=new java.util.LinkedHashMap<String,Integer>();
+        for(var key:List.of(ScanKey.item("minecraft:netherite_ingot"),ScanKey.item("minecraft:netherite_scrap"),ScanKey.item("minecraft:netherite_sword"),
+                ScanKey.item("minecraft:netherite_chestplate"),ScanKey.item("minecraft:netherite_upgrade_smithing_template"),
+                ScanKey.block("minecraft:netherite_block"),ScanKey.item("minecraft:netherite_block"),
+                ScanKey.block("minecraft:ancient_debris"),ScanKey.item("minecraft:ancient_debris"))) {
+            var values=rules.get(key);require(values!=null,key+" has no aspects");
+            antiquitas.put(key.toString(),values.amounts().getOrDefault("antiquitas",0));
+        }
+        proof.put("netheriteAntiquitas",antiquitas);
+        for(var entry:antiquitas.entrySet()) {
+            int expected=entry.getKey().contains("netherite_block")?8:entry.getKey().contains("ancient_debris")?4:2;
+            require(entry.getValue()==expected,entry.getKey()+" antiquitas "+entry.getValue()+", expected "+expected);
+        }
         var blocked=ScanKey.block("minecraft:sculk");
         require(!api.withPlayer(player,old -> api.accessor(ScanAccessors.Manager.class).complete(old,result(api,blocked),"@")),"Original prerequisite bypassed");
         require(!ScanResearch.scanned(player,blocked),"Rejected scan recorded");proof.put("originalPrerequisitesEnforced",true);

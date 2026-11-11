@@ -63,6 +63,7 @@ public final class Tc4Blocks {
     public static final RegistryObject<Block> DECONSTRUCTION_Y = withItem("deconstruction_y", () -> new ModernDeconstructionBlock(true));
     public static final RegistryObject<Block> NODE_REACTOR = withItem("node_reactor", NodeReactorBlock::new);
     public static final RegistryObject<Block> PRIMAL_FURNACE = withItem("primal_furnace", PrimalFurnaceBlock::new);
+    public static final RegistryObject<Block> INTERMEDIATE_CRUCIBLE = withItem("intermediate_crucible", github.com.gengyoubo.tcmodern.tc4.content.IntermediateCrucibleBlock::new);
     public static final RegistryObject<Block> GREATWOOD_WOOD = barkWood("greatwood_wood", MapColor.TERRACOTTA_BLACK);
     public static final RegistryObject<Block> SILVERWOOD_WOOD = barkWood("silverwood_wood", MapColor.WOOL);
     public static final RegistryObject<Block> STRIPPED_GREATWOOD_LOG = barkWood("stripped_greatwood_log", MapColor.TERRACOTTA_BROWN);

@@ -3,6 +3,7 @@
   "values": [
     "tc4modern:node_reactor",
     "tc4modern:primal_furnace",
+    {"id": "tc4modern:intermediate_crucible", "required": false},
     "tc4modern:deepslate_cinnabar_ore",
     "tc4modern:deepslate_amber_bearing_stone",
     "tc4modern:deepslate_air_infused_stone",

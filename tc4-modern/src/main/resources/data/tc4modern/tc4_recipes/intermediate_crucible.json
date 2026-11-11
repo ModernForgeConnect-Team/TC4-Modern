@@ -1,0 +1,9 @@
+{
+  "type": "tc4modern:arcane_shapeless",
+  "research": "intermediate_crucible",
+  "ingredients": [
+    {"legacy_item": "Thaumcraft:blockMetalDevice", "metadata": 0}
+  ],
+  "aspects": {"terra": 10, "aqua": 20, "ignis": 15, "ordo": 5, "perditio": 10},
+  "result": {"item": "tc4modern:intermediate_crucible"}
+}

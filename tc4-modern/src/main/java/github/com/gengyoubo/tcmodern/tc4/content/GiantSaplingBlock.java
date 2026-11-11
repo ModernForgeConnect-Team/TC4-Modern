@@ -2,6 +2,7 @@ package github.com.gengyoubo.tcmodern.tc4.content;
 
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4BlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -19,6 +20,10 @@ import org.jetbrains.annotations.Nullable;
 
 /** A sapling with a persistent, tick-budgeted generator. */
 public final class GiantSaplingBlock extends BushBlock implements EntityBlock, BonemealableBlock {
+    private static final ResourceLocation HOE_OF_GROWTH = ResourceLocation.fromNamespaceAndPath("thaumcraft", "item_hoe_elemental");
+    static boolean isGrowthHoe(net.minecraft.world.item.ItemStack stack) {
+        return HOE_OF_GROWTH.equals(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()));
+    }
     private final boolean silver;
     private final int size;
     public GiantSaplingBlock(boolean silver, int size) {
@@ -39,9 +44,26 @@ public final class GiantSaplingBlock extends BushBlock implements EntityBlock, B
     @Override public void performBonemeal(ServerLevel l, RandomSource r, BlockPos p, BlockState s) { start(l, p); }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         var held = player.getItemInHand(hand);
-        if (size == 2 && (held.isEmpty() || held.is(Items.BONE_MEAL) || held.getItem() instanceof MagicBoneMealItem)
+        boolean growthHoe = isGrowthHoe(held);
+        if (size == 2 && (held.isEmpty() || held.is(Items.BONE_MEAL) || held.getItem() instanceof MagicBoneMealItem || growthHoe)
                 && level.getBlockEntity(pos) instanceof GiantSaplingEntity tree && tree.isTreeGenerating()) {
             if (!level.isClientSide) player.displayClientMessage(tree.generationStatus(), true);
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        if (growthHoe && !player.isShiftKeyDown()) {
+            if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof GiantSaplingEntity tree) {
+                // TC4's hoe requires 20/150 remaining durability, and spends 5/25 on the two species.
+                int required = silver ? 150 : 20, cost = silver ? 25 : 5;
+                if (held.getDamageValue() + required <= held.getMaxDamage()) {
+                    tree.start();
+                    if (tree.isTreeGenerating() || !level.getBlockState(pos).is(this)) {
+                        held.hurtAndBreak(cost, player, user -> user.broadcastBreakEvent(hand));
+                        server.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 0);
+                        server.playSound(null, pos, net.minecraft.sounds.SoundEvents.BONE_MEAL_USE,
+                                net.minecraft.sounds.SoundSource.BLOCKS, 0.75F, 1.0F);
+                    }
+                }
+            }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return InteractionResult.PASS;
