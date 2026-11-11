@@ -83,8 +83,9 @@ public final class Tc4ScanDefaults {
         if (name.contains("copper")) return values("metallum",4,"permutatio",1);
         if (name.contains("amethyst")) return values("vitreus",4,"praecantatio",2);
         if (name.contains("sculk")) return values("tenebrae",3,"sensus",2,"mortuus",2);
-        if (name.equals("ancient_debris")) return values("terra",4,"metallum",4,"ignis",2);
-        if (name.contains("netherite")) return values("metallum",32,"ignis",16,"tutamen",16);
+        // The netherite series comes from ancient debris: all of it carries antiquitas.
+        if (name.equals("ancient_debris")) return values("terra",4,"metallum",4,"ignis",2,"antiquitas",4);
+        if (name.contains("netherite")) return values("metallum",32,"ignis",16,"tutamen",16,"antiquitas",8);
         if (name.contains("prismarine") || name.equals("sea_lantern")) return values("aqua",3,"vitreus",2,"lux",2);
         if (name.contains("coral") || name.contains("kelp") || name.contains("seagrass")) return values("herba",2,"aqua",2);
         if (name.contains("ice") || name.equals("powder_snow")) return values("gelum",2,"aqua",1);
@@ -133,7 +134,7 @@ public final class Tc4ScanDefaults {
             case "raw_copper": return values("metallum",1,"permutatio",1,"terra",1);
             default: break;
         }
-        if (name.contains("netherite")) return values("metallum",8,"ignis",4,"tutamen",4);
+        if (name.contains("netherite")) return values("metallum",8,"ignis",4,"tutamen",4,"antiquitas",2);
         if (name.contains("copper")) return values("metallum",4,"permutatio",1);
         if (name.equals("amethyst_shard")) return values("vitreus",2,"praecantatio",1);
         if (name.equals("echo_shard")) return values("sensus",4,"tenebrae",2,"mortuus",2);

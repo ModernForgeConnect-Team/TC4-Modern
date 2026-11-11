@@ -1,0 +1,7 @@
+{
+  "type": "tc4modern:crucible",
+  "research": "Metallic_fossils",
+  "catalyst": {"item": "minecraft:crying_obsidian"},
+  "aspects": {"tenebrae": 32, "terra": 64, "metallum": 108, "antiquitas": 16},
+  "result": {"item": "minecraft:ancient_debris"}
+}

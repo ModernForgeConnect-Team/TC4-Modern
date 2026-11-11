@@ -1,0 +1,35 @@
+{
+  "type": "tc4modern:research",
+  "key": "Metallic_fossils",
+  "name": {
+    "zh_CN": "金属化石"
+  },
+  "category": "ALCHEMY",
+  "position": [
+    -1,
+    7
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "minecraft:ancient_debris"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "cognitio": 1,
+    "ordo": 1,
+    "antiquitas": 1,
+    "metallum": 1,
+    "terra": 1
+  },
+  "flags": [
+    "auto_unlock"
+  ],
+  "pages": [
+    {
+      "text": ""
+    }
+  ],
+  "parents": [
+    "THAUMIUM"
+  ]
+}
