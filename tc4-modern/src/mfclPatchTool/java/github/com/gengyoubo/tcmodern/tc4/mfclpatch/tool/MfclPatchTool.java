@@ -208,7 +208,7 @@ public final class MfclPatchTool {
     static Map<String, byte[]> readJar(Path jar) throws IOException {
         Map<String, byte[]> result = new TreeMap<>();
         try (ZipFile zip = new ZipFile(jar.toFile())) {
-            for (ZipEntry entry : (Iterable<ZipEntry>) zip.stream()::iterator) {
+            for (ZipEntry entry : java.util.Collections.list(zip.entries())) {
                 if (!entry.getName().endsWith(".class") || !entry.getName().startsWith(MFCL)) continue;
                 try (InputStream in = zip.getInputStream(entry)) {
                     result.put(entry.getName().substring(0, entry.getName().length() - 6), in.readAllBytes());

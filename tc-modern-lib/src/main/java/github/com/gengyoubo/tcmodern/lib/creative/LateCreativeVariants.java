@@ -11,6 +11,9 @@ import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -29,11 +32,12 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
  */
 public final class LateCreativeVariants {
     private static volatile List<ItemStack> variants;
+    private static final Set<ResourceKey<CreativeModeTab>> SKIPPED = ConcurrentHashMap.newKeySet();
 
     private LateCreativeVariants() { }
 
     @LegacyType("net.minecraft.item.Item")
-    interface OriginalItem {
+    public interface OriginalItem {
         /** Null when the original lists the item in no creative tab. */
         @LegacyMethod(name = "func_77640_w", descriptor = "()Lnet/minecraft/creativetab/CreativeTabs;") LegacyObject tab();
         /** {@code getSubItems}: appends the item's creative variants for {@code tab} to {@code list}. */
@@ -46,7 +50,11 @@ public final class LateCreativeVariants {
         if (FMLEnvironment.dist.isClient()) modBus.addListener(LateCreativeVariants::build);
     }
 
+    /** Leaves {@code tab} as its own contents build it, for a tab that already lists the variants it wants. */
+    public static void skip(ResourceKey<CreativeModeTab> tab) { SKIPPED.add(tab); }
+
     private static void build(BuildCreativeModeTabContentsEvent event) {
+        if (SKIPPED.contains(event.getTabKey())) return;
         var extra = variants();
         if (extra.isEmpty()) return;
         var entries = event.getEntries();

@@ -173,6 +173,7 @@ def generateMfclPatch = tasks.register('generateMfclPatch', JavaExec) {
     inputs.files(configurations.mfclPatchBase).withPropertyName('mfcl')
     outputs.dir(out)
     classpath = sourceSets.mfclPatchTool.runtimeClasspath
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
     mainClass = 'github.com.gengyoubo.tcmodern.tc4.mfclpatch.tool.MfclPatchTool'
     // Classes and the index both go to one resources directory, so dev runs and the JAR see the same files.
     argumentProviders.add({ [classes.singleFile.absolutePath, configurations.mfclPatchBase.singleFile.absolutePath,
@@ -246,6 +247,9 @@ minecraft {
             }
             if (providers.gradleProperty('cinnabarSmokeTest').isPresent()) {
                 property 'tc4modern.cinnabarSmokeTest', 'true'
+            }
+            if (providers.gradleProperty('wandTabSmokeTest').isPresent()) {
+                property 'tc4modern.wandTabSmokeTest', 'true'
             }
             if (providers.gradleProperty('workbookSmokeTest').isPresent()) {
                 property 'tc4modern.workbookSmokeTest', 'true'

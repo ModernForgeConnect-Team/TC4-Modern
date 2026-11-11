@@ -26,6 +26,7 @@
   "block.tc4modern.deepslate_entropy_infused_stone": "Deepslate Entropy Infused Stone",
   "block.tc4modern.deepslate_amber_bearing_stone": "Deepslate Amber Bearing Stone",
   "itemGroup.tc4modern": "TC4: Modern",
+  "itemGroup.tc4modern.wands": "TC4: Wands",
   "jei.tc4modern.aspect_composition": "Aspect Combination",
   "jei.tc4modern.aspect.primal": "Primal aspect",
   "jei.tc4modern.aspect.components": "Made of %s",

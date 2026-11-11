@@ -69,6 +69,7 @@ public final class LegacyBlockRendering {
             Set<Integer> catalog = Set.copyOf(metas);
             // Placement callbacks encode facing, upper halves and axes in metadata absent from the item catalog.
             if (!metas.isEmpty()) for (int meta = 0; meta < 16; meta++) metas.add(meta);
+            var unrenderable = new TreeSet<Integer>();
             for (int meta : metas) {
                 if (meta < 0 || meta > 15) continue;
                 try {
@@ -103,9 +104,15 @@ public final class LegacyBlockRendering {
                     });
                 } catch (Exception failure) {
                     Throwable cause = failure; while (cause.getCause() != null) cause = cause.getCause();
-                    diagnostics.add(declaration.key() + "@" + meta + ": " + cause);
+                    // Metadata no item carries is only probed for placement states. When the original block cannot
+                    // even draw it (TC4 loot crates and urns index their icons by metadata 0..2), the state never
+                    // exists in a world: there is simply no model to publish.
+                    if (!catalog.contains(meta)) unrenderable.add(meta);
+                    else diagnostics.add(declaration.key() + "@" + meta + ": " + cause);
                 }
             }
+            if (!unrenderable.isEmpty()) com.mojang.logging.LogUtils.getLogger().debug(
+                    "MFCL world capture: {} cannot draw uncatalogued metadata {}; no model for those states", declaration.key(), unrenderable);
         }
     }
     public boolean supports(String key, int metadata) { return supported.getOrDefault(key, Set.of()).contains(metadata); }

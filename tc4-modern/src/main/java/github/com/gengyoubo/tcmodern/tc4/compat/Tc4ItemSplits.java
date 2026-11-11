@@ -13,12 +13,10 @@ import net.minecraft.nbt.CompoundTag;
  * tell them apart. Old code still sees the single original item; MFCL keeps its metadata and NBT intact.
  */
 public final class Tc4ItemSplits implements LegacyItemProvider {
-    static final String WAND = "Thaumcraft:WandCasting";
-    /** TC4 4.2.3.5 ConfigItems. The original registries are not readable this early, so these are the fixed builds. */
-    static final List<String> CAPS = List.of("iron", "gold", "thaumium", "void", "copper", "silver");
-    static final List<String> RODS = List.of("wood", "greatwood", "obsidian", "blaze", "ice", "quartz", "bone", "reed", "silverwood",
-            "greatwood_staff", "obsidian_staff", "blaze_staff", "ice_staff", "quartz_staff", "bone_staff", "reed_staff",
-            "silverwood_staff", "primal_staff");
+    static final String WAND = Tc4WandBuilds.WAND;
+    /** The original registries are not readable this early, so these are the fixed builds. */
+    static final List<String> CAPS = Tc4WandBuilds.CAPS;
+    static final List<String> RODS = Tc4WandBuilds.RODS;
     private static final Pattern NAME = Pattern.compile("[a-z0-9_.-]+");
     private static final Pattern PART = Pattern.compile("[{,]\\s*(cap|rod|sceptre)\\s*:\\s*\"?([^\",}]*)");
 
