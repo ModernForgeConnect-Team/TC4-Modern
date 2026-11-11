@@ -13,24 +13,24 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-/** The alchemical furnace boiling an item down into its essentia, one aspect per its TC4 object tags. */
-final class AlchemyFurnaceCategory implements IRecipeCategory<AlchemyFurnaceCategory.Recipe> {
+/** What a thaumometer reveals of an item: the aspects TC4 reports for it, object tags plus bonus tags. */
+final class ThaumometerCategory implements IRecipeCategory<ThaumometerCategory.Recipe> {
     /** @param essentia the item's aspects with their amounts, object tags plus bonus tags */
     record Recipe(ItemStack input, List<JeiAspect> essentia) {
         Recipe { input = input.copyWithCount(1); essentia = List.copyOf(essentia); }
     }
 
-    static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "alchemy_furnace", Recipe.class);
+    static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "thaumometer", Recipe.class);
     static final int MAX_ESSENTIA = 24;
     private static final int PER_ROW = 6, ESSENTIA_X = 52, ROWS = MAX_ESSENTIA / PER_ROW;
     private static final int WIDTH = 160, HEIGHT = 8 + ROWS * 18, INPUT_Y = (HEIGHT - 16) / 2;
     private static final int INK = 0xFF505050;
     private final IDrawable icon;
 
-    AlchemyFurnaceCategory(IDrawable icon) { this.icon = icon; }
+    ThaumometerCategory(IDrawable icon) { this.icon = icon; }
 
     @Override public RecipeType<Recipe> getRecipeType() { return TYPE; }
-    @Override public Component getTitle() { return Component.translatable("jei.tc4modern.alchemy_furnace"); }
+    @Override public Component getTitle() { return Component.translatable("jei.tc4modern.thaumometer"); }
     @Override public int getWidth() { return WIDTH; }
     @Override public int getHeight() { return HEIGHT; }
     @Override public IDrawable getIcon() { return icon; }

@@ -31,6 +31,28 @@ class ResearchLocalizationTest {
         assertEquals("primal_furnace", json("/data/tc4modern/tc4_recipes/primal_furnace.json").get("research").getAsString());
     }
 
+    @Test void ancientDebrisCrucibleRecipeRequiresTheBuiltInMetallicFossilsResearch() throws Exception {
+        var research = json("/data/custom/tc4_research/metallic_fossils.json");
+        var parsed = ResearchJson.parse(research, (id, count, nbt) -> new LegacyStack("host:" + id, 0, count, nbt == null ? "" : nbt));
+        for (String key : List.of("tc.research_name.Metallic_fossils", "tc.research_text.Metallic_fossils", "tc.research_page.Metallic_fossils.1")) {
+            assertFalse(parsed.texts().get("zh_CN").getOrDefault(key, "").isBlank(), key);
+            assertFalse(parsed.texts().get("en_US").getOrDefault(key, "").isBlank(), key);
+            assertNotEquals(parsed.texts().get("zh_CN").get(key), parsed.texts().get("en_US").get(key), key);
+        }
+        var pages = research.getAsJsonArray("pages");
+        assertEquals(2, pages.size());
+        assertEquals("minecraft:ancient_debris", pages.get(1).getAsJsonObject().getAsJsonObject("crucible").get("item").getAsString());
+        var recipe = json("/data/tc4modern/tc4_recipes/ancient_debris.json");
+        assertEquals("tc4modern:crucible", recipe.get("type").getAsString());
+        assertEquals(research.get("key").getAsString(), recipe.get("research").getAsString());
+        assertEquals("minecraft:crying_obsidian", recipe.getAsJsonObject("catalyst").get("item").getAsString());
+        assertEquals("minecraft:ancient_debris", recipe.getAsJsonObject("result").get("item").getAsString());
+        int total = 0;
+        for (var amount : recipe.getAsJsonObject("aspects").entrySet()) total += amount.getValue().getAsInt();
+        // Above TC4's original 100-essentia crucible; brewable only with CrucibleCapacity.
+        assertEquals(220, total);
+    }
+
     private com.google.gson.JsonObject json(String resource) throws Exception {
         try (var in = getClass().getResourceAsStream(resource)) {
             assertNotNull(in, resource);

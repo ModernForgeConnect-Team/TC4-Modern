@@ -1,0 +1,10 @@
+{
+  "parent": "minecraft:block/cauldron",
+  "textures": {
+    "particle": "tc4modern:block/intermediate_crucible_side",
+    "top": "tc4modern:block/intermediate_crucible_top",
+    "bottom": "tc4modern:block/intermediate_crucible_bottom",
+    "side": "tc4modern:block/intermediate_crucible_side",
+    "inside": "tc4modern:block/intermediate_crucible_inner"
+  }
+}

@@ -210,7 +210,7 @@ public final class Tc4JeiPlugin implements IModPlugin {
                 new TcRecipeCategory(CRUCIBLE, "jei.tc4modern.crucible", helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.CAULDRON))),
                 new TcRecipeCategory(INFUSION, "jei.tc4modern.infusion", helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.END_CRYSTAL))),
                 new AspectCompositionCategory(),
-                new AlchemyFurnaceCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.FURNACE))),
+                new ThaumometerCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.SPYGLASS))),
                 new WandConversionCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.STICK))),
                 new ItemInFluidCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.WATER_BUCKET))),
                 new MultiblockCategory(helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.BRICKS))));
@@ -249,8 +249,8 @@ public final class Tc4JeiPlugin implements IModPlugin {
         recipes.forEach(registration::addRecipes);
         var compounds = JeiAspect.all().stream().filter(aspect -> aspect.components().size() == 2).toList();
         registration.addRecipes(AspectCompositionCategory.TYPE, compounds);
-        var furnace = furnaceRecipes(runtime, registration.getIngredientManager().getAllItemStacks());
-        registration.addRecipes(AlchemyFurnaceCategory.TYPE, furnace);
+        var scanned = scanRecipes(runtime, registration.getIngredientManager().getAllItemStacks());
+        registration.addRecipes(ThaumometerCategory.TYPE, scanned);
         LogUtils.getLogger().info("TC4 JEI: arcane={}, crucible={}, infusion={}, aspects={}, unsupported={}, unmapped={}.",
                 recipes.get(ARCANE).size(), recipes.get(CRUCIBLE).size(), recipes.get(INFUSION).size(), compounds.size(), snapshot.issues().size(), unmapped);
         var wand = wandConversions(runtime, registration.getIngredientManager().getAllItemStacks());
@@ -260,8 +260,8 @@ public final class Tc4JeiPlugin implements IModPlugin {
         var multiblocks = Tc4Multiblocks.all(runtime, new JeiRecipeConverter(runtime, List.of(), Set.of()),
                 wands(runtime, registration.getIngredientManager().getAllItemStacks()));
         registration.addRecipes(MultiblockCategory.TYPE, multiblocks);
-        LogUtils.getLogger().info("TC4 JEI: alchemical furnace={} items with essentia, wand conversions={}, multiblocks={}, item in fluid={}.",
-                furnace.size(), wand.size(), multiblocks.size(), fluid.size());
+        LogUtils.getLogger().info("TC4 JEI: thaumometer={} items with aspects, wand conversions={}, multiblocks={}, item in fluid={}.",
+                scanned.size(), wand.size(), multiblocks.size(), fluid.size());
         snapshot.issues().forEach(issue -> LogUtils.getLogger().debug("TC4 JEI source {}: {}", issue.source(), issue.detail()));
     }
 
@@ -355,18 +355,18 @@ public final class Tc4JeiPlugin implements IModPlugin {
         return recipes.size();
     }
 
-    /** Every listed item the original alchemical furnace accepts, with the essentia TC4 gives it. */
-    private static List<AlchemyFurnaceCategory.Recipe> furnaceRecipes(LegacyRuntime runtime, java.util.Collection<ItemStack> stacks) {
-        var result = new ArrayList<AlchemyFurnaceCategory.Recipe>();
+    /** Every listed item with an original counterpart, with the aspects TC4 reports for it. */
+    private static List<ThaumometerCategory.Recipe> scanRecipes(LegacyRuntime runtime, java.util.Collection<ItemStack> stacks) {
+        var result = new ArrayList<ThaumometerCategory.Recipe>();
         for (var stack : stacks) {
             try {
                 var original = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, stack.copyWithCount(1));
                 if (original.isEmpty()) continue;
                 TcItemAspects.of(runtime, original.get()).ifPresent(values -> {
-                    if (values.amounts().size() > AlchemyFurnaceCategory.MAX_ESSENTIA) return;
+                    if (values.amounts().size() > ThaumometerCategory.MAX_ESSENTIA) return;
                     var essentia = values.amounts().entrySet().stream().map(entry ->
                             JeiAspect.of(entry.getKey()).withAmount(entry.getValue())).toList();
-                    result.add(new AlchemyFurnaceCategory.Recipe(stack, essentia));
+                    result.add(new ThaumometerCategory.Recipe(stack, essentia));
                 });
             } catch (RuntimeException unreadable) {
                 LogUtils.getLogger().debug("TC4 JEI: no essentia for {}: {}", stack, unreadable.toString());
@@ -436,8 +436,8 @@ public final class Tc4JeiPlugin implements IModPlugin {
                     .ifPresent(stack -> registration.addRecipeCatalyst(stack, CRUCIBLE));
             converter.map(new LegacyStack("Thaumcraft:blockStoneDevice", 2, 1, ""))
                     .ifPresent(stack -> registration.addRecipeCatalyst(stack, INFUSION));
-            converter.map(new LegacyStack("Thaumcraft:blockStoneDevice", 0, 1, ""))
-                    .ifPresent(stack -> registration.addRecipeCatalyst(stack, AlchemyFurnaceCategory.TYPE));
+            converter.map(new LegacyStack("Thaumcraft:ItemThaumometer", 0, 1, ""))
+                    .ifPresent(stack -> registration.addRecipeCatalyst(stack, ThaumometerCategory.TYPE));
             converter.map(IRON_WOOD_WAND).ifPresent(stack -> {
                 registration.addRecipeCatalyst(stack, WandConversionCategory.TYPE);
                 registration.addRecipeCatalyst(stack, MultiblockCategory.TYPE);
