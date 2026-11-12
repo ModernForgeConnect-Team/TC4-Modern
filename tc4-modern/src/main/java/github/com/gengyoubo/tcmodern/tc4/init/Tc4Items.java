@@ -2,8 +2,14 @@ package github.com.gengyoubo.tcmodern.tc4.init;
 
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
 import github.com.gengyoubo.tcmodern.tc4.content.AncientThaumiumArmorItem;
+import github.com.gengyoubo.tcmodern.tc4.content.AncientThaumiumTools;
 import github.com.gengyoubo.tcmodern.tc4.content.ElementWorkbookItem;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ShovelItem;
+import net.minecraft.world.item.SwordItem;
 import github.com.gengyoubo.tcmodern.tc4.content.MagicBoneMealItem;
 import github.com.gengyoubo.tcmodern.tc4.content.WritingToolItem;
 import net.minecraft.world.item.Item;
@@ -28,6 +34,17 @@ public final class Tc4Items {
             () -> new AncientThaumiumArmorItem(ArmorItem.Type.LEGGINGS, 10, -2));
     public static final RegistryObject<Item> ANCIENT_THAUMIUM_BOOTS = ITEMS.register("ancient_thaumium_boots",
             () -> new AncientThaumiumArmorItem(ArmorItem.Type.BOOTS, 5, -1));
+    // Netherite's per-tool damage and speed modifiers on the ancient thaumium tier.
+    public static final RegistryObject<Item> ANCIENT_THAUMIUM_SWORD = ITEMS.register("ancient_thaumium_sword",
+            () -> new SwordItem(AncientThaumiumTools.TIER, 3, -2.4F, new Item.Properties().fireResistant()));
+    public static final RegistryObject<Item> ANCIENT_THAUMIUM_PICKAXE = ITEMS.register("ancient_thaumium_pickaxe",
+            () -> new PickaxeItem(AncientThaumiumTools.TIER, 1, -2.8F, new Item.Properties().fireResistant()));
+    public static final RegistryObject<Item> ANCIENT_THAUMIUM_AXE = ITEMS.register("ancient_thaumium_axe",
+            () -> new AxeItem(AncientThaumiumTools.TIER, 5F, -3F, new Item.Properties().fireResistant()));
+    public static final RegistryObject<Item> ANCIENT_THAUMIUM_SHOVEL = ITEMS.register("ancient_thaumium_shovel",
+            () -> new ShovelItem(AncientThaumiumTools.TIER, 1.5F, -3F, new Item.Properties().fireResistant()));
+    public static final RegistryObject<Item> ANCIENT_THAUMIUM_HOE = ITEMS.register("ancient_thaumium_hoe",
+            () -> new HoeItem(AncientThaumiumTools.TIER, -4, 0F, new Item.Properties().fireResistant()));
 
     public static final RegistryObject<Item> PENCIL_LEAD = ITEMS.register("pencil_lead", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> PEN_REFILL = ITEMS.register("pen_refill", () -> new Item(new Item.Properties()));

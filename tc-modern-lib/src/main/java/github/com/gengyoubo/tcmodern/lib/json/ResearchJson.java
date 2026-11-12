@@ -26,7 +26,8 @@ public final class ResearchJson {
             "auto_unlock", TcResearchEntry.Flag.AUTO_UNLOCK);
     private static final Map<String, TcResearchDefinition.RecipeKind> RECIPES = Map.of(
             "arcane", TcResearchDefinition.RecipeKind.ARCANE, "crucible", TcResearchDefinition.RecipeKind.CRUCIBLE,
-            "infusion", TcResearchDefinition.RecipeKind.INFUSION, "crafting", TcResearchDefinition.RecipeKind.CRAFTING);
+            "infusion", TcResearchDefinition.RecipeKind.INFUSION, "crafting", TcResearchDefinition.RecipeKind.CRAFTING,
+            "smithing", TcResearchDefinition.RecipeKind.SMITHING);
 
     private ResearchJson() { }
 
@@ -104,9 +105,9 @@ public final class ResearchJson {
         if (value.isJsonPrimitive()) return new TcResearchDefinition.Text(value.getAsString(), "");
         var page = asObject(value, "page");
         var kinds = new ArrayList<String>();
-        for (String kind : List.of("text", "image", "aspects", "arcane", "crucible", "infusion", "crafting", "smelting"))
+        for (String kind : List.of("text", "image", "aspects", "arcane", "crucible", "infusion", "crafting", "smelting", "smithing"))
             if (page.has(kind)) kinds.add(kind);
-        if (kinds.size() != 1) throw new JsonParseException("Page " + id + " needs exactly one of text, image, aspects, arcane, crucible, infusion, crafting, smelting");
+        if (kinds.size() != 1) throw new JsonParseException("Page " + id + " needs exactly one of text, image, aspects, arcane, crucible, infusion, crafting, smelting, smithing");
         String kind = kinds.get(0);
         return switch (kind) {
             case "text" -> new TcResearchDefinition.Text(text(page.get("text"), "tc.research_page." + id, texts),

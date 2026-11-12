@@ -9,7 +9,7 @@ import java.util.*;
  */
 public final class ResearchForm {
     public static final List<String> FLAGS = List.of("secondary", "concealed", "hidden", "lost", "round", "special", "stub", "auto_unlock", "virtual");
-    public static final List<String> PAGE_TYPES = List.of("text", "image", "aspects", "arcane", "crucible", "infusion", "crafting", "smelting");
+    public static final List<String> PAGE_TYPES = List.of("text", "image", "aspects", "arcane", "crucible", "infusion", "crafting", "smelting", "smithing");
 
     /** A shared translation key/literal or inline text indexed by any Minecraft language code. */
     public static final class Text {

@@ -37,7 +37,8 @@ public record TcResearchDefinition(String key, String category, int column, int 
     public record Aspects(Map<String, Integer> aspects) implements Page {
         public Aspects { aspects = Collections.unmodifiableMap(new LinkedHashMap<>(aspects)); }
     }
-    public enum RecipeKind { ARCANE, CRUCIBLE, INFUSION, CRAFTING }
+    /** {@code SMITHING} shows {@link github.com.gengyoubo.tcmodern.api.recipe.TcSmithingRecipes}, not original recipes. */
+    public enum RecipeKind { ARCANE, CRUCIBLE, INFUSION, CRAFTING, SMITHING }
     /** Recipes matched by output item and metadata (and NBT when {@code output} has it). */
     public record Recipe(RecipeKind kind, LegacyStack output) implements Page {
         public Recipe { Objects.requireNonNull(kind); Objects.requireNonNull(output); }

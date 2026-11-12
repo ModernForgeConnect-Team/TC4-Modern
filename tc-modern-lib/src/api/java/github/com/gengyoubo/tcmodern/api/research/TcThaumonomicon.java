@@ -8,6 +8,7 @@ import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
 import github.com.gengyoubo.tcmodern.api.recipe.TcExtraCrucibleRecipes;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipe;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipeAccessors;
+import github.com.gengyoubo.tcmodern.api.recipe.TcSmithingRecipes;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipes;
 import java.util.*;
 import static github.com.gengyoubo.tcmodern.api.research.TcBookAccessors.*;
@@ -121,7 +122,7 @@ public final class TcThaumonomicon {
         try {
             build(runtime, research, virtual);
         } catch (RuntimeException failure) {
-            DISPLAYED.removeIf(shown -> shown.owner().equals(research.key()));
+            forget(research.key());
             throw failure;
         }
     }
@@ -178,7 +179,7 @@ public final class TcThaumonomicon {
         require(runtime);
         var item = runtime.accessor(TcResearchAccessors.Categories.class).find(key);
         if (item == null) return false;
-        DISPLAYED.removeIf(shown -> shown.owner().equals(key));
+        forget(key);
         var list = runtime.accessor(CategoryRegistry.class).find(runtime.accessor(Research.class, item).category());
         if (list == null) return false;
         var category = runtime.accessor(CategoryList.class, list);
@@ -265,7 +266,9 @@ public final class TcThaumonomicon {
         if (page instanceof TcResearchDefinition.Smelting smelting)
             return runtime.accessor(SmeltingPages.class).smelting(runtime.stack(smelting.input()));
         var recipe = (TcResearchDefinition.Recipe) page;
-        var matches = new ArrayList<>(recipes(runtime, recipe.kind(), recipe.output()));
+        var matches = new ArrayList<LegacyObject>();
+        if (recipe.kind() == TcResearchDefinition.RecipeKind.SMITHING) matches.addAll(smithing(runtime, recipe.output(), owner));
+        else matches.addAll(recipes(runtime, recipe.kind(), recipe.output()));
         if (recipe.kind() == TcResearchDefinition.RecipeKind.CRUCIBLE) matches.addAll(extraCrucibles(runtime, recipe.output(), owner));
         if (matches.isEmpty())
             throw new IllegalArgumentException(owner + ": no " + recipe.kind().name().toLowerCase(Locale.ROOT) + " recipe makes " + recipe.output());
@@ -273,7 +276,7 @@ public final class TcThaumonomicon {
             case ARCANE -> "thaumcraft.api.crafting.IArcaneRecipe";
             case CRUCIBLE -> "thaumcraft.api.crafting.CrucibleRecipe";
             case INFUSION -> "thaumcraft.api.crafting.InfusionRecipe";
-            case CRAFTING -> "net.minecraft.item.crafting.IRecipe";
+            case CRAFTING, SMITHING -> "net.minecraft.item.crafting.IRecipe";
         };
         var array = runtime.values().newArray(type, matches.size());
         for (int i = 0; i < matches.size(); i++) runtime.values().set(array, i, matches.get(i));
@@ -281,7 +284,8 @@ public final class TcThaumonomicon {
             case ARCANE -> runtime.accessor(ArcanePages.class).arcane(array);
             case CRUCIBLE -> runtime.accessor(CruciblePages.class).crucible(array);
             case INFUSION -> runtime.accessor(InfusionPages.class).infusion(array);
-            case CRAFTING -> runtime.accessor(CraftingPages.class).crafting(array);
+            // The original has no smithing page; a crafting page shows the three slots in its top row.
+            case CRAFTING, SMITHING -> runtime.accessor(CraftingPages.class).crafting(array);
         };
     }
 
@@ -304,6 +308,7 @@ public final class TcThaumonomicon {
                     case INFUSION -> values.isInstance(recipe, "thaumcraft.api.crafting.InfusionRecipe")
                             ? runtime.accessor(TcRecipeAccessors.Infusion.class, recipe).output() : null;
                     case CRAFTING -> runtime.accessor(Recipe.class, recipe).output();
+                    case SMITHING -> null;
                 };
             } catch (RuntimeException dynamic) {
                 continue;
@@ -365,6 +370,45 @@ public final class TcThaumonomicon {
     private static TcRecipe displayed(LegacyRuntime runtime, LegacyObject original) {
         for (var shown : DISPLAYED) if (runtime.values().same(shown.original(), original)) return shown.recipe();
         return null;
+    }
+
+    /**
+     * A display-only original shaped recipe, three wide and one high (template, base, addition), for each
+     * {@link TcSmithingRecipes} recipe that makes {@code wanted}. It is never added to the crafting list. Slots that
+     * accept several items show their first; this library's book and client show the remembered recipe.
+     */
+    private static List<LegacyObject> smithing(LegacyRuntime runtime, LegacyStack wanted, String owner) {
+        var result = new ArrayList<LegacyObject>();
+        for (var recipe : TcSmithingRecipes.all(runtime)) {
+            if (!outputMatches(recipe.output(), wanted)) continue;
+            var inputs = runtime.values().newArray("net.minecraft.item.ItemStack", 3);
+            runtime.values().set(inputs, 0, runtime.stack(recipe.template().get(0)));
+            runtime.values().set(inputs, 1, runtime.stack(recipe.base().get(0)));
+            runtime.values().set(inputs, 2, runtime.stack(recipe.addition().get(0)));
+            var display = runtime.accessor(ShapedFactory.class).create(3, 1, inputs, runtime.stack(recipe.output()));
+            SMITHING_SHOWN.add(new ShownSmithing(owner, display, recipe));
+            result.add(display);
+        }
+        return result;
+    }
+
+    /** The smithing recipe shown by a display-only shaped recipe on a page of research {@code owner}. */
+    private record ShownSmithing(String owner, LegacyObject original, TcSmithingRecipes.Recipe recipe) { }
+    private static final List<ShownSmithing> SMITHING_SHOWN = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /**
+     * The {@link TcSmithingRecipes} recipe that an original crafting recipe on a research page stands in for, or empty
+     * for an ordinary crafting recipe.
+     */
+    public static Optional<TcSmithingRecipes.Recipe> smithing(LegacyRuntime runtime, LegacyObject original) {
+        if (original == null) return Optional.empty();
+        for (var shown : SMITHING_SHOWN) if (runtime.values().same(shown.original(), original)) return Optional.of(shown.recipe());
+        return Optional.empty();
+    }
+
+    private static void forget(String owner) {
+        DISPLAYED.removeIf(shown -> shown.owner().equals(owner));
+        SMITHING_SHOWN.removeIf(shown -> shown.owner().equals(owner));
     }
 
     /** Reads detached copies of categories, research and pages. */
@@ -457,6 +501,9 @@ public final class TcThaumonomicon {
                 return recipes.isEmpty() ? new TcResearchPage.Unsupported("recipe") : new TcResearchPage.Recipes(recipes);
             }
             if (values.same(type, types.crafting())) {
+                var upgrades = new ArrayList<TcSmithingRecipes.Recipe>();
+                for (var recipe : elements(page.recipe())) smithing(runtime, recipe).ifPresent(upgrades::add);
+                if (!upgrades.isEmpty()) return new TcResearchPage.Smithing(upgrades);
                 var grids = new ArrayList<TcResearchPage.Grid>();
                 for (var recipe : elements(page.recipe())) {
                     var grid = grid(recipe);

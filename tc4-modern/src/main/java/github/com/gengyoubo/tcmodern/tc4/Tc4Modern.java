@@ -35,6 +35,7 @@ public final class Tc4Modern {
         Tc4BlockEntities.register(modBus);
         Tc4Menus.register(modBus);
         Tc4Items.register(modBus);
+        github.com.gengyoubo.tcmodern.tc4.content.AncientThaumiumTools.registerTier();
         DeskNetwork.register();
         Tc4CreativeTabs.register(modBus);
         Tc4RecipeSerializers.register(modBus);

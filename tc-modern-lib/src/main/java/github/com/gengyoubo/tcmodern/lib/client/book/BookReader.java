@@ -172,6 +172,18 @@ final class BookReader {
             heading(g, Component.translatable(grid.shapeless() ? "book.tcmodernlib.page.shapeless" : "book.tcmodernlib.page.crafting"), cx, y);
             slot(g, grid.output().count() > 0 ? List.of(grid.output()) : List.of(), cx - 9, y + 18, mouseX, mouseY, true);
             grid(g, grid.width(), grid.height(), grid.inputs(), cx, y + 46, mouseX, mouseY);
+        } else if (page instanceof TcResearchPage.Smithing smithing) {
+            var recipe = smithing.recipes().get((int) (now / 2000 % smithing.recipes().size()));
+            heading(g, Component.translatable("book.tcmodernlib.page.smithing"), cx, y);
+            slot(g, List.of(recipe.output()), cx - 9, y + 18, mouseX, mouseY, true);
+            // Template, base and addition in a row as on the smithing table, an arrow up to the result.
+            int row = y + 56;
+            line(g, cx, row - 4, cx, y + 40, 1.5F, INK_SOFT);
+            line(g, cx - 4, y + 44, cx, y + 40, 1.5F, INK_SOFT);
+            line(g, cx + 4, y + 44, cx, y + 40, 1.5F, INK_SOFT);
+            slot(g, recipe.template(), cx - 40, row, mouseX, mouseY, false);
+            slot(g, recipe.base(), cx - 9, row, mouseX, mouseY, false);
+            slot(g, recipe.addition(), cx + 22, row, mouseX, mouseY, false);
         } else if (page instanceof TcResearchPage.Smelting smelting) {
             heading(g, Component.translatable("book.tcmodernlib.page.smelting"), cx, y);
             slot(g, List.of(smelting.input()), cx - 40, y + 50, mouseX, mouseY, false);

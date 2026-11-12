@@ -47,6 +47,11 @@ public sealed interface TcResearchPage {
 
     record Smelting(LegacyStack input, LegacyStack output) implements TcResearchPage { }
 
+    /** Smithing table upgrades; several cycle on one page. The original book shows them as a crafting page. */
+    record Smithing(List<github.com.gengyoubo.tcmodern.api.recipe.TcSmithingRecipes.Recipe> recipes) implements TcResearchPage {
+        public Smithing { recipes = List.copyOf(recipes); }
+    }
+
     /** A page kind this library does not describe, such as a multiblock structure; {@code type} names it. */
     record Unsupported(String type) implements TcResearchPage { }
 }

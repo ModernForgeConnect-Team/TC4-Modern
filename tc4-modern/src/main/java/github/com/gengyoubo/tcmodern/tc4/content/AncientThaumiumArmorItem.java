@@ -7,8 +7,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
@@ -38,6 +36,7 @@ public final class AncientThaumiumArmorItem extends ArmorItem {
         @Override public int getEnchantmentValue() { return 25; }
         @Override public SoundEvent getEquipSound() { return SoundEvents.ARMOR_EQUIP_NETHERITE; }
         @Override public Ingredient getRepairIngredient() { return Ingredient.of(Tc4Items.ANCIENT_THAUMIUM_INGOT.get()); }
+        /** Worn textures: tc4modern:textures/models/armor/ancient_thaumium_layer_1.png and _layer_2.png. */
         @Override public String getName() { return Tc4Modern.MOD_ID + ":ancient_thaumium"; }
         @Override public float getToughness() { return 4F; }
         /** Shown as +1 Knockback Resistance per piece, like netherite. */
@@ -71,11 +70,5 @@ public final class AncientThaumiumArmorItem extends ArmorItem {
     public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("item.tc4modern.ancient_thaumium_armor.vis_discount", visDiscount).withStyle(ChatFormatting.DARK_PURPLE));
         tooltip.add(Component.translatable("item.tc4modern.ancient_thaumium_armor.warp", warp).withStyle(ChatFormatting.DARK_PURPLE));
-    }
-
-    /** Placeholder until this armour has its own textures: netherite's. */
-    @Override
-    public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        return "minecraft:textures/models/armor/netherite_layer_" + (slot == EquipmentSlot.LEGS ? 2 : 1) + ".png";
     }
 }

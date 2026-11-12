@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/netherite_chestplate"
+    "layer0": "tc4modern:item/ancient_thaumium_chestplate"
   }
 }

@@ -45,6 +45,57 @@
         "zh_CN": "在锻造台上放入远古神秘锻造模板、一件神秘盔甲和一块远古神秘锭，就能把它升级为远古神秘盔甲。模板会被消耗。<BR>远古神秘盔甲比下界合金更坚固，还能节省法杖消耗的魔力，并压制扭曲：<BR>头盔：魔力减免 5%，扭曲 -1<BR>胸甲：魔力减免 15%，扭曲 -3<BR>护腿：魔力减免 10%，扭曲 -2<BR>靴子：魔力减免 5%，扭曲 -1",
         "en_US": "At a smithing table, an ancient thaumium smithing template, a piece of thaumium armour and an ancient thaumium ingot upgrade that piece to ancient thaumium armour. The template is used up.<BR>Ancient thaumium armour is sturdier than netherite, saves vis your wands spend and holds warp at bay:<BR>Helmet: 5% vis discount, -1 warp<BR>Chestplate: 15% vis discount, -3 warp<BR>Leggings: 10% vis discount, -2 warp<BR>Boots: 5% vis discount, -1 warp"
       }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_helmet"
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_chestplate"
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_leggings"
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_boots"
+      }
+    },
+    {
+      "text": {
+        "zh_CN": "同样的方法也适用于神秘工具：远古神秘锻造模板、一件神秘工具和一块远古神秘锭，就能把剑、镐、斧、锹或锄升级为远古神秘工具。<BR>远古神秘工具比下界合金更耐用、更锋利，挖掘也更快。",
+        "en_US": "The same works for thaumium tools: an ancient thaumium smithing template, a thaumium tool and an ancient thaumium ingot upgrade a sword, pickaxe, axe, shovel or hoe to its ancient thaumium form.<BR>Ancient thaumium tools last longer, cut deeper and dig faster than netherite."
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_sword"
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_pickaxe"
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_axe"
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_shovel"
+      }
+    },
+    {
+      "smithing": {
+        "item": "tc4modern:ancient_thaumium_hoe"
+      }
     }
   ]
 }
