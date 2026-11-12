@@ -53,6 +53,31 @@ class ResearchLocalizationTest {
         assertEquals(220, total);
     }
 
+    @Test void elytraInfusionNeedsTheWhyBirdsFlyResearch() throws Exception {
+        var research = json("/data/custom/tc4_research/why_birds_fly.json");
+        var parsed = ResearchJson.parse(research, (id, count, nbt) -> new LegacyStack("host:" + id, 0, count, nbt == null ? "" : nbt));
+        for (String key : List.of("tc.research_name.why_birds_fly", "tc.research_text.why_birds_fly", "tc.research_page.why_birds_fly.1")) {
+            assertFalse(parsed.texts().get("zh_CN").getOrDefault(key, "").isBlank(), key);
+            assertFalse(parsed.texts().get("en_US").getOrDefault(key, "").isBlank(), key);
+            assertNotEquals(parsed.texts().get("zh_CN").get(key), parsed.texts().get("en_US").get(key), key);
+        }
+        assertEquals("INFUSION", research.getAsJsonArray("parents").get(0).getAsString());
+        assertEquals("minecraft:elytra", research.getAsJsonArray("pages").get(1).getAsJsonObject().getAsJsonObject("infusion").get("item").getAsString());
+        var recipe = json("/data/tc4modern/tc4_recipes/elytra.json");
+        assertEquals("tc4modern:infusion", recipe.get("type").getAsString());
+        assertEquals(research.get("key").getAsString(), recipe.get("research").getAsString());
+        assertEquals("minecraft:leather_chestplate", recipe.getAsJsonObject("input").get("item").getAsString());
+        var components = recipe.getAsJsonArray("components");
+        assertEquals(8, components.size());
+        for (var component : components) assertEquals("minecraft:phantom_membrane", component.getAsJsonObject().get("item").getAsString());
+        assertEquals(Map.of("iter", 30, "tutamen", 5, "volatus", 16), Map.of(
+                "iter", recipe.getAsJsonObject("aspects").get("iter").getAsInt(),
+                "tutamen", recipe.getAsJsonObject("aspects").get("tutamen").getAsInt(),
+                "volatus", recipe.getAsJsonObject("aspects").get("volatus").getAsInt()));
+        assertEquals(3, recipe.getAsJsonObject("aspects").size());
+        assertEquals("minecraft:elytra", recipe.getAsJsonObject("result").get("item").getAsString());
+    }
+
     private com.google.gson.JsonObject json(String resource) throws Exception {
         try (var in = getClass().getResourceAsStream(resource)) {
             assertNotNull(in, resource);

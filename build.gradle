@@ -17,12 +17,12 @@ def localMfclApi = devProperty('mfclApiJar')
 if (localMfclApi.isPresent() && !file(localMfclApi.get()).isFile()) {
     throw new GradleException("MFCL API JAR not found: ${localMfclApi.get()}. Update or remove mfclApiJar in gradle-local.properties (or the -P option).")
 }
-// CurseForge release of MFCL (the mod JAR also contains the public API classes).
-ext.mfclCurseDependency = "curse.maven:modernforgeconnectloader-${mfcl_curse_project}:${mfcl_curse_file}"
+// MFCL's Maven release: the API-only JAR (classifier api) for compiling, the full mod for running and nesting.
+def mfclModule = 'github.com.gengyoubo.mfcl:ModernForgeConnectLoader'
 ext.mfclApiDependency = localMfclApi.isPresent()
         ? files(file(localMfclApi.get()))
-        : mfclCurseDependency
-// The full MFCL mod: a local build when mfclRuntimeJar is set, otherwise the CurseForge release.
+        : "${mfclModule}:${mfcl_api_version}:api"
+// The full MFCL mod: a local build when mfclRuntimeJar is set, otherwise the Maven release.
 def localMfclRuntime = devProperty('mfclRuntimeJar')
 if (localMfclRuntime.isPresent()) {
     def jarName = file(localMfclRuntime.get()).name
@@ -31,9 +31,8 @@ if (localMfclRuntime.isPresent()) {
     ext.mfclRuntimeVersion = coordinates[0][2]
     ext.mfclRuntimeDependency = "local.mfcl:${coordinates[0][1]}:${mfclRuntimeVersion}"
 } else {
-    // CurseMaven versions are CurseForge file IDs, which grow with each upload; jar-in-jar ranges compare those.
-    ext.mfclRuntimeVersion = mfcl_curse_file
-    ext.mfclRuntimeDependency = mfclCurseDependency
+    ext.mfclRuntimeVersion = mfcl_runtime_version
+    ext.mfclRuntimeDependency = "${mfclModule}:${mfcl_runtime_version}"
 }
 
 subprojects {
@@ -51,9 +50,9 @@ subprojects {
     repositories {
         mavenCentral()
         maven {
-            name = 'CurseMaven'
-            url = 'https://cursemaven.com'
-            content { includeGroup 'curse.maven' }
+            name = 'MFCL'
+            url = rootProject.mfcl_maven
+            content { includeGroup 'github.com.gengyoubo.mfcl' }
         }
         if (rootProject.devProperty('mfclRuntimeJar').isPresent()) {
             flatDir {
@@ -73,11 +72,9 @@ subprojects {
     reobf.create('jarJar')
     dependencies {
         minecraft "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
-        // tc4-modern already gets the deobfuscated CurseForge MFCL JAR (API included) via implementation;
-        // adding the raw coordinate again here would clash with ForgeGradle's deobf remapping.
-        if (project.name != 'tc4-modern' || !(rootProject.mfclApiDependency instanceof CharSequence)) {
-            compileOnly rootProject.mfclApiDependency
-        }
+        // Code compiles against the API only; the full mod is a runtime dependency (see tc4-modern).
+        compileOnly rootProject.mfclApiDependency
+        testCompileOnly rootProject.mfclApiDependency
         jarJar(rootProject.mfclRuntimeDependency) {
             transitive = false
             jarJar.ranged(it, "[${rootProject.mfclRuntimeVersion},)")

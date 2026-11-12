@@ -88,9 +88,8 @@ dependencies {
     if (rootProject.devProperty('withJade').getOrElse('true').toBoolean()) {
         runtimeOnly fg.deobf("maven.modrinth:jade:${rootProject.jade_version}")
     }
-    implementation fg.deobf(rootProject.mfclRuntimeDependency)
-    // A local API JAR still needs to be visible to tests; the CurseForge mod JAR above already contains the API.
-    if (!(rootProject.mfclApiDependency instanceof CharSequence)) testImplementation rootProject.mfclApiDependency
+    // The full MFCL mod for development runs and tests; code compiles against the API JAR (root build.gradle).
+    runtimeOnly fg.deobf(rootProject.mfclRuntimeDependency)
     testImplementation fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -1,0 +1,18 @@
+{
+  "type": "tc4modern:infusion",
+  "research": "why_birds_fly",
+  "input": {"item": "minecraft:leather_chestplate"},
+  "components": [
+    {"item": "minecraft:phantom_membrane"},
+    {"item": "minecraft:phantom_membrane"},
+    {"item": "minecraft:phantom_membrane"},
+    {"item": "minecraft:phantom_membrane"},
+    {"item": "minecraft:phantom_membrane"},
+    {"item": "minecraft:phantom_membrane"},
+    {"item": "minecraft:phantom_membrane"},
+    {"item": "minecraft:phantom_membrane"}
+  ],
+  "aspects": {"iter": 30, "tutamen": 5, "volatus": 16},
+  "instability": 3,
+  "result": {"item": "minecraft:elytra"}
+}

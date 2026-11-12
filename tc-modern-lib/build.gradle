@@ -5,21 +5,13 @@ sourceSets { api }
 // Gradle's project dependency uses the classes variant during compilation.
 // Export API classes there as well as in the final mod JAR.
 sourceSets.main.output.classesDirs.from(sourceSets.api.output.classesDirs)
-// The CurseForge MFCL file is the full mod and registers its own RuntimeProvider service, which clashes with the
-// tests' fake runtime. Tests use only its public API classes, as they did with the separate mfcl-api artifact.
-configurations { mfclFull { transitive = false } }
-dependencies { mfclFull rootProject.mfclApiDependency }
-def mfclApiOnlyJar = tasks.register('mfclApiOnlyJar', Jar) {
-    archiveFileName = 'mfcl-api-only.jar'
-    destinationDirectory = layout.buildDirectory.dir('mfcl')
-    from({ configurations.mfclFull.collect { zipTree(it) } }) { include 'github/com/gengyoubo/mfcl/api/**' }
-}
-def mfclApiOnly = rootProject.mfclApiDependency instanceof CharSequence ? files(mfclApiOnlyJar) : rootProject.mfclApiDependency
+// Tests use only MFCL's API JAR: the full mod registers its own RuntimeProvider service, which would clash with
+// the tests' fake runtime.
 dependencies {
     apiCompileOnly rootProject.mfclApiDependency
     implementation sourceSets.api.output
     testImplementation sourceSets.api.output
-    testImplementation mfclApiOnly
+    testImplementation rootProject.mfclApiDependency
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

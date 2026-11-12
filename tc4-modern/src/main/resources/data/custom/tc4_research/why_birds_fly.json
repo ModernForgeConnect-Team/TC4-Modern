@@ -1,0 +1,44 @@
+{
+  "type": "tc4modern:research",
+  "key": "why_birds_fly",
+  "name": {
+    "zh_CN": "鸟为什么会飞行？",
+    "en_US": "Why Do Birds Fly?"
+  },
+  "category": "ARTIFICE",
+  "position": [
+    -2,
+    6
+  ],
+  "complexity": 2,
+  "icon": {
+    "item": "minecraft:elytra"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "volatus": 1,
+    "iter": 1,
+    "tutamen": 1,
+    "aer": 1
+  },
+  "parents": [
+    "INFUSION"
+  ],
+  "subtitle": {
+    "zh_CN": "向天空借一双翅膀",
+    "en_US": "Borrowing wings from the sky"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "鸟儿乘风而起，靠的是一双翅膀。幻翼的膜轻薄却坚韧，正是天空留下的线索。<BR>把一件皮革胸甲放在注魔祭坛的中心，周围摆上八片幻翼膜，再注入旅行、防护与飞行，皮革就会舒展成一对鞘翅。",
+        "en_US": "Birds ride the wind on a pair of wings. A phantom's membrane is thin yet tough: a clue the sky left behind.<BR>Set a leather tunic on the infusion altar's centre, surround it with eight phantom membranes, and infuse Iter, Tutamen and Volatus: the leather unfolds into a pair of elytra."
+      }
+    },
+    {
+      "infusion": {
+        "item": "minecraft:elytra"
+      }
+    }
+  ]
+}

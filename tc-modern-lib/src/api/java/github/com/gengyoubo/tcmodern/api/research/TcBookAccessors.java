@@ -259,13 +259,6 @@ public final class TcBookAccessors {
         @LegacyMethod(name = "func_77571_b", descriptor = "()Lnet/minecraft/item/ItemStack;") LegacyObject output();
     }
 
-    /** A shaped recipe that is not added to the crafting list: how a smithing page reaches the original book. */
-    @LegacyType("net.minecraft.item.crafting.ShapedRecipes")
-    public interface ShapedFactory {
-        @LegacyConstructor(descriptor = "(II[Lnet/minecraft/item/ItemStack;Lnet/minecraft/item/ItemStack;)V")
-        LegacyObject create(int width, int height, LegacyObject inputs, LegacyObject output);
-    }
-
     @LegacyType("net.minecraft.item.crafting.ShapedRecipes")
     public interface ShapedVanilla {
         @LegacyField(name = "field_77576_b", descriptor = "I") int width();
