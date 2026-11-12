@@ -1,6 +1,8 @@
 package github.com.gengyoubo.tcmodern.tc4.content;
 
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
+import github.com.gengyoubo.tcmodern.lib.gear.TcEquipmentEffects;
+import github.com.gengyoubo.mfcl.api.LegacyObject;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Items;
 import java.util.List;
 import net.minecraft.ChatFormatting;
@@ -16,10 +18,10 @@ import net.minecraft.world.level.Level;
 
 /**
  * Ancient thaumium armour: thaumium armour upgraded at a smithing table. Besides its protection, each piece lowers the
- * vis its wearer's wands spend and the warp the original counts from worn gear; {@code AncientThaumiumGear} hands both
+ * vis its wearer's wands spend and the warp the original counts from worn gear; {@code TcEquipmentEffects} hands both
  * to the original Thaumcraft.
  */
-public final class AncientThaumiumArmorItem extends ArmorItem {
+public final class AncientThaumiumArmorItem extends ArmorItem implements TcEquipmentEffects {
     /** Netherite's durability, thaumium's enchantability; protection per piece is set by {@link #defense}. */
     public static final ArmorMaterial MATERIAL = new ArmorMaterial() {
         /** Vanilla's per-piece base durability times netherite's 37. */
@@ -57,6 +59,8 @@ public final class AncientThaumiumArmorItem extends ArmorItem {
 
     public int visDiscount() { return visDiscount; }
     public int warp() { return warp; }
+    @Override public int visDiscount(ItemStack stack, LegacyObject player, String aspect) { return visDiscount; }
+    @Override public int warp(ItemStack stack, LegacyObject player) { return warp; }
 
     static int defense(Type type) {
         return switch (type) {
