@@ -39,6 +39,14 @@ public final class TcRecipeAccessors {
         LegacyObject infusion(String research, Object result, int instability, LegacyObject aspects, LegacyObject input, LegacyObject[] components);
     }
 
+    /** A crucible recipe that is not added to {@link Registry#recipes()}: for showing on a research page only. */
+    @LegacyType("thaumcraft.api.crafting.CrucibleRecipe")
+    public interface CrucibleFactory {
+        /** {@code catalyst}: an ItemStack, an ore name, or an ArrayList of ItemStacks (the book cycles through them). */
+        @LegacyConstructor(descriptor = "(Ljava/lang/String;Lnet/minecraft/item/ItemStack;Ljava/lang/Object;Lthaumcraft/api/aspects/AspectList;)V")
+        LegacyObject create(String research, LegacyObject result, Object catalyst, LegacyObject aspects);
+    }
+
     @LegacyType("thaumcraft.api.aspects.AspectList")
     public interface AspectListFactory {
         @LegacyConstructor(descriptor = "()V") LegacyObject create();

@@ -209,6 +209,13 @@
   "message.tc4modern.giant_tree.phase.3": "巨树正在生成树干。",
   "block.tc4modern.intermediate_crucible": "中级坩埚",
   "item.tc4modern.ancient_thaumium_ingot": "远古神秘锭",
+  "item.tc4modern.ancient_thaumium_template": "远古神秘锻造模板",
+  "item.tc4modern.ancient_thaumium_helmet": "远古神秘头盔",
+  "item.tc4modern.ancient_thaumium_chestplate": "远古神秘胸甲",
+  "item.tc4modern.ancient_thaumium_leggings": "远古神秘护腿",
+  "item.tc4modern.ancient_thaumium_boots": "远古神秘靴子",
+  "item.tc4modern.ancient_thaumium_armor.vis_discount": "魔力减免：%s%%",
+  "item.tc4modern.ancient_thaumium_armor.warp": "扭曲：%s",
   "intermediate_crucible.tc4modern.mode.decompose": "分解模式：丢入的物品会被分解为要素",
   "intermediate_crucible.tc4modern.mode.synthesis": "合成模式：最多容纳两种材料",
   "intermediate_crucible.tc4modern.failed": "合成失败，咒波溢出了"

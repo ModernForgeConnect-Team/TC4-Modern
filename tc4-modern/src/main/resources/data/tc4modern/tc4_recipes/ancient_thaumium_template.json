@@ -1,0 +1,16 @@
+{
+  "type": "tc4modern:infusion",
+  "research": "ancient_thaumium_template",
+  "input": {"item": "minecraft:netherite_upgrade_smithing_template"},
+  "components": [
+    {"legacy_item": "Thaumcraft:ItemResource", "metadata": 2},
+    {"legacy_item": "Thaumcraft:ItemResource", "metadata": 2},
+    {"item": "minecraft:diamond"},
+    {"legacy_item": "Thaumcraft:ItemResource", "metadata": 2},
+    {"legacy_item": "Thaumcraft:ItemResource", "metadata": 2},
+    {"item": "minecraft:diamond"}
+  ],
+  "aspects": {"antiquitas": 10, "metallum": 5, "praecantatio": 20},
+  "instability": 3,
+  "result": {"item": "tc4modern:ancient_thaumium_template"}
+}

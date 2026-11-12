@@ -218,8 +218,14 @@ final class BookReader {
             case CRUCIBLE -> {
                 heading(g, Component.translatable("book.tcmodernlib.page.crucible"), cx, y);
                 slot(g, List.of(recipe.output()), cx - 9, y + 16, mouseX, mouseY, true);
-                circle(g, cx, y + 64, 18, 0x18000000);
-                slot(g, recipe.inputs().get(0), cx - 9, y + 55, mouseX, mouseY, false);
+                // Every material goes in together; extra crucible recipes may take several, side by side.
+                int materials = recipe.inputs().size(), spacing = 30, first = cx - (materials - 1) * spacing / 2;
+                circle(g, cx, y + 64, 18 + (materials - 1) * spacing / 2, 0x18000000);
+                for (int i = 0; i < materials; i++) {
+                    int sx = first + i * spacing;
+                    slot(g, recipe.inputs().get(i), sx - 9, y + 55, mouseX, mouseY, false);
+                    if (i > 0) g.drawString(screen.font(), "+", sx - spacing / 2 - screen.font().width("+") / 2, y + 59, INK_SOFT, false);
+                }
                 costs(g, recipe, cx, y + 94, mouseX, mouseY);
             }
             case INFUSION -> {

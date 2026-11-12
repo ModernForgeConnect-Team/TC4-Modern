@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smithing_transform",
+  "conditions": [
+    {
+      "type": "forge:item_exists",
+      "item": "thaumcraft:item_boots_thaumium"
+    }
+  ],
+  "template": { "item": "tc4modern:ancient_thaumium_template" },
+  "base": { "item": "thaumcraft:item_boots_thaumium" },
+  "addition": { "item": "tc4modern:ancient_thaumium_ingot" },
+  "result": { "item": "tc4modern:ancient_thaumium_boots" }
+}

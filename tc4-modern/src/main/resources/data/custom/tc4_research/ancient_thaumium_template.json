@@ -1,0 +1,50 @@
+{
+  "type": "tc4modern:research",
+  "key": "ancient_thaumium_template",
+  "name": {
+    "zh_CN": "远古神秘锻造模板",
+    "en_US": "Ancient Thaumium Smithing Template"
+  },
+  "category": "ALCHEMY",
+  "position": [
+    -3,
+    11
+  ],
+  "complexity": 2,
+  "icon": {
+    "item": "tc4modern:ancient_thaumium_template"
+  },
+  "aspects": {},
+  "note_aspects": {
+    "antiquitas": 1,
+    "metallum": 1,
+    "praecantatio": 1,
+    "instrumentum": 1
+  },
+  "parents": [
+    "ancient_thaumium_ingot"
+  ],
+  "subtitle": {
+    "zh_CN": "旧纹新刻",
+    "en_US": "Old patterns, new etching"
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "下界合金升级模板上的纹路古老而顽固。把它放在注魔祭坛的中心，周围摆上四块神秘锭和两颗钻石，再注入古代、金属与魔力，就能把神秘的力量刻进这些纹路里，得到远古神秘锻造模板。",
+        "en_US": "The patterns on a netherite upgrade template are old and stubborn. Set one on the infusion altar's centre, surround it with four thaumium ingots and two diamonds, and infuse Antiquitas, Metallum and Praecantatio to etch thaumic power into those patterns, making an ancient thaumium smithing template."
+      }
+    },
+    {
+      "infusion": {
+        "item": "tc4modern:ancient_thaumium_template"
+      }
+    },
+    {
+      "text": {
+        "zh_CN": "在锻造台上放入远古神秘锻造模板、一件神秘盔甲和一块远古神秘锭，就能把它升级为远古神秘盔甲。模板会被消耗。<BR>远古神秘盔甲比下界合金更坚固，还能节省法杖消耗的魔力，并压制扭曲：<BR>头盔：魔力减免 5%，扭曲 -1<BR>胸甲：魔力减免 15%，扭曲 -3<BR>护腿：魔力减免 10%，扭曲 -2<BR>靴子：魔力减免 5%，扭曲 -1",
+        "en_US": "At a smithing table, an ancient thaumium smithing template, a piece of thaumium armour and an ancient thaumium ingot upgrade that piece to ancient thaumium armour. The template is used up.<BR>Ancient thaumium armour is sturdier than netherite, saves vis your wands spend and holds warp at bay:<BR>Helmet: 5% vis discount, -1 warp<BR>Chestplate: 15% vis discount, -3 warp<BR>Leggings: 10% vis discount, -2 warp<BR>Boots: 5% vis discount, -1 warp"
+      }
+    }
+  ]
+}

@@ -5,6 +5,8 @@ import github.com.gengyoubo.mfcl.api.LegacyRuntime;
 import github.com.gengyoubo.mfcl.api.LegacyStack;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
+import github.com.gengyoubo.tcmodern.api.recipe.TcExtraCrucibleRecipes;
+import github.com.gengyoubo.tcmodern.api.recipe.TcRecipe;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipeAccessors;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipes;
 import java.util.*;
@@ -116,6 +118,15 @@ public final class TcThaumonomicon {
             if (!other.virtual() && other.column() == research.column() && other.row() == research.row())
                 throw new IllegalArgumentException(research.key() + " overlaps " + other.key() + " at " + research.column() + "," + research.row());
         }
+        try {
+            build(runtime, research, virtual);
+        } catch (RuntimeException failure) {
+            DISPLAYED.removeIf(shown -> shown.owner().equals(research.key()));
+            throw failure;
+        }
+    }
+
+    private static void build(LegacyRuntime runtime, TcResearchDefinition research, boolean virtual) {
         var tags = aspectList(runtime, research.aspects(), research.key());
         var pages = new ArrayList<LegacyObject>();
         for (var page : research.pages()) pages.add(page(runtime, page, research.key()));
@@ -167,6 +178,7 @@ public final class TcThaumonomicon {
         require(runtime);
         var item = runtime.accessor(TcResearchAccessors.Categories.class).find(key);
         if (item == null) return false;
+        DISPLAYED.removeIf(shown -> shown.owner().equals(key));
         var list = runtime.accessor(CategoryRegistry.class).find(runtime.accessor(Research.class, item).category());
         if (list == null) return false;
         var category = runtime.accessor(CategoryList.class, list);
@@ -253,7 +265,8 @@ public final class TcThaumonomicon {
         if (page instanceof TcResearchDefinition.Smelting smelting)
             return runtime.accessor(SmeltingPages.class).smelting(runtime.stack(smelting.input()));
         var recipe = (TcResearchDefinition.Recipe) page;
-        var matches = recipes(runtime, recipe.kind(), recipe.output());
+        var matches = new ArrayList<>(recipes(runtime, recipe.kind(), recipe.output()));
+        if (recipe.kind() == TcResearchDefinition.RecipeKind.CRUCIBLE) matches.addAll(extraCrucibles(runtime, recipe.output(), owner));
         if (matches.isEmpty())
             throw new IllegalArgumentException(owner + ": no " + recipe.kind().name().toLowerCase(Locale.ROOT) + " recipe makes " + recipe.output());
         String type = switch (recipe.kind()) {
@@ -303,11 +316,55 @@ public final class TcThaumonomicon {
                 // An output MFCL cannot describe (a broken addon stack) cannot match a page either.
                 continue;
             }
-            if (stack.key().equals(wanted.key()) && (wanted.metadata() == WILDCARD || stack.metadata() == wanted.metadata())
-                    && (wanted.snbt() == null || wanted.snbt().isEmpty() || wanted.snbt().equals(stack.snbt())))
-                result.add(recipe);
+            if (outputMatches(stack, wanted)) result.add(recipe);
         }
         return result;
+    }
+
+    /** Same item, the same metadata unless the wanted one is the wildcard, and the same NBT when the wanted one has any. */
+    static boolean outputMatches(LegacyStack stack, LegacyStack wanted) {
+        return stack.key().equals(wanted.key()) && (wanted.metadata() == WILDCARD || stack.metadata() == wanted.metadata())
+                && (wanted.snbt() == null || wanted.snbt().isEmpty() || wanted.snbt().equals(stack.snbt()));
+    }
+
+    /**
+     * A display-only original crucible recipe for each {@link TcExtraCrucibleRecipes} recipe that makes {@code wanted}.
+     * It is never added to the original recipe list, so the original crucible cannot craft it. The original page draws
+     * one catalyst, by the arrow: that is the last material, and this library's client draws the others to its left
+     * ({@link #extraCrucible}). This library's own book shows the remembered recipe.
+     */
+    private static List<LegacyObject> extraCrucibles(LegacyRuntime runtime, LegacyStack wanted, String owner) {
+        var result = new ArrayList<LegacyObject>();
+        for (var extra : TcExtraCrucibleRecipes.all(runtime)) {
+            if (!outputMatches(extra.output(), wanted)) continue;
+            var choices = new ArrayList<LegacyObject>();
+            for (var stack : extra.inputs().get(extra.inputs().size() - 1)) choices.add(runtime.stack(stack));
+            Object catalyst = choices.size() == 1 ? choices.get(0) : runtime.values().newList(choices);
+            var aspects = new LinkedHashMap<String, Integer>();
+            for (var cost : extra.aspects()) aspects.merge(cost.tag(), cost.amount(), Integer::sum);
+            var display = runtime.accessor(TcRecipeAccessors.CrucibleFactory.class)
+                    .create(extra.research(), runtime.stack(extra.output()), catalyst, aspectList(runtime, aspects, owner));
+            DISPLAYED.add(new Displayed(owner, display, extra));
+            result.add(display);
+        }
+        return result;
+    }
+
+    /** The extra recipe shown by a display-only crucible recipe on a page of research {@code owner}. */
+    private record Displayed(String owner, LegacyObject original, TcRecipe recipe) { }
+    private static final List<Displayed> DISPLAYED = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /**
+     * The {@link TcExtraCrucibleRecipes} recipe that an original crucible recipe on a research page stands in for, or
+     * empty for an ordinary original recipe. Its inputs are every material; the original page shows only the last.
+     */
+    public static Optional<TcRecipe> extraCrucible(LegacyRuntime runtime, LegacyObject original) {
+        return original == null ? Optional.empty() : Optional.ofNullable(displayed(runtime, original));
+    }
+
+    private static TcRecipe displayed(LegacyRuntime runtime, LegacyObject original) {
+        for (var shown : DISPLAYED) if (runtime.values().same(shown.original(), original)) return shown.recipe();
+        return null;
     }
 
     /** Reads detached copies of categories, research and pages. */
@@ -391,8 +448,12 @@ public final class TcThaumonomicon {
             if (values.same(type, types.image())) return new TcResearchPage.Image(location(page.image()), page.text());
             if (values.same(type, types.aspects())) return new TcResearchPage.Aspects(aspects(page.aspects()));
             if (values.same(type, types.arcane()) || values.same(type, types.crucible()) || values.same(type, types.infusion())) {
-                var recipes = new ArrayList<github.com.gengyoubo.tcmodern.api.recipe.TcRecipe>();
-                for (var recipe : elements(page.recipe())) recipes.addAll(TcRecipes.read(runtime, recipe));
+                var recipes = new ArrayList<TcRecipe>();
+                for (var recipe : elements(page.recipe())) {
+                    var shown = displayed(runtime, recipe);
+                    if (shown != null) recipes.add(shown);
+                    else recipes.addAll(TcRecipes.read(runtime, recipe));
+                }
                 return recipes.isEmpty() ? new TcResearchPage.Unsupported("recipe") : new TcResearchPage.Recipes(recipes);
             }
             if (values.same(type, types.crafting())) {

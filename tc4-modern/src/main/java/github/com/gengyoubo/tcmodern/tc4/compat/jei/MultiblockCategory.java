@@ -31,7 +31,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -154,11 +153,9 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
 
     private static String name(Recipe recipe) { return "jei.tc4modern.multiblock." + recipe.id(); }
 
-    /** The research's own name where Thaumcraft's language files have one, else its key. */
     private static Component research(Recipe recipe) {
         if (recipe.research().isEmpty()) return Component.translatable("jei.tc4modern.no_research");
-        String name = "tc.research_name." + recipe.research();
-        return Component.translatable("jei.tc4modern.multiblock.research", I18n.exists(name) ? I18n.get(name) : recipe.research());
+        return Component.translatable("jei.tc4modern.multiblock.research", TcRecipeCategory.researchName(recipe.research()));
     }
 
     private static void frame(GuiGraphics graphics, int x, int y) {

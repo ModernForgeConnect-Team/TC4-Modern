@@ -41,6 +41,9 @@ public final class Tc4Modern {
         Tc4Features.register(modBus);
         modBus.addListener(this::commonSetup);
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(github.com.gengyoubo.tcmodern.tc4.content.IntermediateCrucibleBlock::onRightClickBlock);
+        // Research "crucible" pages also find what the intermediate crucible makes.
+        github.com.gengyoubo.tcmodern.api.recipe.TcExtraCrucibleRecipes.register(MOD_ID,
+                github.com.gengyoubo.tcmodern.tc4.crucible.IntermediateCruciblePages::recipes);
         // Aspects first: everything after may read or assign them.
         TcModernApi.whenReady(Tc4Aspects::install);
         TcModernApi.whenReady(Tc4ScanDefaults::install);

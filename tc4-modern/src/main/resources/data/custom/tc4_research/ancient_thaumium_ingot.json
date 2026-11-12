@@ -1,0 +1,40 @@
+{
+  "type": "tc4modern:research",
+  "key": "ancient_thaumium_ingot",
+  "name": {
+    "zh_CN": "更古老的神秘锭？",
+    "en_US": "An Even Older Thaumium?"
+  },
+  "category": "ALCHEMY",
+  "position": [
+    -3,
+    9
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:ancient_thaumium_ingot"
+  },
+  "aspects": {
+    "cognitio": 3,
+    "ordo": 1
+  },
+  "note_aspects": {
+    "cognitio": 1,
+    "ordo": 1
+  },
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "神秘锭+下界合金?双双联手做出来的金属锭究竟有多好？"
+      }
+    },
+    {
+      "crucible": {
+        "item": "tc4modern:ancient_thaumium_ingot"
+      }
+    }
+  ],
+  "parents": [
+    "intermediate_crucible"
+  ]
+}

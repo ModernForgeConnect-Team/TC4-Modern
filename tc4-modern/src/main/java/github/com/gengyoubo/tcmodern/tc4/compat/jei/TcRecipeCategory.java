@@ -1,7 +1,9 @@
 package github.com.gengyoubo.tcmodern.tc4.compat.jei;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipe;
+import github.com.gengyoubo.tcmodern.api.research.TcThaumonomicon;
 import java.util.List;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
@@ -132,13 +134,22 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
 
     static boolean hasBookArt() { return available(BOOK) && available(OVERLAY); }
 
-    /** The research's own name where Thaumcraft's language files have one, else its key. */
     private static Component research(TcRecipe recipe) { return research(recipe.research()); }
 
     static Component research(String key) {
         if (key.isEmpty()) return Component.translatable("jei.tc4modern.no_research");
+        return Component.translatable("jei.tc4modern.research", researchName(key));
+    }
+
+    /**
+     * The research's title as the Thaumonomicon shows it: the original language table first (it also holds the
+     * names of {@code tc4_research} JSON research), then modern language files, else the key itself.
+     */
+    static String researchName(String key) {
         String name = "tc.research_name." + key;
-        return Component.translatable("jei.tc4modern.research", I18n.exists(name) ? I18n.get(name) : key);
+        String legacy = TcModernApi.runtime().map(runtime -> TcThaumonomicon.translate(runtime, name)).orElse(name);
+        if (!legacy.isEmpty() && !legacy.equals(name)) return legacy;
+        return I18n.exists(name) ? I18n.get(name) : key;
     }
 
     /** Original page coordinate to this page, for a 16 px item whose centre keeps its place. */

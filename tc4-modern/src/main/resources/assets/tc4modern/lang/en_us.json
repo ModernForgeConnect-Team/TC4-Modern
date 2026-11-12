@@ -209,6 +209,13 @@
   "message.tc4modern.giant_tree.phase.3": "Generating the trunk.",
   "block.tc4modern.intermediate_crucible": "Intermediate Crucible",
   "item.tc4modern.ancient_thaumium_ingot": "Ancient Thaumium Ingot",
+  "item.tc4modern.ancient_thaumium_template": "Ancient Thaumium Smithing Template",
+  "item.tc4modern.ancient_thaumium_helmet": "Ancient Thaumium Helmet",
+  "item.tc4modern.ancient_thaumium_chestplate": "Ancient Thaumium Chestplate",
+  "item.tc4modern.ancient_thaumium_leggings": "Ancient Thaumium Leggings",
+  "item.tc4modern.ancient_thaumium_boots": "Ancient Thaumium Boots",
+  "item.tc4modern.ancient_thaumium_armor.vis_discount": "Vis discount: %s%%",
+  "item.tc4modern.ancient_thaumium_armor.warp": "Warp: %s",
   "intermediate_crucible.tc4modern.mode.decompose": "Decomposition mode: items thrown in dissolve into aspects",
   "intermediate_crucible.tc4modern.mode.synthesis": "Synthesis mode: holds up to two materials",
   "intermediate_crucible.tc4modern.failed": "The synthesis failed and spilled flux"
