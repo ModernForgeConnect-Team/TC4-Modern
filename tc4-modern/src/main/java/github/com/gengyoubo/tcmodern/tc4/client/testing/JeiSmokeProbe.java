@@ -30,6 +30,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 public final class JeiSmokeProbe {
     private static volatile IntUnaryOperator showCategory;
     private static boolean createdTagFixture;
+    private boolean wandPaymentTested;
     private final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(5);
     private final Map<String, Object> proof = new LinkedHashMap<>();
     private final String[] categories = {"arcane", "crucible", "infusion", "item_in_fluid", "multiblock", "modern_desk_upgrade"};
@@ -72,6 +73,61 @@ public final class JeiSmokeProbe {
                                 .getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions());
                 stage = 1;
             } else if (stage == 1 && mc.player != null && mc.level != null && mc.screen == null && showCategory != null) {
+                if (!wandPaymentTested) {
+                    var ok = mc.getSingleplayerServer().submit(() -> {
+                        var runtime = github.com.gengyoubo.tcmodern.api.TcModernApi.runtime().orElseThrow();
+                        var player = mc.getSingleplayerServer().getPlayerList().getPlayers().get(0);
+                        var hand = net.minecraft.world.InteractionHand.MAIN_HAND;
+                        var previous = player.getItemInHand(hand);
+                        var modern = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK);
+                        var proxy = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BLAZE_ROD);
+                        var syncCount = new java.util.concurrent.atomic.AtomicInteger();
+                        var adapter = new github.com.gengyoubo.tcmodern.lib.wand.TcWandInteractions.Adapter() {
+                            public net.minecraft.world.item.ItemStack proxy(net.minecraft.world.item.ItemStack stack) { return proxy; }
+                            public boolean isProxy(net.minecraft.world.item.ItemStack stack) { return stack == proxy; }
+                            public void sync(net.minecraft.world.item.ItemStack source, net.minecraft.world.item.ItemStack target) {
+                                if (source != proxy || target != modern) throw new IllegalStateException("Wrong proxy sync");
+                                syncCount.incrementAndGet();
+                            }
+                        };
+                        try {
+                            player.setItemInHand(hand, modern);
+                            try {
+                                github.com.gengyoubo.tcmodern.lib.wand.TcWandInteractions.withProxy(player, hand, modern, adapter, stack -> {
+                                    if (player.getItemInHand(hand) != proxy) throw new AssertionError("Proxy not held");
+                                    throw new IllegalStateException("expected test exception");
+                                });
+                                return false;
+                            } catch (IllegalStateException expected) {
+                                if (!"expected test exception".equals(expected.getMessage())) throw expected;
+                            }
+                            if (player.getItemInHand(hand) != modern || syncCount.get() != 1) return false;
+                        } finally { player.setItemInHand(hand, previous); }
+                        var original = new github.com.gengyoubo.mfcl.api.LegacyStack("Thaumcraft:WandCasting", 0, 1,
+                                "{cap:\"iron\",rod:\"wood\",aer:1000}");
+                        var host = runtime.mappings().toHost(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK,
+                                runtime.stack(original), net.minecraft.world.item.ItemStack.class).orElseThrow();
+                        if (!github.com.gengyoubo.tcmodern.lib.wand.TcWandCrafting.canCraftWith(host)
+                                || !github.com.gengyoubo.tcmodern.lib.wand.TcWandCrafting.isNormalWand(host)) return false;
+                        var staffOld = new github.com.gengyoubo.mfcl.api.LegacyStack("Thaumcraft:WandCasting", 0, 1,
+                                "{cap:\"iron\",rod:\"greatwood_staff\",aer:1000}");
+                        var staff = runtime.mappings().toHost(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK,
+                                runtime.stack(staffOld), net.minecraft.world.item.ItemStack.class).orElseThrow();
+                        if (github.com.gengyoubo.tcmodern.lib.wand.TcWandCrafting.canCraftWith(staff)
+                                || github.com.gengyoubo.tcmodern.lib.wand.TcWandCrafting.pay(player, staff, Map.of("aer", 100), true).isPresent()) return false;
+                        var simulated = github.com.gengyoubo.tcmodern.lib.wand.TcWandCrafting.pay(player, host, Map.of("aer", 100), true).orElseThrow();
+                        var paid = github.com.gengyoubo.tcmodern.lib.wand.TcWandCrafting.pay(player, host, Map.of("aer", 100), false).orElseThrow();
+                        var originalAfter = runtime.snapshot(runtime.mappings().toLegacy(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK, host).orElseThrow());
+                        var simulation = runtime.snapshot(runtime.mappings().toLegacy(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK, simulated).orElseThrow());
+                        var charged = runtime.snapshot(runtime.mappings().toLegacy(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK, paid).orElseThrow());
+                        var before = github.com.gengyoubo.tcmodern.api.wand.TcWandVis.snapshot(runtime, originalAfter).orElseThrow().amounts().get("aer");
+                        var dry = github.com.gengyoubo.tcmodern.api.wand.TcWandVis.snapshot(runtime, simulation).orElseThrow().amounts().get("aer");
+                        var after = github.com.gengyoubo.tcmodern.api.wand.TcWandVis.snapshot(runtime, charged).orElseThrow().amounts().get("aer");
+                        return before == 1000 && dry == 1000 && after > 0 && after < before;
+                    }).get(15, TimeUnit.SECONDS);
+                    if (!ok) throw new IllegalStateException("TC4 wand simulation or payment failed");
+                    proof.put("wandPayment", true); wandPaymentTested = true;
+                }
                 proof.put(categories[category], showCategory.applyAsInt(category));
                 frames = 0;
                 stage = 2;

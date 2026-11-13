@@ -42,7 +42,7 @@ subprojects {
     apply plugin: 'maven-publish'
 
     group = rootProject.mod_group
-    version = rootProject.mod_version
+    version = project.name == 'tc-modern-lib' ? rootProject.lib_version : rootProject.mod_version
     java {
         toolchain.languageVersion = JavaLanguageVersion.of(17)
         withSourcesJar()

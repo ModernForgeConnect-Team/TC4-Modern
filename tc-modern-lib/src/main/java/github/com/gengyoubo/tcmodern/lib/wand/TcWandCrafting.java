@@ -14,6 +14,23 @@ public final class TcWandCrafting {
     private TcWandCrafting() { }
     @LegacyType("thaumcraft.common.items.wands.ItemWandCasting") public interface Wand {
         @LegacyMethod(name="isStaff", descriptor="(Lnet/minecraft/item/ItemStack;)Z") boolean staff(LegacyObject stack);
+        @LegacyMethod(name="isSceptre", descriptor="(Lnet/minecraft/item/ItemStack;)Z") boolean sceptre(LegacyObject stack);
+    }
+    /** True for a casting wand or sceptre accepted by TC4's workbench, but false for a staff. */
+    public static boolean canCraftWith(ItemStack stack) { return kind(stack, false); }
+    /** True for a wand that is neither a staff nor a sceptre. */
+    public static boolean isNormalWand(ItemStack stack) { return kind(stack, true); }
+    private static boolean kind(ItemStack stack, boolean normal) {
+        if (stack == null || stack.isEmpty()) return false;
+        var runtime = TcModernApi.runtime().orElse(null); if (runtime == null) return false;
+        try {
+            var old = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, stack).orElse(null);
+            if (old == null) return false;
+            var item = runtime.accessor(TcWandVis.Stack.class, old).item();
+            if (item == null || !runtime.values().isInstance(item, "thaumcraft.common.items.wands.ItemWandCasting")) return false;
+            var wand = runtime.accessor(Wand.class, item);
+            return !wand.staff(old) && (!normal || !wand.sceptre(old));
+        } catch (RuntimeException unsupported) { return false; }
     }
     /** Never mutates wand. On success the caller must revalidate and write the returned copy to its slot. */
     public static Optional<ItemStack> pay(ServerPlayer player, ItemStack wand, Map<String,Integer> costs, boolean simulate) {

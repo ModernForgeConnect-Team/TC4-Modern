@@ -17,6 +17,8 @@ TC Modern Lib/API 与 TC4: Modern 共用一个仓库，以两个独立 Gradle �
 | `tc4-modern` | 玩法、内容与现代侧集成，直接依赖同仓库 Lib | `tc4modern` |
 
 依赖方向：`TC4: Modern → TC Modern Lib/API → MFCL public API`。
+
+两个模块在 `gradle.properties` 中分别使用 `mod_version`（TC4: Modern）和 `lib_version`（TC Modern Lib/API）；修改其中一个不会改变另一个模块的版本。
 MFCL 仍是独立项目，不引用其 `internal`、`bridge` 或 `compat` 实现，不将旧 Minecraft / Forge / TC4 类加入现代编译类路径。
 
 ## Disclaimer / 免责声明
@@ -140,12 +142,12 @@ MFCL 由 Gradle 从 MFCL 的 Maven 仓库（`gradle.properties` 的 `mfcl_maven`
 
 | 产物 | 路径 |
 | --- | --- |
-| Lib 完整模组 | `tc-modern-lib/build/libs/tc-modern-lib-0.1.0-SNAPSHOT.jar` |
-| Lib 独立 API（仅编译用） | `tc-modern-lib/build/libs/tc-modern-lib-0.1.0-SNAPSHOT-api.jar` |
-| TC4 完整模组 | `tc4-modern/build/libs/tc4-modern-0.1.0-SNAPSHOT.jar` |
+| Lib 完整模组 | `tc-modern-lib/build/libs/tc-modern-lib-<lib_version>.jar` |
+| Lib 独立 API（仅编译用） | `tc-modern-lib/build/libs/tc-modern-lib-<lib_version>-api.jar` |
+| TC4 完整模组 | `tc4-modern/build/libs/tc4-modern-<mod_version>.jar` |
 
 分别构建：`:tc-modern-lib:build`、`:tc4-modern:build`。根 `build` 构建并检查两个模块。
-`publishToMavenLocal` 可发布本地开发产物；独立 API 坐标为 `github.com.gengyoubo.tcmodern:tc-modern-api:0.1.0-SNAPSHOT`，使用者还需显式添加 MFCL API 的 `compileOnly` 依赖。
+`publishToMavenLocal` 可发布本地开发产物；独立 API 坐标为 `github.com.gengyoubo.tcmodern:tc-modern-api:<lib_version>`，使用者还需显式添加 MFCL API 的 `compileOnly` 依赖。
 目前没有配置公共 Maven 发布服务。
 
 ## 银树与宏伟之木树叶 / Magical leaves
@@ -184,6 +186,8 @@ MFCL 由 Gradle 从 MFCL 的 Maven 仓库（`gradle.properties` 的 `mfcl_maven`
 
 ## JEI 兼容 / JEI integration
 
+原版 TC4 的 JEI 集成由 `tc-modern-lib` 提供，安装 Lib、MFCL、原版 TC4 和 JEI 即可使用，无须安装 TC4: Modern。TC4: Modern 另行提供其专属的中级坩埚、现代研究桌和工作台填充。
+
 JEI 是可选的客户端集成，当前固定开发版本为 `15.20.0.106`（Minecraft 1.20.1 / Forge）。完整 JEI 不打入项目 JAR；未安装 JEI 时，公共模组入口不加载 JEI 插件类。
 
 - 显示原版 TC4 的有序／无序奥术合成、坩埚炼金与静态注魔配方，支持 JEI 的配方／用途查询。
@@ -195,15 +199,15 @@ JEI 是可选的客户端集成，当前固定开发版本为 `15.20.0.106`（Mi
 - 页面显示基础魔力／源质消耗、研究 key，以及注魔不稳定性。基础魔力消耗未计算法杖减免。
 - 注册实际旧工作台、坩埚和注魔矩阵的工作站入口，并为 TC4 物品注册 metadata／原始 NBT 子类型身份。
 - 六种多方块结构提供搭建材料、魔力消耗、研究要求和成型前后预览；对成型结构的代表方块按 R、对材料按 U 可查询搭建方式。结果槽只是结构入口，不会将多方块作为物品合成出来。缸中节点忽略节点自身的要素和 ID，以便携带不同节点数据的物品也能查询同一搭建配方。
-- 仅展示配方，不提供自动填充，不绕过研究，不注册可执行的现代 TC4 特殊配方。普通工作台配方继续由 MFCL 提供，避免重复添加。
+- Lib 提供配方展示；安装 TC4: Modern 时，现代奥术工作台额外支持通过普通槽位点击填充配方。操作仍由原版工作台校验，不绕过研究。普通工作台配方继续由 MFCL 提供，避免重复添加。
 
 当前仅支持 TC4 `4.2.3.5` 的标准静态配方类；动态的法杖／权杖配方按已注册的杖端与杖芯逐一展开为静态页面。动态注魔附魔、修改输入 NBT 的配方、自定义配方子类及无法无损映射的内容不推断为静态配方。
 单页支持至多 16 种要素和 16 个注魔周边材料。跳过数量会写入 `TC4 JEI` 日志摘要，具体原因在 debug 日志中。
-TC4 物品通过 MFCL 的 `LegacyItemProvider` 拆分为独立的现代物品：不可损坏的多 metadata 物品按 metadata 拆分（如 `thaumcraft:item_resource/meta_2`），法杖、长杖与权杖按杖芯、杖端与是否权杖拆分（如 `thaumcraft:wand_casting/greatwood_gold_sceptre`，忽略 metadata 与储存的要素）。旧侧仍是同一个原版物品。除缸中节点仅按结构类型查询外，NBT 子类型目前保留完整的原始 NBT；充能等状态也可能区分为不同的 JEI 身份，尚未实现所有物品的语义化 NBT 匹配。
+安装 TC4: Modern 时，TC4 物品通过 MFCL 的 `LegacyItemProvider` 拆分为独立的现代物品：不可损坏的多 metadata 物品按 metadata 拆分（如 `thaumcraft:item_resource/meta_2`），法杖、长杖与权杖按杖芯、杖端与是否权杖拆分（如 `thaumcraft:wand_casting/greatwood_gold_sceptre`，忽略 metadata 与储存的要素）。旧侧仍是同一个原版物品。除缸中节点仅按结构类型查询外，NBT 子类型目前保留完整的原始 NBT；充能等状态也可能区分为不同的 JEI 身份，尚未实现所有物品的语义化 NBT 匹配。
 
-JEI is optional. The plugin displays original TC4 shaped/shapeless arcane crafting, crucible alchemy, and static infusion recipes through public MFCL accessors. Ingredients retain metadata, original NBT, counts, and ore alternatives. Pages show base aspect costs, research keys, and infusion instability. Recipe viewing does not unlock research or implement crafting/recipe transfer. The dynamic wand and sceptre recipes are expanded into one static page per registered cap and rod. Other dynamic recipes, custom subclasses, and unrepresentable required ingredients/outputs are omitted with diagnostics. Full original NBT currently participates in subtype identity, including state such as stored charge, except for node jars (by structure only) and wands, staves and sceptres (by cap, rod and sceptre only; metadata and stored vis are ignored). Through MFCL's `LegacyItemProvider`, every non-damageable TC4 item with several metadata subtypes is its own host item (`thaumcraft:item_resource/meta_2`), and every wand, staff and sceptre build is its own host item (`thaumcraft:wand_casting/greatwood_gold_sceptre`); old code still sees the single original item.
+JEI is optional. TC Modern Lib provides the original TC4 integration independently of TC4: Modern; the latter adds its own recipes and workbench transfer. The library plugin displays original TC4 shaped/shapeless arcane crafting, crucible alchemy, and static infusion recipes through public MFCL accessors. Ingredients retain metadata, original NBT, counts, and ore alternatives. Pages show base aspect costs, research keys, and infusion instability. Recipe viewing does not unlock research; workbench transfer requires TC4: Modern. The dynamic wand and sceptre recipes are expanded into one static page per registered cap and rod. Other dynamic recipes, custom subclasses, and unrepresentable required ingredients/outputs are omitted with diagnostics. Full original NBT currently participates in subtype identity, including state such as stored charge, except for node jars (by structure only) and wands, staves and sceptres (by cap, rod and sceptre only; metadata and stored vis are ignored). Through MFCL's `LegacyItemProvider`, every non-damageable TC4 item with several metadata subtypes is its own host item (`thaumcraft:item_resource/meta_2`), and every wand, staff and sceptre build is its own host item (`thaumcraft:wand_casting/greatwood_gold_sceptre`); old code still sees the single original item.
 
-默认开发客户端包含 JEI。可通过 `-PwithJei=false` 关闭开发运行时依赖；实际安装时自行放入 JEI 模组 JAR。
+默认开发客户端包含 JEI。可通过 `-PwithJei=false` 关闭开发运行时依赖；实际安装时自行放入 JEI 模组 JAR。 Lib 独立开发运行使用 `:tc-modern-lib:runClient -PstandaloneLib=true`；安装原版 TC4、Baubles 和 MFCL 后可加入 `-PlibJeiSmokeTest` 检查未安装 TC4: Modern 时的原版配方。
 
 开发验收（须先准备完整 MFCL 和原版 TC4/Baubles 环境）：
 

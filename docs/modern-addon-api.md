@@ -26,3 +26,12 @@
 准备好原版 TC4 4.2.3.5、Baubles 和 MFCL 旧运行时后，可用独立游戏目录运行 `:tc4-modern:runClient -PgameDir=build/lib-api-smoke -PlibApiSmokeTest -PwithCurios=false -PwithJei=false -PwithFtbQuests=false`。结果写入该游戏目录的 `logs/tc4modern/lib-api-smoke.txt`；它覆盖法杖部件及 Vis 快照、节点/容器识别和一次战利品注册，不覆盖实际装备、Vis 消费或玩家扭曲同步。
 
 真实管道双向验收：准备隔离游戏目录及原版 TC4/Baubles 后运行 `:tc4-modern:runClient -PgameDir=build/aspect-tube-smoke -PaspectTubeSmokeTest -PwithCurios=false -PwithJei=false -PwithFtbQuests=false`，结果写到该目录下 `aspect-tube-smoke.txt`。测试检查按面连接、错误要素过滤、混合要素的选择以及双向传输。
+
+## 自定义法杖复用
+
+- `TcWandCrafting.pay(serverPlayer, stack, Map<String, Integer>, simulate)` 面向现代物品栈，按 TC4 奥术工作台规则检查并支付厘 Vis，拒绝长杖。输入栈不会被修改；成功后由调用方重新校验并写回返回的副本。
+- `TcWandPartRegistrar.rod/cap` 在原版注册新的杖芯、长杖芯或杖端。使用自己的唯一标签；重复注册会报错，调用方应在每个旧运行时生命周期管理自己的注册状态。长杖芯注册后的标签由原版追加 `_staff`。杖端只能表达一个基础倍率和一组共用特殊倍率的要素。
+- `TcWandCapacities.DEFAULT_PREFIX` 对应存放在旧法杖 NBT 的每要素容量，例如 `tcmodernlib_capacity_aer`，单位为厘 Vis。默认不影响没有该键的法杖。兼容已有 TCt 存档时，TCt 可在法杖使用前调用 `TcWandCapacities.registerPrefix("tc_t_capacity_")` 并保留返回的句柄；不要同时依赖多个实现同一规则的重定向。容量桥接要求 MFCL 支持重定向，只覆盖原版 `thaumcraft.` 调用点。
+- `TcSavedWandRecovery.register((runtime, wandTag) -> ...)` 在 MFCL 的原版 TC4 方块实体数据加载时回调，附属负责识别自己的 NBT、按需重建定义。应在区块加载前注册。TCt 的材料解析、专有物品转换、材质选择和 `tc_t_host_wand` 格式仍由 TCt 自己维护。
+
+`TcWandInteractions.Adapter` 可由附属提供代理栈创建、代理身份判断和状态写回；`TcWandInteractions` 负责临时换手及右键、持续使用和释放的转发。代理识别和保存格式仍由附属定义。

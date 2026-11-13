@@ -36,10 +36,13 @@ public final class TcSavedWandRecovery {
         if (HANDLERS.isEmpty() || !tile.getString("mfcl_legacy_block").startsWith("Thaumcraft:")
                 || !tile.contains("mfcl_legacy_nbt", Tag.TAG_BYTE_ARRAY)) return;
         byte[] bytes = tile.getByteArray("mfcl_legacy_nbt"); if (bytes.length == 0) return;
-        try { scan(NbtIo.readCompressed(new ByteArrayInputStream(bytes)), wand -> {
+        try (var stream = new java.io.DataInputStream(new java.io.BufferedInputStream(
+                new java.util.zip.GZIPInputStream(new ByteArrayInputStream(bytes))))) {
+            scan(NbtIo.read(stream, new NbtAccounter(16L * 1024 * 1024)), wand -> {
             for (var handler : HANDLERS) try { handler.accept(runtime, wand.copy()); }
             catch (RuntimeException failure) { LogUtils.getLogger().warn("TC4 saved wand recovery handler failed", failure); }
-        }); } catch (IOException | RuntimeException failure) { LogUtils.getLogger().warn("Cannot read saved TC4 wand data", failure); }
+            });
+        } catch (IOException | RuntimeException failure) { LogUtils.getLogger().warn("Cannot read saved TC4 wand data", failure); }
     }
     static void scan(Tag value, Consumer<CompoundTag> handler) {
         if (value instanceof CompoundTag compound) {
