@@ -1,5 +1,10 @@
 base { archivesName = 'tc-modern-lib' }
 
+repositories {
+    maven { url = 'https://maven.blamejared.com'; content { includeGroup 'mezz.jei' } }
+}
+
+
 // The API artifact has no Minecraft/Forge classes. The full mod also contains it.
 sourceSets { api }
 // Gradle's project dependency uses the classes variant during compilation.
@@ -8,6 +13,14 @@ sourceSets.main.output.classesDirs.from(sourceSets.api.output.classesDirs)
 // Tests use only MFCL's API JAR: the full mod registers its own RuntimeProvider service, which would clash with
 // the tests' fake runtime.
 dependencies {
+    compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge-api:${rootProject.jei_version}")
+    testImplementation fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}")
+    if (rootProject.devProperty('standaloneLib').getOrElse('false').toBoolean()) {
+        runtimeOnly fg.deobf(rootProject.mfclRuntimeDependency)
+        if (rootProject.devProperty('withJei').getOrElse('true').toBoolean())
+            runtimeOnly fg.deobf("mezz.jei:jei-${rootProject.minecraft_version}-forge:${rootProject.jei_version}")
+    }
     apiCompileOnly rootProject.mfclApiDependency
     implementation sourceSets.api.output
     testImplementation sourceSets.api.output
@@ -32,5 +45,20 @@ publishing.publications {
         artifactId = 'tc-modern-api'
         artifact(tasks.named('apiJar')) { classifier = null }
         artifact(tasks.named('apiSourcesJar')) { classifier = 'sources' }
+    }
+}
+
+// Standalone development run, useful for verifying the library without TC4: Modern installed.
+minecraft {
+    copyIdeResources = true
+    runs {
+        client {
+            workingDirectory rootProject.file(rootProject.devProperty('gameDir').getOrElse('run'))
+            if (providers.gradleProperty('libJeiSmokeTest').isPresent()) property 'tcmodernlib.jeiSmokeTest', 'true'
+            if (providers.gradleProperty('libNoJeiSmokeTest').isPresent()) property 'tcmodernlib.noJeiSmokeTest', 'true'
+            if (rootProject.devProperty('legacyRuntimeDir').isPresent())
+                property 'mfcl.legacyRuntimeDir', rootProject.file(rootProject.devProperty('legacyRuntimeDir').get()).absolutePath
+            mods { tcmodernlib { source sourceSets.main } }
+        }
     }
 }

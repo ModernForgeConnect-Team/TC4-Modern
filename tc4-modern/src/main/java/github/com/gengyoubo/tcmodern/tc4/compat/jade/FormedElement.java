@@ -1,6 +1,6 @@
 package github.com.gengyoubo.tcmodern.tc4.compat.jade;
 
-import github.com.gengyoubo.tcmodern.tc4.client.FormedStructures;
+import github.com.gengyoubo.tcmodern.lib.client.formed.FormedStructures;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;

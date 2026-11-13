@@ -17,6 +17,7 @@ public final class TcModernLib {
         github.com.gengyoubo.tcmodern.lib.scan.ModernScanning.install();
         LateCreativeVariants.install(context.getModEventBus());
         BookNetwork.register();
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(github.com.gengyoubo.tcmodern.lib.wand.TcSavedWandRecovery::chunkLoaded);
         context.getModEventBus().addListener(github.com.gengyoubo.tcmodern.lib.essentia.AspectCapabilities::register);
         // Research smithing pages show the smithing_transform recipes of every mod.
         github.com.gengyoubo.tcmodern.api.recipe.TcSmithingRecipes.register(MOD_ID,

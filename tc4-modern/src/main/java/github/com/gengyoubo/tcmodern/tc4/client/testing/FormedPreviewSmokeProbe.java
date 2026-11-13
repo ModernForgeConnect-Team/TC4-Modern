@@ -2,7 +2,7 @@ package github.com.gengyoubo.tcmodern.tc4.client.testing;
 
 import com.mojang.logging.LogUtils;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
-import github.com.gengyoubo.tcmodern.tc4.client.FormedStructures;
+import github.com.gengyoubo.tcmodern.lib.client.formed.FormedStructures;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.List;

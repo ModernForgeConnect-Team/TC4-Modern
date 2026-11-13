@@ -1,10 +1,10 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import github.com.gengyoubo.mfcl.api.LegacyRuntime;
 import github.com.gengyoubo.mfcl.api.LegacyStack;
-import github.com.gengyoubo.tcmodern.tc4.compat.jei.MultiblockCategory.Material;
-import github.com.gengyoubo.tcmodern.tc4.compat.jei.MultiblockCategory.Part;
-import github.com.gengyoubo.tcmodern.tc4.compat.jei.MultiblockCategory.Placed;
+import github.com.gengyoubo.tcmodern.lib.jei.MultiblockCategory.Material;
+import github.com.gengyoubo.tcmodern.lib.jei.MultiblockCategory.Part;
+import github.com.gengyoubo.tcmodern.lib.jei.MultiblockCategory.Placed;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

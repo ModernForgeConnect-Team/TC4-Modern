@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.client;
+package github.com.gengyoubo.tcmodern.lib.client.formed;
 
 import github.com.gengyoubo.mfcl.api.LegacyObject;
 import github.com.gengyoubo.mfcl.api.mla.LegacyConstructor;

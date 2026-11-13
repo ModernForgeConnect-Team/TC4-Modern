@@ -4,7 +4,7 @@ import github.com.gengyoubo.mfcl.api.*;
 import github.com.gengyoubo.mfcl.api.mla.*;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.*;
-import github.com.gengyoubo.tcmodern.tc4.client.FormedAccessors;
+import github.com.gengyoubo.tcmodern.lib.client.formed.FormedAccessors;
 import github.com.gengyoubo.tcmodern.tc4.content.*;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
 import github.com.gengyoubo.tcmodern.tc4.client.furnace.PrimalFurnaceScreen;

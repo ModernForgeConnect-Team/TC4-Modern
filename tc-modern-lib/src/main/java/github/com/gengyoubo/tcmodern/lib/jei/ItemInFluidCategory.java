@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -16,12 +16,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
 
 /** A world interaction, displayed without registering a new executable recipe. */
-final class ItemInFluidCategory implements IRecipeCategory<ItemInFluidCategory.Recipe> {
-    record Recipe(ItemStack ingredient, ItemStack result) {
-        Recipe { ingredient = ingredient.copyWithCount(1); result = result.copyWithCount(1); }
+public final class ItemInFluidCategory implements IRecipeCategory<ItemInFluidCategory.Recipe> {
+    public record Recipe(ItemStack ingredient, ItemStack result) {
+        public Recipe { ingredient = ingredient.copyWithCount(1); result = result.copyWithCount(1); }
     }
 
-    static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "item_in_fluid", Recipe.class);
+    public static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "item_in_fluid", Recipe.class);
     private static final int WIDTH = 160, HEIGHT = 82, ITEM_X = 22, WATER_X = 70, RESULT_X = 126, ROW = 32;
     private static final int INK = 0xFF505050;
     private final IDrawable icon;

@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import java.util.List;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;

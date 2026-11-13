@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipe;
@@ -24,8 +24,8 @@ import net.minecraft.world.item.TooltipFlag;
  * its usages are the recipes that cost it and the compound aspects it is part of, its recipe is what it is made of.
  * The amount is a recipe cost and never part of the identity.
  */
-record JeiAspect(TcAspect aspect, long amount) {
-    static final IIngredientType<JeiAspect> TYPE = () -> JeiAspect.class;
+public record JeiAspect(TcAspect aspect, long amount) {
+    public static final IIngredientType<JeiAspect> TYPE = () -> JeiAspect.class;
     /** The original aspects by tag, filled when JEI registers ingredients. */
     private static volatile Map<String, TcAspect> catalog = Map.of();
     private static volatile List<TcAspect> ordered = List.of();
@@ -39,17 +39,17 @@ record JeiAspect(TcAspect aspect, long amount) {
     static List<TcAspect> all() { return ordered; }
 
     /** A recipe cost; an aspect missing from the registry still shows, just without its components. */
-    static JeiAspect of(TcRecipe.AspectCost cost) {
+    public static JeiAspect of(TcRecipe.AspectCost cost) {
         var known = catalog.get(cost.tag());
         return new JeiAspect(known != null ? known : new TcAspect(cost.tag(), cost.color(), cost.texture(), List.of()), cost.amount());
     }
 
-    static JeiAspect of(String tag) {
+    public static JeiAspect of(String tag) {
         var known = catalog.get(tag);
         return new JeiAspect(known != null ? known : new TcAspect(tag, 0xFFFFFF, "", List.of()), 0);
     }
 
-    JeiAspect withAmount(long amount) { return new JeiAspect(aspect, amount); }
+    public JeiAspect withAmount(long amount) { return new JeiAspect(aspect, amount); }
 
     static String name(String tag) { return AspectIcons.name(tag); }
 

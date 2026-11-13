@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

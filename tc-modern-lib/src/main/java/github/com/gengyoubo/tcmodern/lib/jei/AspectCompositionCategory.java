@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspect;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -14,8 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 /** A compound aspect and the two aspects it is made of, as the Thaumonomicon's aspect pages listed it. */
-final class AspectCompositionCategory implements IRecipeCategory<TcAspect> {
-    static final RecipeType<TcAspect> TYPE = RecipeType.create("tc4modern", "aspect_composition", TcAspect.class);
+public final class AspectCompositionCategory implements IRecipeCategory<TcAspect> {
+    public static final RecipeType<TcAspect> TYPE = RecipeType.create("tc4modern", "aspect_composition", TcAspect.class);
     private static final int WIDTH = 120, HEIGHT = 34, SLOT_Y = 9;
     private static final int INK = 0xFF505050;
 

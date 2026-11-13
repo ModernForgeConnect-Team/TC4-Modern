@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.client;
+package github.com.gengyoubo.tcmodern.lib.client.formed;
 
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -11,7 +11,7 @@ import github.com.gengyoubo.mfcl.api.LegacyRuntime;
 import github.com.gengyoubo.mfcl.api.LegacyScene;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
-import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
+import github.com.gengyoubo.tcmodern.lib.TcModernLib;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,7 +27,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
-import static github.com.gengyoubo.tcmodern.tc4.client.FormedAccessors.*;
+import static github.com.gengyoubo.tcmodern.lib.client.formed.FormedAccessors.*;
 
 /**
  * TC4 multiblocks as they look once formed, built in MFCL preview scenes: the original WandManager forms the
@@ -35,7 +35,7 @@ import static github.com.gengyoubo.tcmodern.tc4.client.FormedAccessors.*;
  * places. Shared by the JEI multiblock page and the Jade icon. Ids match the JEI recipe ids. Single original blocks
  * get a scene of their own, so tile-rendered ones show in the unformed preview too. Client thread only.
  */
-@Mod.EventBusSubscriber(modid = Tc4Modern.MOD_ID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = TcModernLib.MOD_ID, value = Dist.CLIENT)
 public final class FormedStructures {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String TC = "Thaumcraft:";

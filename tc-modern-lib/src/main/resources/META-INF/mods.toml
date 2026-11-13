@@ -30,3 +30,10 @@ mandatory=true
 versionRange="[1.0.2,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.tcmodernlib]]
+modId="jei"
+mandatory=false
+versionRange="[15.20,16)"
+ordering="AFTER"
+side="CLIENT"

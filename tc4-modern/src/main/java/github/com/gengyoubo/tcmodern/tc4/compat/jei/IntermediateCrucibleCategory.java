@@ -1,6 +1,7 @@
 package github.com.gengyoubo.tcmodern.tc4.compat.jei;
 
 import com.mojang.logging.LogUtils;
+import github.com.gengyoubo.tcmodern.lib.jei.*;
 import github.com.gengyoubo.mfcl.api.LegacyStack;
 import github.com.gengyoubo.tcmodern.tc4.crucible.IntermediateRecipe;
 import java.util.ArrayList;

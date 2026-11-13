@@ -1,11 +1,11 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import github.com.gengyoubo.tcmodern.tc4.client.FormedStructures;
+import github.com.gengyoubo.tcmodern.lib.client.formed.FormedStructures;
 import java.util.List;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
@@ -48,7 +48,7 @@ import net.minecraftforge.client.model.data.ModelData;
  * Drag rotates, scrolling or clicking the layer label steps through the layers, clicking the form label switches
  * between the blocks to place and the formed structure.
  */
-final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Recipe> {
+public final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Recipe> {
     /**
      * One block of a structure. Nothing to render or list is allowed: the preview falls back to a marker.
      *
@@ -57,26 +57,26 @@ final class MultiblockCategory implements IRecipeCategory<MultiblockCategory.Rec
      * @param trigger   whether this is a block to right-click
      * @param legacyKey the original block, drawn by its own renderers when MFCL offers preview scenes; null for host blocks
      */
-    record Part(BlockState state, List<ItemStack> items, boolean trigger, String legacyKey, int metadata) {
-        Part { items = items.stream().map(stack -> stack.copyWithCount(1)).toList(); }
+    public record Part(BlockState state, List<ItemStack> items, boolean trigger, String legacyKey, int metadata) {
+        public Part { items = items.stream().map(stack -> stack.copyWithCount(1)).toList(); }
         Part(BlockState state, List<ItemStack> items, boolean trigger) { this(state, items, trigger, null, 0); }
         Part asTrigger() { return new Part(state, items, true, legacyKey, metadata); }
     }
 
-    record Placed(int x, int y, int z, Part part) { }
+    public record Placed(int x, int y, int z, Part part) { }
 
-    record Material(Part part, int count) { }
+    public record Material(Part part, int count) { }
 
     /**
      * @param research the original research key, empty when the structure needs none
      * @param tools    the wands, or the scribing tools, that build it
      */
-    record Recipe(String id, String research, List<Placed> blocks, int sizeX, int sizeY, int sizeZ, List<Material> materials,
+    public record Recipe(String id, String research, List<Placed> blocks, int sizeX, int sizeY, int sizeZ, List<Material> materials,
                   List<ItemStack> tools, List<JeiAspect> cost, List<ItemStack> results) {
-        Recipe { blocks = List.copyOf(blocks); materials = List.copyOf(materials); tools = List.copyOf(tools); cost = List.copyOf(cost); results = results.stream().map(ItemStack::copy).toList(); }
+        public Recipe { blocks = List.copyOf(blocks); materials = List.copyOf(materials); tools = List.copyOf(tools); cost = List.copyOf(cost); results = results.stream().map(ItemStack::copy).toList(); }
     }
 
-    static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "multiblock", Recipe.class);
+    public static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "multiblock", Recipe.class);
     private static final int WIDTH = 150, HEIGHT = 142;
     private static final int RESEARCH_Y = 12;
     private static final int VIEW_X = 0, VIEW_Y = 22, VIEW_W = 96, VIEW_H = 78;

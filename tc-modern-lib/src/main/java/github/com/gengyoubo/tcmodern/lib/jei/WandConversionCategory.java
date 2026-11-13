@@ -1,7 +1,7 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import java.util.List;
-import github.com.gengyoubo.tcmodern.tc4.client.FormedStructures;
+import github.com.gengyoubo.tcmodern.lib.client.formed.FormedStructures;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
@@ -18,11 +18,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 /** Right-clicking a placed block with a wand to turn it into a TC4 one, as the original BlockTable and WandManager do. */
-final class WandConversionCategory implements IRecipeCategory<WandConversionCategory.Recipe> {
+public final class WandConversionCategory implements IRecipeCategory<WandConversionCategory.Recipe> {
     /** @param note translation key of the line under the conversion */
-    record Recipe(ItemStack block, List<ItemStack> wands, ItemStack result, String note, String structure) {
-        Recipe { block = block.copyWithCount(1); wands = List.copyOf(wands); result = result.copyWithCount(1); }
-        Recipe(ItemStack block, List<ItemStack> wands, ItemStack result, String note) { this(block, wands, result, note, ""); }
+    public record Recipe(ItemStack block, List<ItemStack> wands, ItemStack result, String note, String structure) {
+        public Recipe { block = block.copyWithCount(1); wands = List.copyOf(wands); result = result.copyWithCount(1); }
+        public Recipe(ItemStack block, List<ItemStack> wands, ItemStack result, String note) { this(block, wands, result, note, ""); }
     }
 
     /** The preview draws the real placed structure; the invisible slot retains JEI lookup and hover behaviour. */
@@ -34,7 +34,7 @@ final class WandConversionCategory implements IRecipeCategory<WandConversionCate
         }
     };
 
-    static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "wand_conversion", Recipe.class);
+    public static final RecipeType<Recipe> TYPE = RecipeType.create("tc4modern", "wand_conversion", Recipe.class);
     private static final int WIDTH = 160, HEIGHT = 64, ROW = 26, BLOCK_X = 20, WAND_X = 72, RESULT_X = 124;
     private static final int INK = 0xFF505050;
     private final IDrawable icon;

@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import github.com.gengyoubo.mfcl.api.LegacyMappings;
 import github.com.gengyoubo.mfcl.api.LegacyRuntime;
@@ -14,12 +14,12 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.world.item.ItemStack;
 
-final class JeiRecipeConverter {
+public final class JeiRecipeConverter {
     private final LegacyRuntime runtime;
     private final Map<String, Set<LegacyStack>> variants = new HashMap<>();
     private final Map<LegacyStack, Optional<ItemStack>> converted = new HashMap<>();
 
-    JeiRecipeConverter(LegacyRuntime runtime, Collection<ItemStack> knownStacks, Set<String> wildcardKeys) {
+    public JeiRecipeConverter(LegacyRuntime runtime, Collection<ItemStack> knownStacks, Set<String> wildcardKeys) {
         this.runtime = runtime;
         if (wildcardKeys.isEmpty()) return;
         for (var stack : knownStacks) {
@@ -65,7 +65,7 @@ final class JeiRecipeConverter {
         return new JeiTcRecipe(recipe, inputs, output);
     }
 
-    Optional<ItemStack> map(LegacyStack value) {
+    public Optional<ItemStack> map(LegacyStack value) {
         if (value.metadata() == 32767) return Optional.empty();
         return converted.computeIfAbsent(value, old -> {
             try {

@@ -7,7 +7,7 @@ import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
 import github.com.gengyoubo.tcmodern.api.research.TcResearch;
 import github.com.gengyoubo.tcmodern.api.recipe.TcRecipeAccessors;
-import github.com.gengyoubo.tcmodern.tc4.client.FormedAccessors;
+import github.com.gengyoubo.tcmodern.lib.client.formed.FormedAccessors;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;

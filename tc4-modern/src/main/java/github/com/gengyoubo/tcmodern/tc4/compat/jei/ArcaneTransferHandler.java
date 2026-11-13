@@ -1,5 +1,6 @@
 package github.com.gengyoubo.tcmodern.tc4.compat.jei;
 
+import github.com.gengyoubo.tcmodern.lib.jei.*;
 import github.com.gengyoubo.mfcl.api.LegacyMappings;
 import github.com.gengyoubo.mfcl.api.LegacyStack;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;

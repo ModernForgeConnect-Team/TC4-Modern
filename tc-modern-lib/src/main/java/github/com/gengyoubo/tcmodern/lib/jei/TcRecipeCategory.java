@@ -1,4 +1,4 @@
-package github.com.gengyoubo.tcmodern.tc4.compat.jei;
+package github.com.gengyoubo.tcmodern.lib.jei;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
@@ -26,19 +26,19 @@ import net.minecraft.util.Mth;
  * scaled by {@link #SCALE}; items keep their centres, since JEI slots stay 16 px. Without the textures the page
  * falls back to plain slot frames.
  */
-final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
+public final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
     static final int MAX_ASPECTS = 16;
     static final int MAX_COMPONENTS = 16;
     private static final ResourceLocation BOOK = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/gui/gui_researchbook.png");
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/gui/gui_researchbook_overlay.png");
-    static final int WIDTH = 160, HEIGHT = 140;
+    public static final int WIDTH = 160, HEIGHT = 140;
     /**
      * Original page size relative to this one; the original page content is 112 px wide. 9/16 turns the arcane
      * grid's 32 px cells into vanilla's 18 px slot spacing and keeps the page shorter than JEI's usual limit.
      */
     private static final float SCALE = 0.5625F;
     private static final int LEFT = Math.round((WIDTH - 112 * SCALE) / 2), TOP = 4;
-    static final int RESEARCH_Y = HEIGHT - 12;
+    public static final int RESEARCH_Y = HEIGHT - 12;
     private static final int INSTABILITY_Y = RESEARCH_Y - 11, ASPECT = 18;
     /** Original page text colour. */
     private static final int INK = 0xFF505050;
@@ -128,15 +128,15 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
     }
 
     /** The right-hand page of the original open book, without the cover and spine, stretched to the given size. */
-    static void parchment(GuiGraphics graphics, int width, int height) {
+    public static void parchment(GuiGraphics graphics, int width, int height) {
         graphics.blit(BOOK, 0, 0, width, height, 258, 4, 234, 348, 512, 512);
     }
 
-    static boolean hasBookArt() { return available(BOOK) && available(OVERLAY); }
+    public static boolean hasBookArt() { return available(BOOK) && available(OVERLAY); }
 
     private static Component research(TcRecipe recipe) { return research(recipe.research()); }
 
-    static Component research(String key) {
+    public static Component research(String key) {
         if (key.isEmpty()) return Component.translatable("jei.tc4modern.no_research");
         return Component.translatable("jei.tc4modern.research", researchName(key));
     }
@@ -145,7 +145,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
      * The research's title as the Thaumonomicon shows it: the original language table first (it also holds the
      * names of {@code tc4_research} JSON research), then modern language files, else the key itself.
      */
-    static String researchName(String key) {
+    public static String researchName(String key) {
         String name = "tc.research_name." + key;
         String legacy = TcModernApi.runtime().map(runtime -> TcThaumonomicon.translate(runtime, name)).orElse(name);
         if (!legacy.isEmpty() && !legacy.equals(name)) return legacy;
@@ -153,8 +153,8 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
     }
 
     /** Original page coordinate to this page, for a 16 px item whose centre keeps its place. */
-    static int itemX(float x) { return Math.round(LEFT + (x + 8) * SCALE) - 8; }
-    static int itemY(float y) { return Math.round(TOP + (y + 8) * SCALE) - 8; }
+    public static int itemX(float x) { return Math.round(LEFT + (x + 8) * SCALE) - 8; }
+    public static int itemY(float y) { return Math.round(TOP + (y + 8) * SCALE) - 8; }
 
     private static int[] position(TcRecipe recipe, int index) {
         return switch (recipe.kind()) {
@@ -199,7 +199,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
     static final int CRUCIBLE_ASPECTS_PER_ROW = 5;
 
     /** Aspect {@code index} of {@code count} inside the crucible outline, in centred rows as the original page. */
-    static int[] crucibleAspect(int count, int index) {
+    public static int[] crucibleAspect(int count, int index) {
         int perRow = CRUCIBLE_ASPECTS_PER_ROW, rows = (count + perRow - 1) / perRow, row = index / perRow;
         int inRow = Math.min(perRow, count - row * perRow);
         int left = WIDTH / 2 - (inRow * ASPECT - 2) / 2;
@@ -207,7 +207,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
     }
 
     /** The crucible page art: the result frame, the crucible outline and the arrow dropping a catalyst into it. */
-    static void crucibleArt(GuiGraphics graphics) {
+    public static void crucibleArt(GuiGraphics graphics) {
         overlay(graphics, 0, 28, 0, 0, 0, 3, 56, 17);
         overlay(graphics, 0, 92, 0, 0, 0, 20, 56, 48);
         overlay(graphics, 42, 76, 0, 0, 100, 84, 11, 13);
@@ -226,7 +226,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
         pose.popPose();
     }
 
-    static void centered(GuiGraphics graphics, String text, int y) {
+    public static void centered(GuiGraphics graphics, String text, int y) {
         var font = Minecraft.getInstance().font;
         text = font.plainSubstrByWidth(text, WIDTH - 8);
         graphics.drawString(font, text, (WIDTH - font.width(text)) / 2, y, INK, false);
@@ -240,7 +240,7 @@ final class TcRecipeCategory implements IRecipeCategory<JeiTcRecipe> {
         return recipe.kind() == TcRecipe.Kind.ARCANE_SHAPED || recipe.kind() == TcRecipe.Kind.ARCANE_SHAPELESS;
     }
 
-    static void frame(GuiGraphics graphics, int x, int y) {
+    public static void frame(GuiGraphics graphics, int x, int y) {
         graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFF777777);
         graphics.fill(x, y, x + 16, y + 16, 0xFFE8E8E8);
     }

@@ -4,7 +4,7 @@ import github.com.gengyoubo.mfcl.api.*;
 import github.com.gengyoubo.mfcl.api.mla.*;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
-import github.com.gengyoubo.tcmodern.tc4.client.FormedAccessors;
+import github.com.gengyoubo.tcmodern.lib.client.formed.FormedAccessors;
 import github.com.gengyoubo.tcmodern.tc4.content.NodeReactorBlockEntity;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
 import java.nio.file.Files;
