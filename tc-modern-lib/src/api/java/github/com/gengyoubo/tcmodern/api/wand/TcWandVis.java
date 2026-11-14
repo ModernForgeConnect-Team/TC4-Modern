@@ -11,6 +11,10 @@ import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
 import github.com.gengyoubo.tcmodern.api.essentia.TcContainers;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.item.ItemStack;
+import thaumcraft.api.ThaumcraftApiHelper;
+import thaumcraft.api.aspects.AspectList;
+import thaumcraft.common.items.wands.ItemWandCasting;
 
 /** Original casting wand Vis. Units are centivis (100 = 1 displayed Vis), not research points or essentia. */
 public final class TcWandVis {
@@ -18,21 +22,21 @@ public final class TcWandVis {
     public record Snapshot(int capacity, Map<String,Integer> amounts) { public Snapshot { amounts = Map.copyOf(amounts); } }
     /** The updated stack must be written back by the caller after a successful non-simulated operation. */
     public record Consumption(boolean success, LegacyStack stack) { }
-    @LegacyType("net.minecraft.item.ItemStack") public interface Stack {
-        @LegacyMethod(name="func_77973_b", descriptor="()Lnet/minecraft/item/Item;") LegacyObject item();
+    @LegacyType(type = ItemStack.class) public interface Stack {
+        @LegacyMethod(name="getItem") LegacyObject item();
     }
-    @LegacyType("thaumcraft.common.items.wands.ItemWandCasting") public interface Wand {
-        @LegacyMethod(name="getMaxVis", descriptor="(Lnet/minecraft/item/ItemStack;)I") int max(LegacyObject stack);
-        @LegacyMethod(name="getAllVis", descriptor="(Lnet/minecraft/item/ItemStack;)Lthaumcraft/api/aspects/AspectList;") LegacyObject all(LegacyObject stack);
+    @LegacyType(type = ItemWandCasting.class) public interface Wand {
+        @LegacyMethod(name="getMaxVis") int max(LegacyObject stack);
+        @LegacyMethod(name="getAllVis") LegacyObject all(LegacyObject stack);
     }
-    @LegacyType("thaumcraft.api.aspects.AspectList") public interface Factory {
-        @LegacyConstructor(descriptor="()V") LegacyObject create();
+    @LegacyType(type = AspectList.class) public interface Factory {
+        @LegacyConstructor LegacyObject create();
     }
-    @LegacyType("thaumcraft.api.aspects.AspectList") public interface ListBuilder {
-        @LegacyMethod(name="add", descriptor="(Lthaumcraft/api/aspects/Aspect;I)Lthaumcraft/api/aspects/AspectList;") LegacyObject add(LegacyObject aspect, int amount);
+    @LegacyType(type = AspectList.class) public interface ListBuilder {
+        @LegacyMethod(name="add") LegacyObject add(LegacyObject aspect, int amount);
     }
-    @LegacyType("thaumcraft.api.ThaumcraftApiHelper") public interface Helper {
-        @LegacyMethod(name="consumeVisFromWand", descriptor="(Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/player/EntityPlayer;Lthaumcraft/api/aspects/AspectList;ZZ)Z", isStatic=true)
+    @LegacyType(type = ThaumcraftApiHelper.class) public interface Helper {
+        @LegacyMethod(name="consumeVisFromWand", isStatic=true)
         boolean consume(LegacyObject stack, LegacyObject player, LegacyObject aspects, boolean actual, boolean crafting);
     }
     private static void require(LegacyRuntime runtime) {

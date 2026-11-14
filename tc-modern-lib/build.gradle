@@ -48,6 +48,23 @@ publishing.publications {
     }
 }
 
+// MLA contracts may name original classes with class literals (@LegacyType(type = EntityPlayer.class)).
+// The member-less stubs are built from a prepared MFCL 1.7.10 runtime and the original Thaumcraft JAR.
+def legacyRuntime = rootProject.devProperty('legacyRuntimeDir')
+        .map { rootProject.file(it) }
+        .getOrElse(rootProject.file('run/mfcl/runtime/1.7.10'))
+def legacyMods = rootProject.fileTree(new File(
+        rootProject.file(rootProject.devProperty('gameDir').getOrElse('run')), 'mods')) {
+    include 'Thaumcraft-*.jar'
+}
+ext.mfclDirect = [
+        runtime : legacyRuntime,
+        mods    : legacyMods,
+        names   : ['api', 'main'],
+        packaged: false,
+]
+apply from: rootProject.file('gradle/mfcl-direct.gradle')
+
 // Standalone development run, useful for verifying the library without TC4: Modern installed.
 minecraft {
     copyIdeResources = true

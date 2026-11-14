@@ -1,0 +1,248 @@
+// MFCL direct source set: write addon classes against original Minecraft 1.7.10 with MCP names
+// (import net.minecraft.entity.player.EntityPlayer; player.getCurrentArmor(3)), compiled against a deobfuscated copy of
+// the prepared MFCL runtime and reobfuscated to SRG names, then packaged under META-INF/mfcl/direct/.
+// See docs/direct-classes.md. Self-contained: copy this file into an addon and apply it.
+//
+//   ext.mfclDirect = [
+//       sourceSet: 'direct',                                        // default 'direct' (src/direct/java)
+//       runtime  : file('run/mfcl/runtime/1.7.10'),                 // prepared MFCL runtime (run the game once with MFCL)
+//       mods     : fileTree('run/mods') { include 'Thaumcraft-*.jar' }, // original mods the direct code imports
+//       host     : files(sourceSets.main.java.classesDirectory),    // host contracts the direct classes implement
+//       mappings : 'de.oceanlabs.mcp:mcp_stable:12-1.7.10@zip',     // default
+//       packaged : true,                                            // add to processResources (dev runs and the JAR)
+//       names    : ['main'],                                        // host source sets that get member-less class
+//                                                                   // stubs for @LegacyType(type = EntityPlayer.class)
+//   ]
+//   apply from: 'gradle/mfcl-direct.gradle'
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.FieldVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.commons.ClassRemapper
+import org.objectweb.asm.commons.Remapper
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath 'org.ow2.asm:asm-commons:9.7.1' }
+}
+
+def cfg = project.ext.mfclDirect
+String setName = cfg.sourceSet ?: 'direct'
+File runtime = file(cfg.runtime)
+File srgJar = new File(runtime, 'minecraft-forge-1.7.10-srg.jar')
+def mods = cfg.mods ?: files()
+def host = cfg.host ?: files(sourceSets.main.java.classesDirectory)
+def libraries = fileTree(runtime) { include '*.jar'; exclude srgJar.name }
+def work = layout.buildDirectory.dir("mfcl-direct/${setName}")
+
+repositories {
+    maven { url 'https://maven.minecraftforge.net/'; content { includeGroup 'de.oceanlabs.mcp' } }
+}
+def set = sourceSets.maybeCreate(setName)
+def mappings = configurations.create("${setName}McpMappings") { canBeConsumed = false; canBeResolved = true; transitive = false }
+dependencies.add(mappings.name, cfg.mappings ?: 'de.oceanlabs.mcp:mcp_stable:12-1.7.10@zip')
+
+/** SRG member name -> MCP name, from fields.csv and methods.csv. */
+def readNames = { File zip ->
+    def names = [:]
+    new ZipFile(zip).withCloseable { archive ->
+        ['fields.csv', 'methods.csv'].each { csv ->
+            def entry = archive.getEntry(csv)
+            if (entry == null) throw new GradleException("MCP mappings ${zip.name} have no ${csv}")
+            archive.getInputStream(entry).getText('UTF-8').readLines().drop(1).each { line ->
+                def columns = line.split(',', -1)
+                if (columns.length >= 2 && columns[0] && columns[1]) names[columns[0]] = columns[1]
+            }
+        }
+    }
+    names
+}
+
+/** Class name -> [superName, interfaces, members: "mcpName descriptor" -> srgName] for one class file. */
+def indexClass = { byte[] bytes, Map names, Map classes ->
+    def info = [superName: null, interfaces: [], members: [:]]
+    String owner = null
+    new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+        @Override void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+            owner = name; info.superName = superName; info.interfaces = (interfaces ?: []) as List
+        }
+        @Override FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+            def mcp = names[name]; if (mcp) info.members["${mcp} ${descriptor}".toString()] = name; null
+        }
+        @Override MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+            def mcp = names[name]; if (mcp) info.members["${mcp}${descriptor}".toString()] = name; null
+        }
+    }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES)
+    classes[owner] = info
+}
+
+def eachClassInJar = { File jar, Closure action ->
+    new ZipFile(jar).withCloseable { archive ->
+        archive.entries().each { ZipEntry entry ->
+            if (!entry.directory && entry.name.endsWith('.class')) action(archive.getInputStream(entry).bytes)
+        }
+    }
+}
+
+def deobf = tasks.register("${setName}DeobfMinecraft") {
+    group = 'mfcl direct'
+    description = 'Copy the prepared SRG runtime with MCP member names, as the direct source set compile classpath.'
+    def output = work.map { it.file('minecraft-forge-1.7.10-mcp.jar') }
+    inputs.file(srgJar)
+    inputs.files(mappings)
+    outputs.file(output)
+    doLast {
+        if (!srgJar.isFile()) throw new GradleException("No prepared MFCL runtime at ${srgJar}; start the game once with MFCL installed")
+        def names = readNames(mappings.singleFile)
+        def remapper = new Remapper() {
+            @Override String mapMethodName(String owner, String name, String descriptor) { names[name] ?: name }
+            @Override String mapFieldName(String owner, String name, String descriptor) { names[name] ?: name }
+        }
+        File target = output.get().asFile
+        target.parentFile.mkdirs()
+        new ZipFile(srgJar).withCloseable { archive ->
+            new ZipOutputStream(new FileOutputStream(target)).withCloseable { out ->
+                archive.entries().each { ZipEntry entry ->
+                    if (entry.directory || entry.name.startsWith('META-INF/') && (entry.name.endsWith('.SF') || entry.name.endsWith('.RSA'))) return
+                    byte[] bytes = archive.getInputStream(entry).bytes
+                    if (entry.name.endsWith('.class')) {
+                        def reader = new ClassReader(bytes)
+                        // Vanilla keeps generic-parameter overrides (CommandBase.compareTo(Object)) only as synthetic
+                        // methods (obfuscation also dropped ACC_BRIDGE), which javac ignores. Show synthetic methods whose
+                        // name and parameters have no other method, as a source build would declare them; covariant-return
+                        // bridges stay synthetic so they cannot make calls ambiguous.
+                        def declared = [] as Set
+                        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+                            @Override MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                                if ((access & Opcodes.ACC_SYNTHETIC) == 0) declared.add(name + descriptor.substring(0, descriptor.indexOf(')') + 1)); null
+                            }
+                        }, ClassReader.SKIP_CODE)
+                        def writer = new ClassWriter(0)
+                        reader.accept(new ClassVisitor(Opcodes.ASM9, new ClassRemapper(writer, remapper)) {
+                            @Override MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                                if ((access & Opcodes.ACC_SYNTHETIC) != 0 && !declared.contains(name + descriptor.substring(0, descriptor.indexOf(')') + 1)))
+                                    access &= ~(Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC)
+                                super.visitMethod(access, name, descriptor, signature, exceptions)
+                            }
+                        }, 0)
+                        bytes = writer.toByteArray()
+                    }
+                    out.putNextEntry(new ZipEntry(entry.name)); out.write(bytes); out.closeEntry()
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    // Original classes first: names that collide with host classes resolve to the original ones, as at runtime.
+    add(set.compileOnlyConfigurationName, files(deobf))
+    add(set.compileOnlyConfigurationName, libraries)
+    add(set.compileOnlyConfigurationName, mods)
+    add(set.compileOnlyConfigurationName, host)
+}
+tasks.named(set.compileJavaTaskName, JavaCompile) { options.release = 8 }
+
+def reobf = tasks.register("${setName}Reobf") {
+    group = 'mfcl direct'
+    description = 'Rename MCP member references and overrides in the direct classes to the SRG names of the original runtime.'
+    def output = work.map { it.dir('reobf') }
+    def classes = set.output.classesDirs
+    inputs.files(classes)
+    inputs.files(mappings)
+    inputs.file(srgJar)
+    inputs.files(mods)
+    outputs.dir(output)
+    doLast {
+        def names = readNames(mappings.singleFile)
+        def hierarchy = [:]
+        eachClassInJar(srgJar) { bytes -> indexClass(bytes, names, hierarchy) }
+        mods.files.each { jar -> eachClassInJar(jar) { bytes -> indexClass(bytes, names, hierarchy) } }
+        def compiled = classes.asFileTree.matching { include '**/*.class' }
+        // Direct classes join the hierarchy so their own overrides of original methods are renamed too.
+        compiled.files.each { file -> indexClass(file.bytes, [:], hierarchy) }
+        def srgName = { String owner, String key ->
+            def queue = [owner] as LinkedList, seen = [] as Set
+            while (!queue.isEmpty()) {
+                String current = queue.removeFirst()
+                if (current == null || !seen.add(current)) continue
+                def info = hierarchy[current]
+                if (info == null) continue
+                def found = info.members[key]
+                if (found) return found
+                queue.add(info.superName); queue.addAll(info.interfaces)
+            }
+            null
+        }
+        def remapper = new Remapper() {
+            @Override String mapMethodName(String owner, String name, String descriptor) {
+                if (name.startsWith('<') || owner.startsWith('[')) return name
+                srgName(owner, "${name}${descriptor}".toString()) ?: name
+            }
+            @Override String mapFieldName(String owner, String name, String descriptor) {
+                srgName(owner, "${name} ${descriptor}".toString()) ?: name
+            }
+        }
+        File target = output.get().asFile
+        project.delete(target)
+        classes.each { File root ->
+            if (!root.isDirectory()) return
+            project.fileTree(root).matching { include '**/*.class' }.each { File file ->
+                def writer = new ClassWriter(0)
+                new ClassReader(file.bytes).accept(new ClassRemapper(writer, remapper), 0)
+                File out = new File(target, root.toPath().relativize(file.toPath()).toString())
+                out.parentFile.mkdirs(); out.bytes = writer.toByteArray()
+            }
+        }
+    }
+}
+
+// Member-less stubs of every original class, appended after the host classpath of the source sets in `names`
+// (default ['main']): MLA contracts can write @LegacyType(type = EntityPlayer.class) while host classes of the same
+// name still win, and any accidental use of an original member in host code fails to compile.
+def legacyNames = tasks.register("${setName}LegacyNames") {
+    group = 'mfcl direct'
+    description = 'Member-less stubs of the original classes, for class literals in host MLA contracts.'
+    def output = work.map { it.file('legacy-names-1.7.10.jar') }
+    inputs.file(srgJar)
+    inputs.files(mods)
+    outputs.file(output)
+    doLast {
+        if (!srgJar.isFile()) throw new GradleException("No prepared MFCL runtime at ${srgJar}; start the game once with MFCL installed")
+        File target = output.get().asFile
+        target.parentFile.mkdirs()
+        def written = [] as Set
+        new ZipOutputStream(new FileOutputStream(target)).withCloseable { out ->
+            ([srgJar] + mods.files.toList()).each { File jar ->
+                eachClassInJar(jar) { byte[] bytes ->
+                    def writer = new ClassWriter(0)
+                    String className = null
+                    new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9, writer) {
+                        @Override void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                            className = name
+                            super.visit(version, access, name, null, 'java/lang/Object', null)
+                        }
+                        @Override void visitSource(String source, String debug) { }
+                        @Override org.objectweb.asm.AnnotationVisitor visitAnnotation(String descriptor, boolean visible) { null }
+                        @Override FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) { null }
+                        @Override MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) { null }
+                    }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES)
+                    if (className == null || className == 'module-info' || className.endsWith('package-info') || !written.add(className)) return
+                    out.putNextEntry(new ZipEntry(className + '.class')); out.write(writer.toByteArray()); out.closeEntry()
+                }
+            }
+        }
+    }
+}
+(cfg.names == null ? ['main'] : cfg.names).each { String hostSet ->
+    tasks.named(sourceSets.getByName(hostSet).compileJavaTaskName, JavaCompile) { classpath = classpath + files(legacyNames) }
+}
+
+if (cfg.packaged == null || cfg.packaged) {
+    tasks.named('processResources', ProcessResources) { from(reobf) { into 'META-INF/mfcl/direct' } }
+}

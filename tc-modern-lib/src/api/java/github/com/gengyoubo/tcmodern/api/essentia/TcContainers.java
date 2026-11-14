@@ -9,18 +9,21 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.item.ItemStack;
+import thaumcraft.api.aspects.IAspectContainer;
+import thaumcraft.api.aspects.IEssentiaContainerItem;
 
 /** Read original TC4 aspect containers by their actual public interfaces, including addon implementations. */
 public final class TcContainers {
     private TcContainers() { }
-    @LegacyType("thaumcraft.api.aspects.IAspectContainer") public interface Container {
-        @LegacyMethod(name="getAspects", descriptor="()Lthaumcraft/api/aspects/AspectList;") LegacyObject aspects();
+    @LegacyType(type = IAspectContainer.class) public interface Container {
+        @LegacyMethod(name="getAspects") LegacyObject aspects();
     }
-    @LegacyType("thaumcraft.api.aspects.IEssentiaContainerItem") public interface ItemContainer {
-        @LegacyMethod(name="getAspects", descriptor="(Lnet/minecraft/item/ItemStack;)Lthaumcraft/api/aspects/AspectList;") LegacyObject aspects(LegacyObject stack);
+    @LegacyType(type = IEssentiaContainerItem.class) public interface ItemContainer {
+        @LegacyMethod(name="getAspects") LegacyObject aspects(LegacyObject stack);
     }
-    @LegacyType("net.minecraft.item.ItemStack") public interface Stack {
-        @LegacyMethod(name="func_77973_b", descriptor="()Lnet/minecraft/item/Item;") LegacyObject item();
+    @LegacyType(type = ItemStack.class) public interface Stack {
+        @LegacyMethod(name="getItem") LegacyObject item();
     }
     /** Empty optional means unsupported; a present empty map means a supported but empty container. */
     public static Optional<Map<String, Integer>> block(LegacyRuntime runtime, LegacyObject tile) {

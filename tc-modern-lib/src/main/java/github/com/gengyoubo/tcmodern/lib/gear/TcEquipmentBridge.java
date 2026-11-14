@@ -8,13 +8,14 @@ import github.com.gengyoubo.mfcl.api.mla.LegacyType;
 import github.com.gengyoubo.mfcl.api.spi.LegacyRedirectProvider;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.item.ItemStack;
 
 /** Adapts modern armor effects to the totals calculated by the original TC4. */
 public final class TcEquipmentBridge implements LegacyRedirectProvider {
     private static final String PLAYER = "Lnet/minecraft/entity/player/EntityPlayer;";
-    @LegacyType("net.minecraft.entity.player.EntityPlayer") public interface Player {
-        @LegacyMethod(name="func_82169_q", descriptor="(I)Lnet/minecraft/item/ItemStack;") LegacyObject armor(int slot);
+    @LegacyType(type = EntityPlayer.class) public interface Player {
+        @LegacyMethod(name="getCurrentArmor") LegacyObject armor(int slot);
     }
     @Override public void register(LegacyRedirects redirects) {
         redirects.redirect("thaumcraft.", "thaumcraft.common.items.wands.WandManager", "getTotalVisDiscount",

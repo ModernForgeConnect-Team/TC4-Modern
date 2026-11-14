@@ -8,13 +8,14 @@ import java.util.Map;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import thaumcraft.common.items.wands.ItemWandCasting;
 
 /** Modern ItemStack convenience for the original arcane workbench's wand check and Vis consumption. */
 public final class TcWandCrafting {
     private TcWandCrafting() { }
-    @LegacyType("thaumcraft.common.items.wands.ItemWandCasting") public interface Wand {
-        @LegacyMethod(name="isStaff", descriptor="(Lnet/minecraft/item/ItemStack;)Z") boolean staff(LegacyObject stack);
-        @LegacyMethod(name="isSceptre", descriptor="(Lnet/minecraft/item/ItemStack;)Z") boolean sceptre(LegacyObject stack);
+    @LegacyType(type = ItemWandCasting.class) public interface Wand {
+        @LegacyMethod(name="isStaff") boolean staff(LegacyObject stack);
+        @LegacyMethod(name="isSceptre") boolean sceptre(LegacyObject stack);
     }
     /** True for a casting wand or sceptre accepted by TC4's workbench, but false for a staff. */
     public static boolean canCraftWith(ItemStack stack) { return kind(stack, false); }
