@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:thaumcraft",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:wand_casting/wood_iron"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.novice_wand.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.novice_wand.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "craft_wand": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

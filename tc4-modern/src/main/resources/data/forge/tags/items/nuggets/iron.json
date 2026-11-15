@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:iron_nugget",
+    "thaumcraft:item_nugget/meta_0"
+  ]
+}

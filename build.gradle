@@ -1,11 +1,11 @@
 plugins {
     id 'base'
     id 'net.minecraftforge.gradle' version '6.0.54' apply false
-    id 'mfcl.direct' version '1.2.0-dev10'
+    id 'mfcl.direct' version '1.2.0'
 }
 dependencies {
     legacyMaven 'curse.maven:thaumcraft-223628:2227552'
-    legacyMaven 'curse.maven:baubles-227083:2224857'
+    //legacyMaven 'curse.maven:baubles-227083:2224857'改用Corios API
 }
 // Machine-specific paths stay out of the shared Gradle properties and Git.
 def developerProperties = new Properties()

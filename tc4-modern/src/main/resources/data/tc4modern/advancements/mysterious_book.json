@@ -1,0 +1,32 @@
+{
+  "parent": "tc4modern:novice_wand",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:item_thaumonomicon"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.mysterious_book.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.mysterious_book.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtain_book": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "thaumcraft:item_thaumonomicon"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -53,10 +53,11 @@ publishing.publications {
 def legacyRuntime = rootProject.devProperty('legacyRuntimeDir')
         .map { rootProject.file(it) }
         .getOrElse(rootProject.file('run/mfcl/runtime/1.7.10'))
-def legacyMods = rootProject.fileTree(new File(
+def localLegacyMods = rootProject.fileTree(new File(
         rootProject.file(rootProject.devProperty('gameDir').getOrElse('run')), 'mods')) {
     include 'Thaumcraft-*.jar'
 }
+def legacyMods = files(localLegacyMods, rootProject.configurations.legacyMaven)
 ext.mfclDirect = [
         runtime : legacyRuntime,
         mods    : legacyMods,

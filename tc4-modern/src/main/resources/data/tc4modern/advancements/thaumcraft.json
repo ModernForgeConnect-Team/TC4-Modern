@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "tc4modern:element_workbook"
+      "item": "thaumcraft:item_thaumonomicon"
     },
     "title": {
       "translate": "advancement.tc4modern.thaumcraft.title"
@@ -9,7 +9,7 @@
     "description": {
       "translate": "advancement.tc4modern.thaumcraft.description"
     },
-    "background": "minecraft:textures/block/stone.png",
+    "background": "minecraft:textures/block/dirt.png",
     "frame": "task",
     "show_toast": true,
     "announce_to_chat": true,

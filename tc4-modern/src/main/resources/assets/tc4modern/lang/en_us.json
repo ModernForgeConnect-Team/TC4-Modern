@@ -1,4 +1,8 @@
 {
+  "advancement.tc4modern.novice_wand.title": "Novice Wand",
+  "advancement.tc4modern.novice_wand.description": "Craft an iron-capped wooden wand",
+  "advancement.tc4modern.mysterious_book.title": "A Mysterious Book",
+  "advancement.tc4modern.mysterious_book.description": "Obtain the Thaumonomicon",
   "advancement.tc4modern.thaumcraft.title": "Thaumcraft",
   "advancement.tc4modern.thaumcraft.description": "Enter the world of Thaumcraft",
   "ftbquests.task.tc4modern.research": "Thaumonomicon Research",
