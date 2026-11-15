@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.world.item.ItemStack;
+import thaumcraft.common.items.wands.ItemWandCasting;
 
 /**
  * Every wand, staff and sceptre build the original recipes can craft, fully charged, for the wand creative tab.

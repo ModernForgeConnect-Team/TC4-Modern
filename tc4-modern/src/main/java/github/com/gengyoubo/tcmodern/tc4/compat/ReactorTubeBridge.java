@@ -8,6 +8,8 @@ import github.com.gengyoubo.tcmodern.tc4.content.NodeReactorBlockEntity;
 import github.com.gengyoubo.tcmodern.tc4.content.PrimalFurnaceBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.util.ForgeDirection;
+import thaumcraft.common.tiles.TileTube;
 
 /** Makes the native reactor visible to TC4's tube connection and suction queries. */
 public final class ReactorTubeBridge implements LegacyRedirectProvider {
@@ -57,15 +59,15 @@ public final class ReactorTubeBridge implements LegacyRedirectProvider {
         return call.proceed();
     }
 
-    @LegacyType("net.minecraftforge.common.util.ForgeDirection") public interface Direction {
+    @LegacyType(type = ForgeDirection.class) public interface Direction {
         @LegacyField(name="offsetX", descriptor="I") int x();
         @LegacyField(name="offsetY", descriptor="I") int y();
         @LegacyField(name="offsetZ", descriptor="I") int z();
     }
-    @LegacyType("thaumcraft.common.tiles.TileTube") public interface TubeFactory {
+    @LegacyType(type= TileTube.class) public interface TubeFactory {
         @LegacyConstructor(descriptor="()V") LegacyObject create();
     }
-    @LegacyType("thaumcraft.common.tiles.TileTube") public interface Tube {
+    @LegacyType(type=TileTube.class) public interface Tube {
         @LegacyField(name="essentiaAmount", descriptor="I") void amount(int amount);
         @LegacyMethod(name="setSuction", descriptor="(Lthaumcraft/api/aspects/Aspect;I)V") void suction(LegacyObject aspect, int amount);
     }
