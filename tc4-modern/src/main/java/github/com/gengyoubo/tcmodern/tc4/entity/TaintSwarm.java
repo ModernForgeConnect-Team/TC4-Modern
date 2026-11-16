@@ -9,6 +9,8 @@ import github.com.gengyoubo.tcmodern.tc4.world.Tc4ModernWorldgen;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -22,12 +24,18 @@ import net.minecraft.world.phys.Vec3;
 /** Flying cloud of taint particles; attacks nearby players and applies weakness. */
 public final class TaintSwarm extends TaintCow {
     private static final String LEGACY_CLASS = "thaumcraft.common.entities.monster.EntityTaintSwarm";
+    private static final SoundEvent SWARM_ATTACK = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("thaumcraft", "swarmattack"));
     private int attackCooldown;
     private int damageBonus;
     private boolean summoned;
     private Vec3 flightTarget;
     public TaintSwarm(EntityType<? extends TaintSwarm> type, Level level) { super(type, level); setNoGravity(true); }
     @Override protected String legacyClass() { return LEGACY_CLASS; }
+    @Override protected SoundEvent getAmbientSound() { return null; }
+    @Override protected SoundEvent getHurtSound(DamageSource source) { return SWARM_ATTACK; }
+    @Override protected SoundEvent getDeathSound() { return SWARM_ATTACK; }
+    @Override protected float getSoundVolume() { return 0.1F; }
+    @Override protected void playStepSound(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { }
     public static AttributeSupplier.Builder swarmAttributes() {
         return TaintCow.attributes().add(Attributes.MAX_HEALTH, 30).add(Attributes.ATTACK_DAMAGE, 2).add(Attributes.MOVEMENT_SPEED, 0.25);
     }
@@ -61,6 +69,7 @@ public final class TaintSwarm extends TaintCow {
                 Vec3 motion = target.getDeltaMovement();
                 if (doHurtTarget(target)) target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100));
                 target.setDeltaMovement(motion);
+                playSound(SWARM_ATTACK, 0.3F, 0.9F + random.nextFloat() * 0.2F);
             }
         } else {
             if (summoned) { hurt(damageSources().generic(), 5); return; }

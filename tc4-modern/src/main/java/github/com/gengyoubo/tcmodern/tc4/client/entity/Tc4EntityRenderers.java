@@ -127,40 +127,9 @@ public final class Tc4EntityRenderers {
         @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint entity) { return net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS; }
     }
     private static final class ModernGolemRenderer extends net.minecraft.client.renderer.entity.MobRenderer<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem, ModernGolemModel> {
-        private static final ResourceLocation FLOAT_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/fishing_hook.png");
         ModernGolemRenderer(EntityRendererProvider.Context context) { super(context, new ModernGolemModel(), 0.3F); addLayer(new GolemCoreLayer(this, context.getItemRenderer())); addLayer(new GolemItemLayer(this, context.getItemRenderer())); addLayer(new GolemRodLayer(this, context.getItemRenderer())); }
         @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem entity) {
             return ResourceLocation.fromNamespaceAndPath(TC, "textures/models/golem_" + entity.material().id() + ".png");
-        }
-        @Override public void render(github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem golem, float yaw, float partialTick, com.mojang.blaze3d.vertex.PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light) {
-            super.render(golem, yaw, partialTick, pose, buffers, light);
-            var water = golem.fishingPosition().orElse(null);
-            if (water == null || golem.isInvisible()) return;
-            double x = net.minecraft.util.Mth.lerp(partialTick, golem.xo, golem.getX());
-            double y = net.minecraft.util.Mth.lerp(partialTick, golem.yo, golem.getY());
-            double z = net.minecraft.util.Mth.lerp(partialTick, golem.zo, golem.getZ());
-            float bx = (float)(water.getX() + 0.5 - x), by = (float)(water.getY() + 1.0 - y), bz = (float)(water.getZ() + 0.5 - z);
-            pose.pushPose(); pose.translate(bx, by, bz); pose.scale(0.25F, 0.25F, 0.25F);
-            pose.mulPose(entityRenderDispatcher.cameraOrientation()); pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180));
-            var buffer = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entityCutout(FLOAT_TEXTURE));
-            floatVertex(buffer, pose.last(), -0.5F, -0.5F, 0, 1, light);
-            floatVertex(buffer, pose.last(), 0.5F, -0.5F, 1, 1, light);
-            floatVertex(buffer, pose.last(), 0.5F, 0.5F, 1, 0, light);
-            floatVertex(buffer, pose.last(), -0.5F, 0.5F, 0, 0, light);
-            pose.popPose();
-            float angle = net.minecraft.util.Mth.lerp(partialTick, golem.yBodyRotO, golem.yBodyRot) * net.minecraft.util.Mth.DEG_TO_RAD;
-            float sx = -0.28F * net.minecraft.util.Mth.cos(angle) - 0.30F * net.minecraft.util.Mth.sin(angle);
-            float sz = -0.28F * net.minecraft.util.Mth.sin(angle) + 0.30F * net.minecraft.util.Mth.cos(angle);
-            var line = buffers.getBuffer(net.minecraft.client.renderer.RenderType.lineStrip());
-            var matrix = pose.last();
-            for (int i = 0; i <= 16; i++) {
-                float t = i / 16.0F;
-                float lx = net.minecraft.util.Mth.lerp(t, sx, bx), ly = net.minecraft.util.Mth.lerp(t, 0.82F, by) - 0.15F * 4 * t * (1 - t), lz = net.minecraft.util.Mth.lerp(t, sz, bz);
-                line.vertex(matrix.pose(), lx, ly, lz).color(25, 25, 25, 255).normal(matrix.normal(), 0, 1, 0).endVertex();
-            }
-        }
-        private static void floatVertex(com.mojang.blaze3d.vertex.VertexConsumer buffer, com.mojang.blaze3d.vertex.PoseStack.Pose pose, float x, float y, float u, float v, int light) {
-            buffer.vertex(pose.pose(), x, y, 0).color(255, 255, 255, 255).uv(u, v).overlayCoords(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).uv2(light).normal(pose.normal(), 0, 1, 0).endVertex();
         }
     }
     private static final class GolemRodLayer extends net.minecraft.client.renderer.entity.layers.RenderLayer<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem, ModernGolemModel> {

@@ -53,6 +53,32 @@ public final class Tc4Items {
             () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.SMALL_TAINT_TENTACLE, 0x3d2444, 0xc887bd, new Item.Properties()));
     public static final RegistryObject<Item> GIANT_TAINT_TENTACLE_SPAWN_EGG = ITEMS.register("giant_taint_tentacle_spawn_egg",
             () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.GIANT_TAINT_TENTACLE, 0x2d1833, 0xae69ad, new Item.Properties()));
+    public static final RegistryObject<Item> WISP_SPAWN_EGG = ITEMS.register("wisp_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.WISP, 0xffc0ff, 0xffffff, new Item.Properties()));
+    public static final RegistryObject<Item> FIRE_BAT_SPAWN_EGG = ITEMS.register("fire_bat_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.FIRE_BAT, 0xffc0ff, 0xc00000, new Item.Properties()));
+    public static final RegistryObject<Item> PECH_SPAWN_EGG = ITEMS.register("pech_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.PECH, 0xffc0ff, 0x400040, new Item.Properties()));
+    public static final RegistryObject<Item> MIND_SPIDER_SPAWN_EGG = ITEMS.register("mind_spider_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.MIND_SPIDER, 0xaaaaaa, 0x404040, new Item.Properties()));
+    public static final RegistryObject<Item> ELDRITCH_GUARDIAN_SPAWN_EGG = ITEMS.register("eldritch_guardian_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_GUARDIAN, 0x222222, 0x404040, new Item.Properties()));
+    public static final RegistryObject<Item> ELDRITCH_WARDEN_SPAWN_EGG = ITEMS.register("eldritch_warden_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_WARDEN, 0x552222, 0x404040, new Item.Properties()));
+    public static final RegistryObject<Item> CULTIST_KNIGHT_SPAWN_EGG = ITEMS.register("cultist_knight_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_KNIGHT, 0xff5055, 0x000080, new Item.Properties()));
+    public static final RegistryObject<Item> CULTIST_CLERIC_SPAWN_EGG = ITEMS.register("cultist_cleric_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_CLERIC, 0xff5055, 0x800000, new Item.Properties()));
+    public static final RegistryObject<Item> CULTIST_LEADER_SPAWN_EGG = ITEMS.register("cultist_leader_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_LEADER, 0xff5055, 0x505050, new Item.Properties()));
+    public static final RegistryObject<Item> CULTIST_PORTAL_SPAWN_EGG = ITEMS.register("cultist_portal_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_PORTAL, 0xff5055, 0xff50ff, new Item.Properties()));
+    public static final RegistryObject<Item> ELDRITCH_GOLEM_SPAWN_EGG = ITEMS.register("eldritch_golem_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_GOLEM, 0x555555, 0x404040, new Item.Properties()));
+    public static final RegistryObject<Item> ELDRITCH_CRAB_SPAWN_EGG = ITEMS.register("eldritch_crab_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_CRAB, 0x555555, 0x550000, new Item.Properties()));
+    public static final RegistryObject<Item> THAUMIC_SLIME_SPAWN_EGG = ITEMS.register("thaumic_slime_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.THAUMIC_SLIME, 0xffc0ff, 0xff80ff, new Item.Properties()));
     public static final RegistryObject<Item> ELEMENT_WORKBOOK = ITEMS.register("element_workbook", ElementWorkbookItem::new);
     public static final RegistryObject<Item> MAGIC_BONE_MEAL = ITEMS.register("magic_bone_meal", MagicBoneMealItem::new);
     public static final RegistryObject<Item> ANCIENT_THAUMIUM_INGOT = ITEMS.register("ancient_thaumium_ingot", () -> new Item(new Item.Properties()));

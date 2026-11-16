@@ -56,6 +56,7 @@ public final class Tc4Modern {
         TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.TaintSpore::registerLegacyHost);
         TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.TaintSwarm::registerLegacyHost);
         TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint::registerLegacyHost);
+        TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.Tc4EntityHosts::install);
         TcModernApi.whenReady(Tc4Aspects::install);
         TcModernApi.whenReady(Tc4ScanDefaults::install);
         TcModernApi.whenReady(Tc4ModernWorldgen::install);

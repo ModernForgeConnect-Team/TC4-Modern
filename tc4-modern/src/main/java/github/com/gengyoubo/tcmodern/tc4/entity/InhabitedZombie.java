@@ -52,7 +52,13 @@ public final class InhabitedZombie extends BrainyZombie {
     @Override protected void tickDeath() {
         if (!level().isClientSide && deathTime == 19 && !crabReleased) {
             crabReleased = true;
-            TcModernApi.runtime().ifPresent(runtime -> {
+            // The released crab wears the zombie's chestplate as its shell, exactly as the original setHelm(true).
+            var modern = github.com.gengyoubo.tcmodern.tc4.init.Tc4Entities.ELDRITCH_CRAB.get().create(level());
+            if (modern != null) {
+                modern.moveTo(getX(), getY() + getEyeHeight(), getZ(), getYRot(), getXRot());
+                modern.setHelm(true);
+                level().addFreshEntity(modern);
+            } else TcModernApi.runtime().ifPresent(runtime -> {
                 try {
                     var world = runtime.mappings().toLegacy(LegacyMappings.WORLD, level()).orElseThrow();
                     var crab = runtime.accessor(CrabFactory.class).create(world);

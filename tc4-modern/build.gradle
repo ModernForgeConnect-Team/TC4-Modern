@@ -204,6 +204,12 @@ minecraft {
             if (providers.gradleProperty('libApiSmokeTest').isPresent()) {
                 property 'tc4modern.libApiSmokeTest', 'true'
             }
+            if (providers.gradleProperty('entitySmokeTest').isPresent()) {
+                property 'tc4modern.entitySmokeTest', 'true'
+            }
+            if (providers.gradleProperty('entityRenderSmokeTest').isPresent()) {
+                property 'tc4modern.entityRenderSmokeTest', 'true'
+            }
             if (providers.gradleProperty('bookSmokeTest').isPresent()) {
                 property 'tcmodernlib.bookSmokeTest', 'true'
             }

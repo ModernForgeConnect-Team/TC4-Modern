@@ -314,6 +314,7 @@ public final class ModernGolem extends PathfinderMob {
     private final class FishingGoal extends net.minecraft.world.entity.ai.goal.Goal {
         private BlockPos water, bank;
         private int scanDelay, pathDelay, travelTicks, waitTicks;
+        private GolemBobber bobber;
         FishingGoal() { setFlags(java.util.EnumSet.of(Flag.MOVE, Flag.LOOK)); }
         private boolean waterSurface(BlockPos pos) {
             return level().hasChunkAt(pos) && level().getFluidState(pos).is(net.minecraft.tags.FluidTags.WATER)
@@ -337,7 +338,10 @@ public final class ModernGolem extends PathfinderMob {
         }
         @Override public boolean canContinueToUse() { return core() == FISH_CORE && water != null && waterSurface(water) && travelTicks < 200; }
         @Override public void start() { pathDelay = 0; travelTicks = 0; waitTicks = 200 + random.nextInt(301); }
-        @Override public void stop() { getNavigation().stop(); entityData.set(FISHING_POS, java.util.Optional.empty()); water = null; bank = null; }
+        @Override public void stop() {
+            getNavigation().stop(); entityData.set(FISHING_POS, java.util.Optional.empty()); water = null; bank = null;
+            if (bobber != null) { bobber.discard(); bobber = null; }
+        }
         @Override public void tick() {
             if (distanceToSqr(net.minecraft.world.phys.Vec3.atBottomCenterOf(bank)) > 2.25) {
                 if (fishingPosition().isPresent()) entityData.set(FISHING_POS, java.util.Optional.empty());
@@ -347,6 +351,7 @@ public final class ModernGolem extends PathfinderMob {
             }
             getNavigation().stop(); travelTicks = 0;
             if (fishingPosition().isEmpty()) entityData.set(FISHING_POS, java.util.Optional.of(water));
+            if (bobber == null || !bobber.isAlive()) { bobber = GolemBobber.cast(ModernGolem.this, water); level().addFreshEntity(bobber); }
             getLookControl().setLookAt(water.getX() + 0.5, water.getY() + 0.5, water.getZ() + 0.5);
             if (--waitTicks > 0) return;
             if (!(level() instanceof net.minecraft.server.level.ServerLevel server)) return;
@@ -360,7 +365,8 @@ public final class ModernGolem extends PathfinderMob {
                     .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY, ModernGolem.this)
                     .create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.FISHING);
             for (var item : server.getServer().getLootData().getLootTable(table).getRandomItems(params)) if (!item.isEmpty()) spawnAtLocation(item);
-            server.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH, water.getX() + 0.5, water.getY() + 1.0, water.getZ() + 0.5, 8, 0.2, 0.05, 0.2, 0.05);
+            if (bobber != null && bobber.isAlive()) bobber.bite();
+            else server.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH, water.getX() + 0.5, water.getY() + 1.0, water.getZ() + 0.5, 8, 0.2, 0.05, 0.2, 0.05);
             server.broadcastEntityEvent(ModernGolem.this, (byte) 4);
             waitTicks = 200 + random.nextInt(301);
         }
