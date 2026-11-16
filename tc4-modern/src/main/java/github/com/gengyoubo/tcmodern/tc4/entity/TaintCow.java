@@ -19,7 +19,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
-public final class TaintCow extends Monster {
+public class TaintCow extends Monster {
     private static final String LEGACY_CLASS = "thaumcraft.common.entities.monster.EntityTaintCow";
     private static final String LEGACY_DATA = "Tc4LegacyTaintCow";
     private byte[] pendingLegacyData;
@@ -29,7 +29,14 @@ public final class TaintCow extends Monster {
     }
     public static void registerLegacyHost(LegacyRuntime runtime) {
         runtime.entityHosts().register(LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_COW.get().create((ServerLevel) level));
+        runtime.entityHosts().register(TaintPig.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_PIG.get().create((ServerLevel) level));
+        runtime.entityHosts().register(TaintChicken.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_CHICKEN.get().create((ServerLevel) level));
+        runtime.entityHosts().register(TaintSheep.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_SHEEP.get().create((ServerLevel) level));
+        runtime.entityHosts().register(TaintVillager.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_VILLAGER.get().create((ServerLevel) level));
+        runtime.entityHosts().register(TaintCreeper.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_CREEPER.get().create((ServerLevel) level));
+        runtime.entityHosts().register(TaintSporeNest.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_SPORE_NEST.get().create((ServerLevel) level));
     }
+    protected String legacyClass() { return LEGACY_CLASS; }
     @Override protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0, false));
@@ -49,7 +56,7 @@ public final class TaintCow extends Monster {
         if (level().isClientSide) return;
         TcModernApi.runtime().ifPresent(runtime -> {
             var hosts = runtime.entityHosts();
-            if (pendingLegacyData != null) { hosts.restore(this, LEGACY_CLASS, pendingLegacyData); pendingLegacyData = null; }
+            if (pendingLegacyData != null) { hosts.restore(this, legacyClass(), pendingLegacyData); pendingLegacyData = null; }
             if (hosts.original(this).isPresent()) hosts.sync(this);
         });
     }

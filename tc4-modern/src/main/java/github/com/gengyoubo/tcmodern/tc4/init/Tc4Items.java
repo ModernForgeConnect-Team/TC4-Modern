@@ -31,6 +31,20 @@ public final class Tc4Items {
             () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.INHABITED_ZOMBIE, 0x414548, 0x74462b, new Item.Properties()));
     public static final RegistryObject<Item> TAINT_COW_SPAWN_EGG = ITEMS.register("taint_cow_spawn_egg",
             () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_COW, 0x4f3155, 0x9c72a3, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_PIG_SPAWN_EGG = ITEMS.register("taint_pig_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_PIG, 0x633c60, 0xc48db6, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_CHICKEN_SPAWN_EGG = ITEMS.register("taint_chicken_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_CHICKEN, 0x806a87, 0x9a477c, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_SHEEP_SPAWN_EGG = ITEMS.register("taint_sheep_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SHEEP, 0x60456b, 0xb48dba, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_VILLAGER_SPAWN_EGG = ITEMS.register("taint_villager_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_VILLAGER, 0x563d58, 0xa77cac, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_CREEPER_SPAWN_EGG = ITEMS.register("taint_creeper_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_CREEPER, 0x43344c, 0xa063a0, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_SPORE_SPAWN_EGG = ITEMS.register("taint_spore_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SPORE, 0x5a345e, 0xa875a6, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_SPORE_NEST_SPAWN_EGG = ITEMS.register("taint_spore_nest_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SPORE_NEST, 0x412444, 0x966399, new Item.Properties()));
     public static final RegistryObject<Item> ELEMENT_WORKBOOK = ITEMS.register("element_workbook", ElementWorkbookItem::new);
     public static final RegistryObject<Item> MAGIC_BONE_MEAL = ITEMS.register("magic_bone_meal", MagicBoneMealItem::new);
     public static final RegistryObject<Item> ANCIENT_THAUMIUM_INGOT = ITEMS.register("ancient_thaumium_ingot", () -> new Item(new Item.Properties()));

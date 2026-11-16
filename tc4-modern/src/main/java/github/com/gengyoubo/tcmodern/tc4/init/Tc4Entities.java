@@ -32,6 +32,33 @@ public final class Tc4Entities {
             () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintCow::new, MobCategory.MONSTER)
                     .sized(0.9F, 1.3F).clientTrackingRange(8).build("tc4modern:taint_cow"));
 
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintPig>> TAINT_PIG = TYPES.register("taint_pig",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintPig::new, MobCategory.MONSTER)
+                    .sized(0.9F, 0.9F).clientTrackingRange(8).build("tc4modern:taint_pig"));
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintChicken>> TAINT_CHICKEN = TYPES.register("taint_chicken",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintChicken::new, MobCategory.MONSTER)
+                    .sized(0.5F, 0.8F).clientTrackingRange(8).build("tc4modern:taint_chicken"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintSheep>> TAINT_SHEEP = TYPES.register("taint_sheep",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintSheep::new, MobCategory.MONSTER)
+                    .sized(0.9F, 1.3F).clientTrackingRange(8).build("tc4modern:taint_sheep"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintVillager>> TAINT_VILLAGER = TYPES.register("taint_villager",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintVillager::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.95F).clientTrackingRange(8).build("tc4modern:taint_villager"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintCreeper>> TAINT_CREEPER = TYPES.register("taint_creeper",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintCreeper::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.7F).clientTrackingRange(8).build("tc4modern:taint_creeper"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintSpore>> TAINT_SPORE = TYPES.register("taint_spore",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintSpore::new, MobCategory.MONSTER)
+                    .sized(0.5F, 0.5F).clientTrackingRange(8).build("tc4modern:taint_spore"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintSporeNest>> TAINT_SPORE_NEST = TYPES.register("taint_spore_nest",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintSporeNest::new, MobCategory.MONSTER)
+                    .sized(1.0F, 1.0F).clientTrackingRange(8).build("tc4modern:taint_spore_nest"));
+
     private Tc4Entities() { }
     public static void register(IEventBus bus) {
         TYPES.register(bus);
@@ -43,5 +70,12 @@ public final class Tc4Entities {
         event.put(TAINT_SPIDER.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSpider.attributes().build());
         event.put(INHABITED_ZOMBIE.get(), github.com.gengyoubo.tcmodern.tc4.entity.InhabitedZombie.inhabitedAttributes().build());
         event.put(TAINT_COW.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintCow.attributes().build());
+        event.put(TAINT_PIG.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintPig.pigAttributes().build());
+        event.put(TAINT_CHICKEN.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintChicken.chickenAttributes().build());
+        event.put(TAINT_SHEEP.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSheep.sheepAttributes().build());
+        event.put(TAINT_VILLAGER.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintVillager.villagerAttributes().build());
+        event.put(TAINT_CREEPER.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintCreeper.creeperAttributes().build());
+        event.put(TAINT_SPORE.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSpore.sporeAttributes().build());
+        event.put(TAINT_SPORE_NEST.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSporeNest.nestAttributes().build());
     }
 }
