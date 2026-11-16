@@ -78,12 +78,25 @@ public final class Tc4Entities {
             () -> EntityType.Builder.<github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint>of(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint::new, MobCategory.MISC)
                     .sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1).build("tc4modern:falling_taint"));
 
+    public static final java.util.Map<github.com.gengyoubo.tcmodern.tc4.entity.golem.GolemMaterial, RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem>>> GOLEMS = registerGolems();
+    private static java.util.Map<github.com.gengyoubo.tcmodern.tc4.entity.golem.GolemMaterial, RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem>>> registerGolems() {
+        var result = new java.util.EnumMap<github.com.gengyoubo.tcmodern.tc4.entity.golem.GolemMaterial, RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem>>>(github.com.gengyoubo.tcmodern.tc4.entity.golem.GolemMaterial.class);
+        for (var material : github.com.gengyoubo.tcmodern.tc4.entity.golem.GolemMaterial.values()) {
+            String id = material.id() + "_golem";
+            result.put(material, TYPES.register(id, () -> EntityType.Builder.<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem>of(
+                    (type, level) -> new github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem(type, level, material), MobCategory.MISC)
+                    .sized(0.4F, 0.95F).clientTrackingRange(8).build("tc4modern:" + id)));
+        }
+        return java.util.Collections.unmodifiableMap(result);
+    }
+
     private Tc4Entities() { }
     public static void register(IEventBus bus) {
         TYPES.register(bus);
         bus.addListener(Tc4Entities::attributes);
     }
     private static void attributes(EntityAttributeCreationEvent event) {
+        GOLEMS.forEach((material, type) -> event.put(type.get(), github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem.attributes(material).build()));
         event.put(BRAINY_ZOMBIE.get(), BrainyZombie.attributes().build());
         event.put(GIANT_BRAINY_ZOMBIE.get(), github.com.gengyoubo.tcmodern.tc4.entity.GiantBrainyZombie.giantAttributes().build());
         event.put(TAINT_SPIDER.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSpider.attributes().build());

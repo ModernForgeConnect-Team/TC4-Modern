@@ -17,6 +17,7 @@ import static github.com.gengyoubo.tcmodern.tc4.Tc4Modern.TC;
 public final class Tc4EntityRenderers {
     private Tc4EntityRenderers() { }
     @SubscribeEvent public static void register(EntityRenderersEvent.RegisterRenderers event) {
+        Tc4Entities.GOLEMS.values().forEach(type -> event.registerEntityRenderer(type.get(), ModernGolemRenderer::new));
         event.registerEntityRenderer(Tc4Entities.BRAINY_ZOMBIE.get(), BrainyRenderer::new);
         event.registerEntityRenderer(Tc4Entities.GIANT_BRAINY_ZOMBIE.get(), BrainyRenderer::new);
         event.registerEntityRenderer(Tc4Entities.TAINT_SPIDER.get(), TaintSpiderRenderer::new);
@@ -30,9 +31,9 @@ public final class Tc4EntityRenderers {
         event.registerEntityRenderer(Tc4Entities.TAINT_SPORE.get(), TaintSporeRenderer::new);
         event.registerEntityRenderer(Tc4Entities.TAINT_SPORE_NEST.get(), TaintSporeNestRenderer::new);
         event.registerEntityRenderer(Tc4Entities.TAINT_SWARM.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
-        event.registerEntityRenderer(Tc4Entities.TAINT_TENTACLE.get(), TaintTentacleRenderer::new);
-        event.registerEntityRenderer(Tc4Entities.SMALL_TAINT_TENTACLE.get(), TaintTentacleRenderer::new);
-        event.registerEntityRenderer(Tc4Entities.GIANT_TAINT_TENTACLE.get(), TaintTentacleRenderer::new);
+        event.registerEntityRenderer(Tc4Entities.TAINT_TENTACLE.get(), context -> new TaintTentacleRenderer(context, 10, 1.0F));
+        event.registerEntityRenderer(Tc4Entities.SMALL_TAINT_TENTACLE.get(), context -> new TaintTentacleRenderer(context, 6, 1.0F / 3.0F));
+        event.registerEntityRenderer(Tc4Entities.GIANT_TAINT_TENTACLE.get(), context -> new TaintTentacleRenderer(context, 14, 2.66F));
         event.registerEntityRenderer(Tc4Entities.FALLING_TAINT.get(), FallingTaintRenderer::new);
     }
     private static final class TaintSpiderRenderer extends net.minecraft.client.renderer.entity.SpiderRenderer<github.com.gengyoubo.tcmodern.tc4.entity.TaintSpider> {
@@ -105,11 +106,11 @@ public final class Tc4EntityRenderers {
     }
     private static final class TaintTentacleRenderer extends net.minecraft.client.renderer.entity.MobRenderer<github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle, TaintTentacleModel<github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle>> {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TC, "textures/models/taintacle.png");
-        TaintTentacleRenderer(EntityRendererProvider.Context context) { super(context, new TaintTentacleModel<>(), 0.35F); }
+        private final float modelScale;
+        TaintTentacleRenderer(EntityRendererProvider.Context context, int length, float modelScale) { super(context, new TaintTentacleModel<>(length), 0.35F); this.modelScale = modelScale; }
         @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle entity) { return TEXTURE; }
         @Override protected void scale(github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle entity, com.mojang.blaze3d.vertex.PoseStack stack, float partialTick) {
-            float scale = entity instanceof github.com.gengyoubo.tcmodern.tc4.entity.SmallTaintTentacle ? 0.5F : entity instanceof github.com.gengyoubo.tcmodern.tc4.entity.GiantTaintTentacle ? 3.0F : 1.5F;
-            stack.scale(scale, scale, scale);
+            stack.scale(modelScale, modelScale, modelScale);
         }
     }
     private static final class FallingTaintRenderer extends net.minecraft.client.renderer.entity.EntityRenderer<github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint> {
@@ -125,6 +126,24 @@ public final class Tc4EntityRenderers {
         }
         @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint entity) { return net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS; }
     }
+    private static final class ModernGolemRenderer extends net.minecraft.client.renderer.entity.MobRenderer<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem, ModernGolemModel> {
+        ModernGolemRenderer(EntityRendererProvider.Context context) { super(context, new ModernGolemModel(), 0.3F); addLayer(new GolemItemLayer(this, context.getItemRenderer())); }
+        @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem entity) {
+            return ResourceLocation.fromNamespaceAndPath(TC, "textures/models/golem_" + entity.material().id() + ".png");
+        }
+
+    }
+    private static final class GolemItemLayer extends net.minecraft.client.renderer.entity.layers.RenderLayer<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem, ModernGolemModel> {
+        private final net.minecraft.client.renderer.entity.ItemRenderer items;
+        GolemItemLayer(ModernGolemRenderer renderer, net.minecraft.client.renderer.entity.ItemRenderer items) { super(renderer); this.items = items; }
+        @Override public void render(com.mojang.blaze3d.vertex.PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light, github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem golem, float limbSwing, float limbAmount, float partialTick, float age, float headYaw, float headPitch) {
+            var carried = golem.carriedForDisplay();
+            if (carried.isEmpty() || golem.isInvisible()) return;
+            pose.pushPose(); pose.translate(0, 0.65, -0.42); pose.scale(0.55F, 0.55F, 0.55F);
+            items.renderStatic(golem, carried, net.minecraft.world.item.ItemDisplayContext.GROUND, false, pose, buffers, golem.level(), light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, golem.getId());
+            pose.popPose();
+        }
+    }
     private static final class TaintCowRenderer extends net.minecraft.client.renderer.entity.MobRenderer<github.com.gengyoubo.tcmodern.tc4.entity.TaintCow, net.minecraft.client.model.CowModel<github.com.gengyoubo.tcmodern.tc4.entity.TaintCow>> {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/models/cow.png");
         TaintCowRenderer(EntityRendererProvider.Context context) {
@@ -134,8 +153,40 @@ public final class Tc4EntityRenderers {
     }
     private static final class InhabitedRenderer extends ZombieRenderer {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/models/czombie.png");
-        InhabitedRenderer(EntityRendererProvider.Context context) { super(context); }
+        InhabitedRenderer(EntityRendererProvider.Context context) {
+            super(context);
+            layers.removeIf(layer -> layer instanceof net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<?, ?, ?>);
+            addLayer(new InhabitedArmorLayer(this, context));
+        }
         @Override public ResourceLocation getTextureLocation(Zombie entity) { return TEXTURE; }
+    }
+    private static final class InhabitedArmorLayer extends net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<Zombie, net.minecraft.client.model.ZombieModel<Zombie>, net.minecraft.client.model.ZombieModel<Zombie>> {
+        private static final ResourceLocation HELMET = ResourceLocation.fromNamespaceAndPath(TC, "item_helmet_cultist_plate");
+        private static final ResourceLocation HELMET_TEXTURE = ResourceLocation.fromNamespaceAndPath(TC, "textures/models/zombie_plate_armor.png");
+        private final net.minecraft.client.model.HumanoidModel<Zombie> helmet;
+
+        InhabitedArmorLayer(InhabitedRenderer renderer, EntityRendererProvider.Context context) {
+            super(renderer, new net.minecraft.client.model.ZombieModel<>(context.bakeLayer(net.minecraft.client.model.geom.ModelLayers.ZOMBIE_INNER_ARMOR)),
+                    new net.minecraft.client.model.ZombieModel<>(context.bakeLayer(net.minecraft.client.model.geom.ModelLayers.ZOMBIE_OUTER_ARMOR)), context.getModelManager());
+            var mesh = net.minecraft.client.model.HumanoidModel.createMesh(net.minecraft.client.model.geom.builders.CubeDeformation.NONE, 0);
+            mesh.getRoot().addOrReplaceChild("head", net.minecraft.client.model.geom.builders.CubeListBuilder.create().texOffs(41, 8)
+                    .addBox(-4.5F, -9.0F, -4.5F, 9, 9, 9), net.minecraft.client.model.geom.PartPose.ZERO);
+            mesh.getRoot().addOrReplaceChild("hat", net.minecraft.client.model.geom.builders.CubeListBuilder.create(), net.minecraft.client.model.geom.PartPose.ZERO);
+            helmet = new net.minecraft.client.model.HumanoidModel<>(net.minecraft.client.model.geom.builders.LayerDefinition.create(mesh, 128, 64).bakeRoot());
+        }
+        private boolean isCultistHelmet(net.minecraft.world.item.ItemStack stack, net.minecraft.world.entity.EquipmentSlot slot) {
+            return slot == net.minecraft.world.entity.EquipmentSlot.HEAD && HELMET.equals(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()));
+        }
+        @Override protected net.minecraft.client.model.Model getArmorModelHook(Zombie entity, net.minecraft.world.item.ItemStack stack, net.minecraft.world.entity.EquipmentSlot slot, net.minecraft.client.model.ZombieModel<Zombie> original) {
+            if (!isCultistHelmet(stack, slot)) return super.getArmorModelHook(entity, stack, slot, original);
+            original.copyPropertiesTo(helmet);
+            helmet.setAllVisible(false);
+            helmet.head.visible = true;
+            return helmet;
+        }
+        @Override public ResourceLocation getArmorResource(net.minecraft.world.entity.Entity entity, net.minecraft.world.item.ItemStack stack, net.minecraft.world.entity.EquipmentSlot slot, String type) {
+            return isCultistHelmet(stack, slot) && type == null ? HELMET_TEXTURE : super.getArmorResource(entity, stack, slot, type);
+        }
     }
     private static final class BrainyRenderer extends ZombieRenderer {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TC, "textures/models/bzombie.png");

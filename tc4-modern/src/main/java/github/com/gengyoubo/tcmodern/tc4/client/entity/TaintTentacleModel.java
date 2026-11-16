@@ -11,20 +11,33 @@ import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.util.Mth;
 
-/** Simple segmented modern approximation of the original animated tentacle. */
+/** Original TC4 texture coordinates and tapered, nested tentacle segments. */
 final class TaintTentacleModel<T extends TaintTentacle> extends EntityModel<T> {
     private final ModelPart root;
-    TaintTentacleModel() {
+    private final ModelPart[] segments;
+    TaintTentacleModel(int length) {
+        super(net.minecraft.client.renderer.RenderType::entityTranslucent);
         var mesh = new MeshDefinition();
-        var rootPart = mesh.getRoot();
-        var base = rootPart.addOrReplaceChild("base", CubeListBuilder.create().texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8), PartPose.offset(0, 24, 0));
-        var middle = base.addOrReplaceChild("middle", CubeListBuilder.create().texOffs(0, 16).addBox(-3, -12, -3, 6, 12, 6), PartPose.offset(0, -8, 0));
-        middle.addOrReplaceChild("tip", CubeListBuilder.create().texOffs(0, 34).addBox(-2, -12, -2, 4, 12, 4), PartPose.offset(0, -12, 0));
+        var current = mesh.getRoot().addOrReplaceChild("base", CubeListBuilder.create().texOffs(0, 0).addBox(-4, -4, -4, 8, 8, 8), PartPose.offset(0, 20, 0));
+        for (int i = 0; i < length - 1; i++) {
+            current = current.addOrReplaceChild("segment" + i, CubeListBuilder.create().texOffs(0, 16).addBox(-4, -4, -4, 8, 8, 8), PartPose.offset(0, -8, 0));
+        }
+        current.addOrReplaceChild("orb", CubeListBuilder.create().texOffs(0, 56).addBox(-2, -2, -2, 4, 4, 4), PartPose.offset(0, -8, 0));
+        current.addOrReplaceChild("end", CubeListBuilder.create().texOffs(0, 32).addBox(-6, -6, -6, 12, 12, 12), PartPose.offset(0, -8, 0));
         root = LayerDefinition.create(mesh, 64, 64).bakeRoot();
+        segments = new ModelPart[length - 1];
+        ModelPart part = root.getChild("base");
+        for (int i = 0; i < segments.length; i++) {
+            part = part.getChild("segment" + i); part.xScale = part.yScale = part.zScale = 0.88F; segments[i] = part;
+        }
+        ModelPart orb = part.getChild("orb"); orb.xScale = orb.yScale = orb.zScale = 0.88F;
+        ModelPart end = part.getChild("end"); end.xScale = end.yScale = end.zScale = 0.88F;
     }
     @Override public void setupAnim(T entity, float limbSwing, float limbAmount, float age, float yaw, float pitch) {
-        var base = root.getChild("base"); var middle = base.getChild("middle"); var tip = middle.getChild("tip");
-        base.xRot = 0.08F * Mth.sin(age * 0.09F); middle.zRot = 0.18F * Mth.sin(age * 0.12F); tip.xRot = 0.22F * Mth.sin(age * 0.14F + 1);
+        for (int i = 0; i < segments.length; i++) {
+            segments[i].xRot = 0.15F * Mth.sin(age * 0.1F - i * 0.5F);
+            segments[i].zRot = 0.1F * Mth.sin(age * 0.15F - i * 0.5F);
+        }
     }
     @Override public void renderToBuffer(PoseStack pose, VertexConsumer vertices, int light, int overlay, float red, float green, float blue, float alpha) { root.render(pose, vertices, light, overlay, red, green, blue, alpha); }
 }

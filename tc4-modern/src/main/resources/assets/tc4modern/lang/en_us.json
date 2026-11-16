@@ -1,4 +1,12 @@
 {
+  "entity.tc4modern.iron_golem": "Iron Golem",
+  "entity.tc4modern.straw_golem": "Straw Golem",
+  "entity.tc4modern.stone_golem": "Stone Golem",
+  "entity.tc4modern.thaumium_golem": "Thaumium Golem",
+  "entity.tc4modern.clay_golem": "Clay Golem",
+  "entity.tc4modern.flesh_golem": "Flesh Golem",
+  "entity.tc4modern.wood_golem": "Wood Golem",
+  "entity.tc4modern.tallow_golem": "Tallow Golem",
   "entity.tc4modern.giant_taint_tentacle": "Giant Taintacle",
   "item.tc4modern.giant_taint_tentacle_spawn_egg": "Giant Taintacle Spawn Egg",
   "entity.tc4modern.taint_tentacle": "Taintacle",

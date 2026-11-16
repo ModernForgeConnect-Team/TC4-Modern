@@ -1,4 +1,12 @@
 {
+  "entity.tc4modern.iron_golem": "铁制傀儡",
+  "entity.tc4modern.straw_golem": "稻草傀儡",
+  "entity.tc4modern.stone_golem": "石制傀儡",
+  "entity.tc4modern.thaumium_golem": "神秘金属傀儡",
+  "entity.tc4modern.clay_golem": "黏土傀儡",
+  "entity.tc4modern.flesh_golem": "血肉傀儡",
+  "entity.tc4modern.wood_golem": "木制傀儡",
+  "entity.tc4modern.tallow_golem": "脂蜡傀儡",
   "entity.tc4modern.giant_taint_tentacle": "巨型腐化触手",
   "item.tc4modern.giant_taint_tentacle_spawn_egg": "巨型腐化触手刷怪蛋",
   "entity.tc4modern.taint_tentacle": "腐化触手",
