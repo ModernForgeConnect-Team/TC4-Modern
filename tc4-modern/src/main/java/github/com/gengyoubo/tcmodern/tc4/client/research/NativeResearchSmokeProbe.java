@@ -3,7 +3,9 @@ package github.com.gengyoubo.tcmodern.tc4.client.research;
 import github.com.gengyoubo.mfcl.api.*;
 import github.com.gengyoubo.mfcl.api.mla.*;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
-import github.com.gengyoubo.tcmodern.api.aspect.*;
+import github.com.gengyoubo.tcmodern.api.aspect.TcAspectAccessors;
+import github.com.gengyoubo.tcmodern.api.aspect.TcAspects;
+import github.com.gengyoubo.tcmodern.api.aspect.TcPlayerAspects;
 import github.com.gengyoubo.tcmodern.api.research.TcResearch;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -15,6 +17,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.*;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.*;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
@@ -160,7 +163,8 @@ public final class NativeResearchSmokeProbe {
         level.setBlockAndUpdate(table,api().hostBlock("Thaumcraft:blockTable",5,BlockState.class).orElseThrow());
         level.setBlockAndUpdate(table.east(),api().hostBlock("Thaumcraft:blockTable",8,BlockState.class).orElseThrow());
         require(api().values().isInstance(tile(level),"thaumcraft.common.tiles.TileResearchTable"),"Fixture has the wrong original tile subtype");
-        var amounts=new LinkedHashMap<String,Integer>();for(var aspect:TcAspects.snapshot(api()))amounts.put(aspect.tag(),100);TcPlayerAspects.give(api(),player,amounts);
+        var amounts=new LinkedHashMap<String,Integer>();for(var aspect: TcAspects.snapshot(api()))amounts.put(aspect.tag(),100);
+        TcPlayerAspects.give(api(),player,amounts);
         TcResearch.complete(api(),player,"RESEARCHER2");TcResearch.complete(api(),player,"RESEARCHDUPE");
         player.getInventory().clearContent();player.getInventory().selected=8;
         api().withPlayer(player,actor->{

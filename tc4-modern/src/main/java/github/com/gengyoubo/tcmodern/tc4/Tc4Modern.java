@@ -31,6 +31,7 @@ public final class Tc4Modern {
         github.com.gengyoubo.mfcl.api.LegacyBlockProviders.register(new github.com.gengyoubo.tcmodern.tc4.compat.Tc4NativeBlocks());
         github.com.gengyoubo.mfcl.api.LegacyItemProviders.register(new github.com.gengyoubo.tcmodern.tc4.compat.Tc4ItemSplits());
         var modBus = context.getModEventBus();
+        github.com.gengyoubo.tcmodern.tc4.init.Tc4Entities.register(modBus);
         Tc4Blocks.register(modBus);
         Tc4BlockEntities.register(modBus);
         Tc4Menus.register(modBus);
@@ -46,6 +47,7 @@ public final class Tc4Modern {
         github.com.gengyoubo.tcmodern.api.recipe.TcExtraCrucibleRecipes.register(MOD_ID,
                 github.com.gengyoubo.tcmodern.tc4.crucible.IntermediateCruciblePages::recipes);
         // Aspects first: everything after may read or assign them.
+        TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.BrainyZombie::registerLegacyHost);
         TcModernApi.whenReady(Tc4Aspects::install);
         TcModernApi.whenReady(Tc4ScanDefaults::install);
         TcModernApi.whenReady(Tc4ModernWorldgen::install);

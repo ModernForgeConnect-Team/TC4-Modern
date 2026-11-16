@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:writing_tools",
+  "display": {
+    "icon": {
+      "item": "tc4modern:pencil"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.disposable_tool.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.disposable_tool.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "craft_pencil": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

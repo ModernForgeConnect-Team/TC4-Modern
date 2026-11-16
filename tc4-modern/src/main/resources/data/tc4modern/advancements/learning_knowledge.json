@@ -1,0 +1,32 @@
+{
+  "parent": "tc4modern:writing_tools",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:item_research_notes"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.learning_knowledge.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.learning_knowledge.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtain_notes": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "thaumcraft:item_research_notes"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

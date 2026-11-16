@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:writing_tools",
+  "display": {
+    "icon": {
+      "item": "tc4modern:fountain_pen"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.fountain_pen.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.fountain_pen.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "craft_fountain_pen": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
