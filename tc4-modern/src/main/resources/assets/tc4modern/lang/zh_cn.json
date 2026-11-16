@@ -279,5 +279,9 @@
   "item.tc4modern.ancient_thaumium_armor.warp": "扭曲：%s",
   "intermediate_crucible.tc4modern.mode.decompose": "分解模式：丢入的物品会被分解为要素",
   "intermediate_crucible.tc4modern.mode.synthesis": "合成模式：最多容纳两种材料",
-  "intermediate_crucible.tc4modern.failed": "合成失败，咒波溢出了"
+  "intermediate_crucible.tc4modern.failed": "合成失败，咒波溢出了",
+  "message.tc4modern.golem_selected": "已选择傀儡，请右键容器设置标记",
+  "message.tc4modern.golem_container_marked": "已设置傀儡的容器标记",
+  "message.tc4modern.golem_sort_added": "已添加排序容器标记",
+  "message.tc4modern.golem_sort_removed": "已移除排序容器标记"
 }

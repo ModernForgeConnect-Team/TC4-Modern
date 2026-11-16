@@ -279,5 +279,9 @@
   "item.tc4modern.ancient_thaumium_armor.warp": "Warp: %s",
   "intermediate_crucible.tc4modern.mode.decompose": "Decomposition mode: items thrown in dissolve into aspects",
   "intermediate_crucible.tc4modern.mode.synthesis": "Synthesis mode: holds up to two materials",
-  "intermediate_crucible.tc4modern.failed": "The synthesis failed and spilled flux"
+  "intermediate_crucible.tc4modern.failed": "The synthesis failed and spilled flux",
+  "message.tc4modern.golem_selected": "Golem selected; right-click a container to mark it",
+  "message.tc4modern.golem_container_marked": "Golem container marked",
+  "message.tc4modern.golem_sort_added": "Sorting container marker added",
+  "message.tc4modern.golem_sort_removed": "Sorting container marker removed"
 }

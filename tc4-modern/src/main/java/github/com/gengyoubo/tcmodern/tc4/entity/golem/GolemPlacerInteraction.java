@@ -56,7 +56,8 @@ public final class GolemPlacerInteraction {
             entity.setOwner(event.getEntity());
             if (stack.hasCustomHoverName()) entity.setCustomName(stack.getHoverName());
             var tile = level.getBlockEntity(clicked);
-            if (tile != null && tile.getCapability(ForgeCapabilities.ITEM_HANDLER, face).isPresent()) entity.setDestination(clicked, face);
+            if (tile != null && (tile.getCapability(ForgeCapabilities.ITEM_HANDLER, face).isPresent()
+                    || tile.getCapability(ForgeCapabilities.FLUID_HANDLER, face).isPresent() || GolemEssentia.isContainer(level, clicked))) entity.setDestination(clicked, face);
             if (!level.noCollision(entity) || !level.addFreshEntity(entity)) return;
             if (!event.getEntity().getAbilities().instabuild) stack.shrink(1);
             level.gameEvent(event.getEntity(), GameEvent.ENTITY_PLACE, clicked);
