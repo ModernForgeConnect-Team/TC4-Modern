@@ -16,6 +16,10 @@ public class TaintTentacle extends TaintCow {
     private int attackCooldown;
     public TaintTentacle(EntityType<? extends TaintTentacle> type, Level level) { super(type, level); setNoGravity(false); }
     @Override protected String legacyClass() { return LEGACY_CLASS; }
+    @Override protected net.minecraft.sounds.SoundEvent getAmbientSound() { return Tc4Legacy.sound("roots"); }
+    @Override protected net.minecraft.sounds.SoundEvent getHurtSound(DamageSource source) { return Tc4Legacy.sound("tentacle"); }
+    @Override protected net.minecraft.sounds.SoundEvent getDeathSound() { return Tc4Legacy.sound("tentacle"); }
+    @Override protected float getSoundVolume() { return getBbHeight() / 8.0F; }
     public static AttributeSupplier.Builder tentacleAttributes() {
         return TaintCow.attributes().add(Attributes.MAX_HEALTH, 50).add(Attributes.ATTACK_DAMAGE, 7).add(Attributes.MOVEMENT_SPEED, 0);
     }

@@ -28,16 +28,15 @@ public final class GolemPlacerInteraction {
         var id = ForgeRegistries.ITEMS.getKey(stack.getItem());
         if (id == null || !id.getNamespace().equals("thaumcraft") || !id.getPath().startsWith("item_golem_placer")) return;
         // A portable modern golem must never fall through to TC4's old placer: it cannot read our carried state.
-        boolean portable = stack.getTag() != null && stack.getTag().contains(GolemBellInteraction.PORTABLE, 10);
+        var stored = GolemItemData.get(stack);
+        boolean portable = stored != null && stored.contains(GolemBellInteraction.PORTABLE, 10);
         if (portable) { event.setCancellationResult(InteractionResult.FAIL); event.setCanceled(true); }
         var runtime = TcModernApi.runtime().orElse(null);
         if (runtime == null) return;
         try {
             // Remove our host-only payload before identifying the TC4 item; all other original NBT is checked below.
             var probe = stack.copy();
-            var tag = probe.getTag();
-            CompoundTag saved = tag != null && tag.contains(GolemBellInteraction.PORTABLE, 10) ? tag.getCompound(GolemBellInteraction.PORTABLE).copy() : null;
-            if (tag != null) { tag.remove(GolemBellInteraction.PORTABLE); if (saved != null) tag.remove("core"); }
+            CompoundTag saved = portable ? stored.getCompound(GolemBellInteraction.PORTABLE).copy() : null;
             var legacy = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, probe).map(runtime::snapshot).orElse(null);
             if (legacy == null || !legacy.key().equals("Thaumcraft:ItemGolemPlacer") || legacy.metadata() >= GolemMaterial.values().length) return;
             if (!legacy.snbt().isBlank()) {

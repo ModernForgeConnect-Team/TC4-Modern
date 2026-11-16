@@ -68,6 +68,21 @@ public final class CuriosSmokeProbe {
                                 .getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions());
                 stage = 1;
             } else if (stage == 1 && mc.level != null && mc.player != null && mc.screen == null) {
+                net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(mc.level.enabledFeatures(), mc.player.canUseGameMasterBlocks(), mc.level.registryAccess());
+                var eggsTab = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.get(net.minecraft.world.item.CreativeModeTabs.SPAWN_EGGS.location());
+                var tcTab = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("thaumcraft", "creative/thaumcraft"));
+                require(tcTab != null, "TC4 creative tab is missing");
+                int eggCount = 0;
+                for (var item : net.minecraftforge.registries.ForgeRegistries.ITEMS) {
+                    var id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item);
+                    if (id == null || !id.getNamespace().equals("tc4modern") || !(item instanceof net.minecraft.world.item.SpawnEggItem)) continue;
+                    var stack = new ItemStack(item);
+                    require(eggsTab.contains(stack), "Missing spawn egg in vanilla tab: " + id);
+                    require(!tcTab.contains(stack), "Spawn egg is still in TC4 tab: " + id);
+                    eggCount++;
+                }
+                require(eggCount > 0, "No modern spawn eggs found");
+                proof.put("spawnEggsInVanillaTab", eggCount);
                 var server = mc.getSingleplayerServer();
                 checks = server.submit(() -> Checks.validate(TcModernApi.runtime().orElseThrow(),
                         server.getPlayerList().getPlayer(mc.player.getUUID()), proof));
@@ -123,6 +138,31 @@ public final class CuriosSmokeProbe {
 
     private static final class Checks {
         static void validate(LegacyRuntime runtime, ServerPlayer player, Map<String, Object> proof) {
+            var bell = runtime.mappings().toHost(LegacyMappings.ITEM_STACK,
+                    runtime.stack(new LegacyStack("Thaumcraft:GolemBell", 0, 1, "")), ItemStack.class).orElseThrow();
+            var selectedId = java.util.UUID.randomUUID();
+            bell.getOrCreateTag().putUUID("tc4modern_selected_golem", selectedId);
+            bell.getOrCreateTag().putString("tc4modern_selected_dimension", "minecraft:overworld");
+            player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, bell);
+            MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent(player,
+                    net.minecraft.world.entity.EquipmentSlot.MAINHAND, ItemStack.EMPTY, bell));
+            bell.getAttributeModifiers(net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+            require(runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, bell).isPresent(), "Migrated golem bell cannot map to original");
+            var selection = bell.getTagElement("display").getCompound("tc4modern_golem_data");
+            require(selection.hasUUID("tc4modern_selected_golem") && selectedId.equals(selection.getUUID("tc4modern_selected_golem"))
+                    && "minecraft:overworld".equals(selection.getString("tc4modern_selected_dimension")), "Golem selection was not preserved");
+            var placer = runtime.mappings().toHost(LegacyMappings.ITEM_STACK,
+                    runtime.stack(new LegacyStack("Thaumcraft:ItemGolemPlacer", 0, 1, "")), ItemStack.class).orElseThrow();
+            var portable = new net.minecraft.nbt.CompoundTag(); portable.putInt("Tc4Core", 6);
+            placer.getOrCreateTag().put("tc4modern_golem", portable); placer.getOrCreateTag().putByte("core", (byte)6);
+            MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent(player,
+                    net.minecraft.world.entity.EquipmentSlot.MAINHAND, bell, placer));
+            placer.getAttributeModifiers(net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+            require(runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, placer).isPresent(), "Migrated portable golem cannot map to original");
+            require(placer.getTagElement("display").getCompound("tc4modern_golem_data").getCompound("tc4modern_golem").getInt("Tc4Core") == 6,
+                    "Portable golem state lost during migration");
+            player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            proof.put("golemBellAndPortableNbtMigration", true);
             var curios = top.theillusivec4.curios.api.CuriosApi.getCuriosInventory(player).resolve().orElseThrow();
             var ring = curios.getStacksHandler("ring").orElseThrow().getStacks();
             var amulet = curios.getStacksHandler("amulet").orElseThrow().getStacks();

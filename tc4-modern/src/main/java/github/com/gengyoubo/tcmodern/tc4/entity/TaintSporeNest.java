@@ -22,6 +22,10 @@ public final class TaintSporeNest extends TaintCow {
     private boolean deathSwarm;
     public TaintSporeNest(EntityType<? extends TaintSporeNest> type, Level level) { super(type, level); xpReward = 10; }
     @Override protected String legacyClass() { return LEGACY_CLASS; }
+    @Override protected net.minecraft.sounds.SoundEvent getAmbientSound() { return Tc4Legacy.sound("roots"); }
+    @Override protected net.minecraft.sounds.SoundEvent getHurtSound(DamageSource source) { return Tc4Legacy.sound("gore"); }
+    @Override protected net.minecraft.sounds.SoundEvent getDeathSound() { return Tc4Legacy.sound("gore"); }
+    @Override protected float getSoundVolume() { return 0.1F; }
     public static AttributeSupplier.Builder nestAttributes() {
         return TaintCow.attributes().add(Attributes.MAX_HEALTH, 75).add(Attributes.ATTACK_DAMAGE, 1).add(Attributes.MOVEMENT_SPEED, 0);
     }

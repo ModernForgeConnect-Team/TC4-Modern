@@ -29,6 +29,10 @@ public final class TaintSpore extends TaintCow {
     private boolean burst;
     public TaintSpore(EntityType<? extends TaintSpore> type, Level level) { super(type, level); xpReward = 2; }
     @Override protected String legacyClass() { return LEGACY_CLASS; }
+    @Override protected net.minecraft.sounds.SoundEvent getAmbientSound() { return Tc4Legacy.sound("swarm"); }
+    @Override protected net.minecraft.sounds.SoundEvent getHurtSound(DamageSource source) { return Tc4Legacy.sound("gore"); }
+    @Override protected net.minecraft.sounds.SoundEvent getDeathSound() { return Tc4Legacy.sound("gore"); }
+    @Override protected float getSoundVolume() { return 0.1F; }
     public static AttributeSupplier.Builder sporeAttributes() { return TaintCow.attributes().add(Attributes.MAX_HEALTH, 1).add(Attributes.ATTACK_DAMAGE, 1).add(Attributes.MOVEMENT_SPEED, 0); }
     public static void registerLegacyHost(LegacyRuntime runtime) {
         runtime.entityHosts().register(LEGACY_CLASS, (level, original) -> {

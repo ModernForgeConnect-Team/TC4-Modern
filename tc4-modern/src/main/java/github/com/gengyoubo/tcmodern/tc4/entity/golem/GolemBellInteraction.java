@@ -14,16 +14,17 @@ import net.minecraftforge.registries.ForgeRegistries;
 /** The TC4 golem bell returns the original TC4 golem item. */
 @Mod.EventBusSubscriber(modid = Tc4Modern.MOD_ID)
 public final class GolemBellInteraction {
-    static final String PORTABLE = "tc4modern_golem";
-    private static final String SELECTED = "tc4modern_selected_golem", SELECTED_DIMENSION = "tc4modern_selected_dimension";
+    static final String PORTABLE = GolemItemData.PORTABLE;
+    private static final String SELECTED = GolemItemData.SELECTED, SELECTED_DIMENSION = GolemItemData.SELECTED_DIMENSION;
     private GolemBellInteraction() { }
     private static boolean isBell(ItemStack stack) {
         var key = ForgeRegistries.ITEMS.getKey(stack.getItem());
         return key != null && key.toString().equals("thaumcraft:golem_bell");
     }
     private static ModernGolem selected(net.minecraft.world.entity.player.Player player, ItemStack stack) {
-        if (!(player.level() instanceof net.minecraft.server.level.ServerLevel level) || !isBell(stack) || !stack.hasTag() || !stack.getTag().hasUUID(SELECTED)) return null;
-        var tag = stack.getTag();
+        if (!(player.level() instanceof net.minecraft.server.level.ServerLevel level) || !isBell(stack)) return null;
+        var tag = GolemItemData.get(stack);
+        if (tag == null || !tag.hasUUID(SELECTED)) return null;
         if (!level.dimension().location().toString().equals(tag.getString(SELECTED_DIMENSION))) return null;
         if (!(level.getEntity(tag.getUUID(SELECTED)) instanceof ModernGolem golem) || !golem.isAlive()
                 || (golem.ownerId() != null && !golem.ownerId().equals(player.getUUID()))) return null;
@@ -48,14 +49,15 @@ public final class GolemBellInteraction {
         event.setCancellationResult(net.minecraft.world.InteractionResult.sidedSuccess(player.level().isClientSide));
         event.setCanceled(true);
         if (player.level().isClientSide || (golem.ownerId() != null && !golem.ownerId().equals(player.getUUID()))) return;
-        var tag = event.getItemStack().getOrCreateTag();
+        var tag = GolemItemData.getOrCreate(event.getItemStack());
         tag.putUUID(SELECTED, golem.getUUID());
         tag.putString(SELECTED_DIMENSION, player.level().dimension().location().toString());
         player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.tc4modern.golem_selected"), true);
     }
     @SubscribeEvent public static void mark(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock event) {
         var stack = event.getItemStack();
-        if (!isBell(stack) || !stack.hasTag() || !stack.getTag().hasUUID(SELECTED)) return;
+        var data = isBell(stack) ? GolemItemData.get(stack) : null;
+        if (data == null || !data.hasUUID(SELECTED)) return;
         var player = event.getEntity();
         event.setCancellationResult(net.minecraft.world.InteractionResult.sidedSuccess(player.level().isClientSide));
         event.setCanceled(true);
@@ -81,7 +83,8 @@ public final class GolemBellInteraction {
     }
     @SubscribeEvent public static void markFluidInAir(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickItem event) {
         var stack = event.getItemStack();
-        if (!isBell(stack) || !stack.hasTag() || !stack.getTag().hasUUID(SELECTED)) return;
+        var data = isBell(stack) ? GolemItemData.get(stack) : null;
+        if (data == null || !data.hasUUID(SELECTED)) return;
         var player = event.getEntity();
         if (player.level().isClientSide) return;
         var golem = selected(player, stack);
@@ -112,7 +115,7 @@ public final class GolemBellInteraction {
                 golem.addAdditionalSaveData(data);
                 data.putInt("Tc4Core", -1);
                 data.remove("Tc4Carried");
-                item.getOrCreateTag().put(PORTABLE, data);
+                GolemItemData.getOrCreate(item).put(PORTABLE, data);
             }
             golem.discard();
             give(player, item);
@@ -121,8 +124,7 @@ public final class GolemBellInteraction {
         } else {
             var data = new CompoundTag();
             golem.addAdditionalSaveData(data);
-            item.getOrCreateTag().put(PORTABLE, data);
-            if (golem.core() >= 0) item.getOrCreateTag().putByte("core", (byte)golem.core());
+            GolemItemData.getOrCreate(item).put(PORTABLE, data);
             if (golem.hasCustomName()) item.setHoverName(golem.getCustomName());
             golem.discard();
             give(player, item);
