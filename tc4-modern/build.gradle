@@ -207,6 +207,9 @@ minecraft {
             if (providers.gradleProperty('entitySmokeTest').isPresent()) {
                 property 'tc4modern.entitySmokeTest', 'true'
             }
+            if (providers.gradleProperty('golemSmokeTest').isPresent()) {
+                property 'tc4modern.golemSmokeTest', 'true'
+            }
             if (providers.gradleProperty('entityRenderSmokeTest').isPresent()) {
                 property 'tc4modern.entityRenderSmokeTest', 'true'
             }

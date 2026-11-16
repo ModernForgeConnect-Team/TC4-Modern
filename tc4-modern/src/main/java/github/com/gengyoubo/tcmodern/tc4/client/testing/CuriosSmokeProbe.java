@@ -72,17 +72,20 @@ public final class CuriosSmokeProbe {
                 var eggsTab = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.get(net.minecraft.world.item.CreativeModeTabs.SPAWN_EGGS.location());
                 var tcTab = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("thaumcraft", "creative/thaumcraft"));
                 require(tcTab != null, "TC4 creative tab is missing");
-                int eggCount = 0;
+                int modernEggCount = 0;
                 for (var item : net.minecraftforge.registries.ForgeRegistries.ITEMS) {
                     var id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item);
                     if (id == null || !id.getNamespace().equals("tc4modern") || !(item instanceof net.minecraft.world.item.SpawnEggItem)) continue;
-                    var stack = new ItemStack(item);
-                    require(eggsTab.contains(stack), "Missing spawn egg in vanilla tab: " + id);
-                    require(!tcTab.contains(stack), "Spawn egg is still in TC4 tab: " + id);
-                    eggCount++;
+                    modernEggCount++;
                 }
-                require(eggCount > 0, "No modern spawn eggs found");
-                proof.put("spawnEggsInVanillaTab", eggCount);
+                require(modernEggCount == 0, "TC4 Modern still registers spawn eggs: " + modernEggCount);
+                var runtime = TcModernApi.runtime().orElseThrow();
+                var originalEgg = runtime.mappings().toHost(LegacyMappings.ITEM_STACK,
+                        runtime.stack(new LegacyStack("Thaumcraft:ItemSpawnerEgg", 0, 1, "")), ItemStack.class).orElseThrow();
+                require(eggsTab.contains(originalEgg), "Original TC4 spawn egg is missing from vanilla spawn egg tab");
+                require(!tcTab.contains(originalEgg), "Original TC4 spawn egg is in the TC4 item tab");
+                proof.put("noModernSpawnEggs", true);
+                proof.put("originalTc4SpawnEggInVanillaTab", true);
                 var server = mc.getSingleplayerServer();
                 checks = server.submit(() -> Checks.validate(TcModernApi.runtime().orElseThrow(),
                         server.getPlayerList().getPlayer(mc.player.getUUID()), proof));

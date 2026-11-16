@@ -21,64 +21,6 @@ import net.minecraftforge.registries.RegistryObject;
 /** Every {@code tc4modern} item, block items included; the creative tab lists them in registration order. */
 public final class Tc4Items {
     static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Tc4Modern.MOD_ID);
-    public static final RegistryObject<Item> BRAINY_ZOMBIE_SPAWN_EGG = ITEMS.register("brainy_zombie_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.BRAINY_ZOMBIE, 0x355f33, 0x9d7b6b, new Item.Properties()));
-    public static final RegistryObject<Item> GIANT_BRAINY_ZOMBIE_SPAWN_EGG = ITEMS.register("giant_brainy_zombie_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.GIANT_BRAINY_ZOMBIE, 0x355f33, 0xa63434, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_SPIDER_SPAWN_EGG = ITEMS.register("taint_spider_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SPIDER, 0x3b1f40, 0xc85bba, new Item.Properties()));
-    public static final RegistryObject<Item> INHABITED_ZOMBIE_SPAWN_EGG = ITEMS.register("inhabited_zombie_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.INHABITED_ZOMBIE, 0x414548, 0x74462b, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_COW_SPAWN_EGG = ITEMS.register("taint_cow_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_COW, 0x4f3155, 0x9c72a3, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_PIG_SPAWN_EGG = ITEMS.register("taint_pig_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_PIG, 0x633c60, 0xc48db6, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_CHICKEN_SPAWN_EGG = ITEMS.register("taint_chicken_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_CHICKEN, 0x806a87, 0x9a477c, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_SHEEP_SPAWN_EGG = ITEMS.register("taint_sheep_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SHEEP, 0x60456b, 0xb48dba, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_VILLAGER_SPAWN_EGG = ITEMS.register("taint_villager_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_VILLAGER, 0x563d58, 0xa77cac, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_CREEPER_SPAWN_EGG = ITEMS.register("taint_creeper_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_CREEPER, 0x43344c, 0xa063a0, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_SPORE_SPAWN_EGG = ITEMS.register("taint_spore_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SPORE, 0x5a345e, 0xa875a6, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_SPORE_NEST_SPAWN_EGG = ITEMS.register("taint_spore_nest_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SPORE_NEST, 0x412444, 0x966399, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_SWARM_SPAWN_EGG = ITEMS.register("taint_swarm_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SWARM, 0x593759, 0xa96eaa, new Item.Properties()));
-    public static final RegistryObject<Item> TAINT_TENTACLE_SPAWN_EGG = ITEMS.register("taint_tentacle_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_TENTACLE, 0x3d2444, 0x975e9a, new Item.Properties()));
-    public static final RegistryObject<Item> SMALL_TAINT_TENTACLE_SPAWN_EGG = ITEMS.register("small_taint_tentacle_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.SMALL_TAINT_TENTACLE, 0x3d2444, 0xc887bd, new Item.Properties()));
-    public static final RegistryObject<Item> GIANT_TAINT_TENTACLE_SPAWN_EGG = ITEMS.register("giant_taint_tentacle_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.GIANT_TAINT_TENTACLE, 0x2d1833, 0xae69ad, new Item.Properties()));
-    public static final RegistryObject<Item> WISP_SPAWN_EGG = ITEMS.register("wisp_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.WISP, 0xffc0ff, 0xffffff, new Item.Properties()));
-    public static final RegistryObject<Item> FIRE_BAT_SPAWN_EGG = ITEMS.register("fire_bat_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.FIRE_BAT, 0xffc0ff, 0xc00000, new Item.Properties()));
-    public static final RegistryObject<Item> PECH_SPAWN_EGG = ITEMS.register("pech_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.PECH, 0xffc0ff, 0x400040, new Item.Properties()));
-    public static final RegistryObject<Item> MIND_SPIDER_SPAWN_EGG = ITEMS.register("mind_spider_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.MIND_SPIDER, 0xaaaaaa, 0x404040, new Item.Properties()));
-    public static final RegistryObject<Item> ELDRITCH_GUARDIAN_SPAWN_EGG = ITEMS.register("eldritch_guardian_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_GUARDIAN, 0x222222, 0x404040, new Item.Properties()));
-    public static final RegistryObject<Item> ELDRITCH_WARDEN_SPAWN_EGG = ITEMS.register("eldritch_warden_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_WARDEN, 0x552222, 0x404040, new Item.Properties()));
-    public static final RegistryObject<Item> CULTIST_KNIGHT_SPAWN_EGG = ITEMS.register("cultist_knight_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_KNIGHT, 0xff5055, 0x000080, new Item.Properties()));
-    public static final RegistryObject<Item> CULTIST_CLERIC_SPAWN_EGG = ITEMS.register("cultist_cleric_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_CLERIC, 0xff5055, 0x800000, new Item.Properties()));
-    public static final RegistryObject<Item> CULTIST_LEADER_SPAWN_EGG = ITEMS.register("cultist_leader_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_LEADER, 0xff5055, 0x505050, new Item.Properties()));
-    public static final RegistryObject<Item> CULTIST_PORTAL_SPAWN_EGG = ITEMS.register("cultist_portal_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.CULTIST_PORTAL, 0xff5055, 0xff50ff, new Item.Properties()));
-    public static final RegistryObject<Item> ELDRITCH_GOLEM_SPAWN_EGG = ITEMS.register("eldritch_golem_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_GOLEM, 0x555555, 0x404040, new Item.Properties()));
-    public static final RegistryObject<Item> ELDRITCH_CRAB_SPAWN_EGG = ITEMS.register("eldritch_crab_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.ELDRITCH_CRAB, 0x555555, 0x550000, new Item.Properties()));
-    public static final RegistryObject<Item> THAUMIC_SLIME_SPAWN_EGG = ITEMS.register("thaumic_slime_spawn_egg",
-            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.THAUMIC_SLIME, 0xffc0ff, 0xff80ff, new Item.Properties()));
     public static final RegistryObject<Item> ELEMENT_WORKBOOK = ITEMS.register("element_workbook", ElementWorkbookItem::new);
     public static final RegistryObject<Item> MAGIC_BONE_MEAL = ITEMS.register("magic_bone_meal", MagicBoneMealItem::new);
     public static final RegistryObject<Item> ANCIENT_THAUMIUM_INGOT = ITEMS.register("ancient_thaumium_ingot", () -> new Item(new Item.Properties()));

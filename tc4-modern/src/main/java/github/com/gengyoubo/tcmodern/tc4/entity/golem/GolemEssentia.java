@@ -53,7 +53,7 @@ final class GolemEssentia {
     static boolean accepts(Level level, BlockPos pos, String tag) {
         var container = container(level, pos);
         if (container == null || tag.isEmpty()) return false;
-        var aspect = container.runtime().accessor(Aspect.class).get(tag);
+        var aspect = container.runtime().accessor(AspectLookup.class).get(tag);
         if (aspect == null || !container.access().accepts(aspect)) return false;
         if (container.runtime().values().isInstance(container.tile(), "thaumcraft.common.tiles.TileJarFillable")) {
             var jar = container.runtime().accessor(Jar.class, container.tile());
@@ -66,7 +66,7 @@ final class GolemEssentia {
     static boolean takeOne(Level level, BlockPos pos, String tag) {
         var container = container(level, pos);
         if (container == null) return false;
-        var aspect = container.runtime().accessor(Aspect.class).get(tag);
+        var aspect = container.runtime().accessor(AspectLookup.class).get(tag);
         if (aspect == null || !container.access().take(aspect, 1)) return false;
         container.changed(); return true;
     }
@@ -74,7 +74,7 @@ final class GolemEssentia {
     static int insert(Level level, BlockPos pos, String tag, int amount) {
         var container = container(level, pos);
         if (container == null || amount <= 0) return amount;
-        var aspect = container.runtime().accessor(Aspect.class).get(tag);
+        var aspect = container.runtime().accessor(AspectLookup.class).get(tag);
         if (aspect == null || !container.access().accepts(aspect)) return amount;
         int remaining = container.access().add(aspect, amount);
         if (remaining < amount) container.changed();
@@ -96,7 +96,9 @@ final class GolemEssentia {
         @LegacyField(name="maxAmount", descriptor="I") int capacity();
     }
     @LegacyType("thaumcraft.api.aspects.Aspect") public interface Aspect {
-        @LegacyMethod(name="getAspect", descriptor="(Ljava/lang/String;)Lthaumcraft/api/aspects/Aspect;", isStatic=true) LegacyObject get(String tag);
         @LegacyMethod(name="getTag", descriptor="()Ljava/lang/String;") String tag();
+    }
+    @LegacyType("thaumcraft.api.aspects.Aspect") public interface AspectLookup {
+        @LegacyMethod(name="getAspect", descriptor="(Ljava/lang/String;)Lthaumcraft/api/aspects/Aspect;", isStatic=true) LegacyObject get(String tag);
     }
 }
