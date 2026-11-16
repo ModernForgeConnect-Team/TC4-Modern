@@ -22,9 +22,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import org.jetbrains.annotations.Nullable;
 
-/** Modern blank golem body. Core jobs and TC4's old placer do not yet use this entity. */
+/** Modern golem with TC4 gather and guard core jobs. */
 public final class ModernGolem extends PathfinderMob {
-    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> GATHER_CORE = net.minecraft.network.syncher.SynchedEntityData.defineId(ModernGolem.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+    private static final int NO_CORE = -1, GATHER_CORE = 2, GUARD_CORE = 4;
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> CORE = net.minecraft.network.syncher.SynchedEntityData.defineId(ModernGolem.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
     private static final net.minecraft.network.syncher.EntityDataAccessor<net.minecraft.world.item.ItemStack> CARRIED = net.minecraft.network.syncher.SynchedEntityData.defineId(ModernGolem.class, net.minecraft.network.syncher.EntityDataSerializers.ITEM_STACK);
     private final GolemMaterial material;
     private BlockPos destination;
@@ -32,6 +33,7 @@ public final class ModernGolem extends PathfinderMob {
     private UUID ownerId;
     private BlockPos home;
     private int regenerationTimer;
+    private int attackAnimationTicks;
     public ModernGolem(EntityType<? extends ModernGolem> type, Level level, GolemMaterial material) {
         super(type, level); this.material = material; setPersistenceRequired();
     }
@@ -45,7 +47,7 @@ public final class ModernGolem extends PathfinderMob {
         destination = position.immutable(); destinationFace = face; setHome(position);
     }
     @Override protected void defineSynchedData() {
-        super.defineSynchedData(); entityData.define(GATHER_CORE, false); entityData.define(CARRIED, net.minecraft.world.item.ItemStack.EMPTY);
+        super.defineSynchedData(); entityData.define(CORE, NO_CORE); entityData.define(CARRIED, net.minecraft.world.item.ItemStack.EMPTY);
     }
     public static AttributeSupplier.Builder attributes(GolemMaterial material) {
         return PathfinderMob.createMobAttributes().add(Attributes.MAX_HEALTH, material.health)
@@ -54,6 +56,16 @@ public final class ModernGolem extends PathfinderMob {
     }
     @Override protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
+        goalSelector.addGoal(1, new net.minecraft.world.entity.ai.goal.MeleeAttackGoal(this, 1.0, true) {
+            @Override public boolean canUse() { return core() == GUARD_CORE && super.canUse(); }
+            @Override public boolean canContinueToUse() { return core() == GUARD_CORE && super.canContinueToUse(); }
+        });
+        targetSelector.addGoal(1, new net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 10, true, false,
+                target -> target instanceof net.minecraft.world.entity.monster.Enemy && !(target instanceof net.minecraft.world.entity.monster.Creeper)
+                        && isWithinRestriction(target.blockPosition())) {
+            @Override public boolean canUse() { return core() == GUARD_CORE && super.canUse(); }
+            @Override public boolean canContinueToUse() { return core() == GUARD_CORE && getTarget() != null && isWithinRestriction(getTarget().blockPosition()) && super.canContinueToUse(); }
+        });
         goalSelector.addGoal(2, new GatherGoal());
         goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.6));
         goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6));
@@ -67,10 +79,14 @@ public final class ModernGolem extends PathfinderMob {
     }
     @Override protected net.minecraft.world.InteractionResult mobInteract(Player player, net.minecraft.world.InteractionHand hand) {
         var stack = player.getItemInHand(hand);
-        var id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem());
-        boolean gatherCore = id != null && id.toString().equals("thaumcraft:item_golem_core/meta_2");
-        if (!player.isShiftKeyDown() && !entityData.get(GATHER_CORE) && gatherCore && (ownerId == null || ownerId.equals(player.getUUID()))) {
-            if (!level().isClientSide) { entityData.set(GATHER_CORE, true); if (!player.getAbilities().instabuild) stack.shrink(1); }
+        if (stack.isEmpty() || player.isShiftKeyDown() || core() != NO_CORE
+                || (ownerId != null && !ownerId.equals(player.getUUID()))) return super.mobInteract(player, hand);
+        var runtime = github.com.gengyoubo.tcmodern.api.TcModernApi.runtime().orElse(null);
+        var original = runtime == null ? null : runtime.mappings().toLegacy(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK, stack).map(runtime::snapshot).orElse(null);
+        boolean supported = original != null && original.key().equals("Thaumcraft:ItemGolemCore")
+                && (original.metadata() == GATHER_CORE || original.metadata() == GUARD_CORE);
+        if (supported) {
+            if (!level().isClientSide) { entityData.set(CORE, original.metadata()); if (!player.getAbilities().instabuild) stack.shrink(1); }
             return net.minecraft.world.InteractionResult.sidedSuccess(level().isClientSide);
         }
         return super.mobInteract(player, hand);
@@ -82,7 +98,21 @@ public final class ModernGolem extends PathfinderMob {
         return blockEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, destinationFace).orElse(null);
     }
     public net.minecraft.world.item.ItemStack carriedForDisplay() { return entityData.get(CARRIED).copy(); }
-    public boolean hasGatherCore() { return entityData.get(GATHER_CORE); }
+    public int core() { return entityData.get(CORE); }
+    public boolean hasGatherCore() { return core() == GATHER_CORE; }
+    public float attackAnimation(float partialTick) {
+        if (attackAnimationTicks <= 0) return 0.0F;
+        float progress = (10.0F - attackAnimationTicks + partialTick) / 10.0F;
+        return net.minecraft.util.Mth.sin(net.minecraft.util.Mth.clamp(progress, 0.0F, 1.0F) * net.minecraft.util.Mth.PI);
+    }
+    @Override public boolean doHurtTarget(net.minecraft.world.entity.Entity target) {
+        if (!level().isClientSide) level().broadcastEntityEvent(this, (byte) 4);
+        return super.doHurtTarget(target);
+    }
+    @Override public void handleEntityEvent(byte event) {
+        if (event == 4) attackAnimationTicks = 10;
+        else super.handleEntityEvent(event);
+    }
     private net.minecraft.world.item.ItemStack carried() { return entityData.get(CARRIED); }
     private void setCarried(net.minecraft.world.item.ItemStack stack) { entityData.set(CARRIED, stack.copy()); }
     private final class GatherGoal extends net.minecraft.world.entity.ai.goal.Goal {
@@ -90,7 +120,7 @@ public final class ModernGolem extends PathfinderMob {
         private int retry;
         GatherGoal() { setFlags(java.util.EnumSet.of(Flag.MOVE, Flag.LOOK)); }
         @Override public boolean canUse() {
-            if (!entityData.get(GATHER_CORE) || destinationInventory() == null || home == null) return false;
+            if (!hasGatherCore() || destinationInventory() == null || home == null) return false;
             if (!carried().isEmpty()) return canInsert(destinationInventory(), carried());
             if (tickCount % 10 != 0) return false;
             var inventory = destinationInventory();
@@ -105,7 +135,7 @@ public final class ModernGolem extends PathfinderMob {
         }
         @Override public boolean canContinueToUse() {
             var inventory = destinationInventory();
-            return entityData.get(GATHER_CORE) && inventory != null
+            return hasGatherCore() && inventory != null
                     && (!carried().isEmpty() ? canInsert(inventory, carried()) : target != null && target.isAlive() && !target.getItem().isEmpty());
         }
         @Override public void stop() { target = null; getNavigation().stop(); }
@@ -134,6 +164,7 @@ public final class ModernGolem extends PathfinderMob {
     }
     @Override public void tick() {
         super.tick();
+        if (attackAnimationTicks > 0) attackAnimationTicks--;
         if (level().isClientSide || !isAlive()) return;
         if (home == null) setHome(blockPosition());
         if (regenerationTimer > 0) regenerationTimer--;
@@ -147,7 +178,7 @@ public final class ModernGolem extends PathfinderMob {
         if (ownerId != null) tag.putUUID("Tc4Owner", ownerId);
         if (home != null) tag.putLong("Tc4Home", home.asLong());
         tag.putInt("Tc4RegenerationTimer", regenerationTimer);
-        tag.putBoolean("Tc4GatherCore", entityData.get(GATHER_CORE));
+        tag.putInt("Tc4Core", core());
         if (!carried().isEmpty()) tag.put("Tc4Carried", carried().save(new CompoundTag()));
         if (destination != null) { tag.putLong("Tc4Destination", destination.asLong()); tag.putInt("Tc4DestinationFace", destinationFace.get3DDataValue()); }
     }
@@ -156,7 +187,8 @@ public final class ModernGolem extends PathfinderMob {
         ownerId = tag.hasUUID("Tc4Owner") ? tag.getUUID("Tc4Owner") : null;
         if (tag.contains("Tc4Home", 4)) setHome(BlockPos.of(tag.getLong("Tc4Home")));
         regenerationTimer = Math.max(0, tag.getInt("Tc4RegenerationTimer"));
-        entityData.set(GATHER_CORE, tag.getBoolean("Tc4GatherCore"));
+        int savedCore = tag.contains("Tc4Core", 99) ? tag.getInt("Tc4Core") : tag.getBoolean("Tc4GatherCore") ? GATHER_CORE : NO_CORE;
+        entityData.set(CORE, savedCore == GATHER_CORE || savedCore == GUARD_CORE ? savedCore : NO_CORE);
         setCarried(net.minecraft.world.item.ItemStack.of(tag.getCompound("Tc4Carried")));
         if (tag.contains("Tc4Destination", 4)) { destination = BlockPos.of(tag.getLong("Tc4Destination")); destinationFace = net.minecraft.core.Direction.from3DDataValue(tag.getInt("Tc4DestinationFace")); }
     }

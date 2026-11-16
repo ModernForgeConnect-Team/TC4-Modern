@@ -31,6 +31,11 @@ final class ModernGolemModel extends EntityModel<ModernGolem> {
         float walk = Mth.cos(limbSwing * 0.6662F) * limbAmount;
         root.getChild("left_leg").xRot = walk; root.getChild("right_leg").xRot = -walk;
         root.getChild("left_arm").xRot = -walk * 0.7F; root.getChild("right_arm").xRot = walk * 0.7F;
+        float attack = entity.attackAnimation(age - entity.tickCount);
+        if (attack > 0.0F) {
+            root.getChild("left_arm").xRot = -2.0F * attack;
+            root.getChild("right_arm").xRot = -2.0F * attack;
+        }
     }
     @Override public void renderToBuffer(PoseStack pose, VertexConsumer vertices, int light, int overlay, float r, float g, float b, float a) {
         pose.pushPose(); pose.scale(0.4F, 0.4F, 0.4F); root.render(pose, vertices, light, overlay, r, g, b, a); pose.popPose();

@@ -127,11 +127,37 @@ public final class Tc4EntityRenderers {
         @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint entity) { return net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS; }
     }
     private static final class ModernGolemRenderer extends net.minecraft.client.renderer.entity.MobRenderer<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem, ModernGolemModel> {
-        ModernGolemRenderer(EntityRendererProvider.Context context) { super(context, new ModernGolemModel(), 0.3F); addLayer(new GolemItemLayer(this, context.getItemRenderer())); }
+        ModernGolemRenderer(EntityRendererProvider.Context context) { super(context, new ModernGolemModel(), 0.3F); addLayer(new GolemCoreLayer(this, context.getItemRenderer())); addLayer(new GolemItemLayer(this, context.getItemRenderer())); }
         @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem entity) {
             return ResourceLocation.fromNamespaceAndPath(TC, "textures/models/golem_" + entity.material().id() + ".png");
         }
 
+    }
+    private static final class GolemCoreLayer extends net.minecraft.client.renderer.entity.layers.RenderLayer<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem, ModernGolemModel> {
+        private final net.minecraft.client.renderer.entity.ItemRenderer items;
+        private final java.util.Map<Integer, net.minecraft.world.item.ItemStack> cores = new java.util.HashMap<>();
+        GolemCoreLayer(ModernGolemRenderer renderer, net.minecraft.client.renderer.entity.ItemRenderer items) { super(renderer); this.items = items; }
+        @Override public void render(com.mojang.blaze3d.vertex.PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light, github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem golem, float limbSwing, float limbAmount, float partialTick, float age, float headYaw, float headPitch) {
+            int core = golem.core();
+            if (core < 0 || golem.isInvisible()) return;
+            var stack = cores.get(core);
+            if (stack == null) {
+                var runtime = github.com.gengyoubo.tcmodern.api.TcModernApi.runtime().orElse(null);
+                if (runtime == null) return;
+                stack = runtime.mappings().toHost(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK,
+                        runtime.stack(new github.com.gengyoubo.mfcl.api.LegacyStack("Thaumcraft:ItemGolemCore", core, 1, "")), net.minecraft.world.item.ItemStack.class)
+                        .orElse(net.minecraft.world.item.ItemStack.EMPTY);
+                if (stack.isEmpty()) return;
+                cores.put(core, stack);
+            }
+            pose.pushPose();
+            pose.translate(0.0875, 0.96, -0.155);
+            pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(180));
+            pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180));
+            pose.scale(0.35F, 0.35F, 0.35F);
+            items.renderStatic(golem, stack, net.minecraft.world.item.ItemDisplayContext.FIXED, false, pose, buffers, golem.level(), light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, golem.getId());
+            pose.popPose();
+        }
     }
     private static final class GolemItemLayer extends net.minecraft.client.renderer.entity.layers.RenderLayer<github.com.gengyoubo.tcmodern.tc4.entity.golem.ModernGolem, ModernGolemModel> {
         private final net.minecraft.client.renderer.entity.ItemRenderer items;

@@ -30,18 +30,19 @@ public final class GolemBellInteraction {
                 runtime.stack(new LegacyStack("Thaumcraft:ItemGolemPlacer", golem.material().ordinal(), 1, "")), ItemStack.class).orElse(ItemStack.EMPTY);
         if (item.isEmpty()) return;
         if (player.isShiftKeyDown()) {
-            var core = golem.hasGatherCore() ? ForgeRegistries.ITEMS.getValue(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("thaumcraft", "item_golem_core/meta_2")) : null;
-            if (golem.hasGatherCore() && (core == null || core == net.minecraft.world.item.Items.AIR)) return;
+            var core = golem.core() >= 0 ? runtime.mappings().toHost(LegacyMappings.ITEM_STACK,
+                    runtime.stack(new LegacyStack("Thaumcraft:ItemGolemCore", golem.core(), 1, "")), ItemStack.class).orElse(ItemStack.EMPTY) : ItemStack.EMPTY;
+            if (golem.core() >= 0 && core.isEmpty()) return;
             var carried = golem.carriedForDisplay();
             golem.discard();
             give(player, item);
-            if (core != null) give(player, new ItemStack(core));
+            if (!core.isEmpty()) give(player, core);
             if (!carried.isEmpty()) give(player, carried);
         } else {
             var data = new CompoundTag();
             golem.addAdditionalSaveData(data);
             item.getOrCreateTag().put(PORTABLE, data);
-            if (golem.hasGatherCore()) item.getOrCreateTag().putByte("core", (byte)2);
+            if (golem.core() >= 0) item.getOrCreateTag().putByte("core", (byte)golem.core());
             if (golem.hasCustomName()) item.setHoverName(golem.getCustomName());
             golem.discard();
             give(player, item);
