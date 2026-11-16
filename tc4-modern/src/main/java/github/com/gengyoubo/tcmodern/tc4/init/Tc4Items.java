@@ -45,6 +45,14 @@ public final class Tc4Items {
             () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SPORE, 0x5a345e, 0xa875a6, new Item.Properties()));
     public static final RegistryObject<Item> TAINT_SPORE_NEST_SPAWN_EGG = ITEMS.register("taint_spore_nest_spawn_egg",
             () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SPORE_NEST, 0x412444, 0x966399, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_SWARM_SPAWN_EGG = ITEMS.register("taint_swarm_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_SWARM, 0x593759, 0xa96eaa, new Item.Properties()));
+    public static final RegistryObject<Item> TAINT_TENTACLE_SPAWN_EGG = ITEMS.register("taint_tentacle_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.TAINT_TENTACLE, 0x3d2444, 0x975e9a, new Item.Properties()));
+    public static final RegistryObject<Item> SMALL_TAINT_TENTACLE_SPAWN_EGG = ITEMS.register("small_taint_tentacle_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.SMALL_TAINT_TENTACLE, 0x3d2444, 0xc887bd, new Item.Properties()));
+    public static final RegistryObject<Item> GIANT_TAINT_TENTACLE_SPAWN_EGG = ITEMS.register("giant_taint_tentacle_spawn_egg",
+            () -> new net.minecraftforge.common.ForgeSpawnEggItem(Tc4Entities.GIANT_TAINT_TENTACLE, 0x2d1833, 0xae69ad, new Item.Properties()));
     public static final RegistryObject<Item> ELEMENT_WORKBOOK = ITEMS.register("element_workbook", ElementWorkbookItem::new);
     public static final RegistryObject<Item> MAGIC_BONE_MEAL = ITEMS.register("magic_bone_meal", MagicBoneMealItem::new);
     public static final RegistryObject<Item> ANCIENT_THAUMIUM_INGOT = ITEMS.register("ancient_thaumium_ingot", () -> new Item(new Item.Properties()));

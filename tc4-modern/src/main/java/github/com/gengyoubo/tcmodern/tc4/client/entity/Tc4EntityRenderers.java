@@ -29,6 +29,11 @@ public final class Tc4EntityRenderers {
         event.registerEntityRenderer(Tc4Entities.TAINT_CREEPER.get(), TaintCreeperRenderer::new);
         event.registerEntityRenderer(Tc4Entities.TAINT_SPORE.get(), TaintSporeRenderer::new);
         event.registerEntityRenderer(Tc4Entities.TAINT_SPORE_NEST.get(), TaintSporeNestRenderer::new);
+        event.registerEntityRenderer(Tc4Entities.TAINT_SWARM.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(Tc4Entities.TAINT_TENTACLE.get(), TaintTentacleRenderer::new);
+        event.registerEntityRenderer(Tc4Entities.SMALL_TAINT_TENTACLE.get(), TaintTentacleRenderer::new);
+        event.registerEntityRenderer(Tc4Entities.GIANT_TAINT_TENTACLE.get(), TaintTentacleRenderer::new);
+        event.registerEntityRenderer(Tc4Entities.FALLING_TAINT.get(), FallingTaintRenderer::new);
     }
     private static final class TaintSpiderRenderer extends net.minecraft.client.renderer.entity.SpiderRenderer<github.com.gengyoubo.tcmodern.tc4.entity.TaintSpider> {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TC, "textures/models/taint_spider.png");
@@ -97,6 +102,28 @@ public final class Tc4EntityRenderers {
         TaintSporeNestRenderer(EntityRendererProvider.Context context) { super(context, new net.minecraft.client.model.SlimeModel<>(context.bakeLayer(net.minecraft.client.model.geom.ModelLayers.SLIME_OUTER)), 0.25F); }
         @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.TaintSporeNest entity) { return TEXTURE; }
         @Override protected void scale(github.com.gengyoubo.tcmodern.tc4.entity.TaintSporeNest entity, com.mojang.blaze3d.vertex.PoseStack stack, float partialTick) { stack.scale(1.6F, 1.6F, 1.6F); }
+    }
+    private static final class TaintTentacleRenderer extends net.minecraft.client.renderer.entity.MobRenderer<github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle, TaintTentacleModel<github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle>> {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TC, "textures/models/taintacle.png");
+        TaintTentacleRenderer(EntityRendererProvider.Context context) { super(context, new TaintTentacleModel<>(), 0.35F); }
+        @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle entity) { return TEXTURE; }
+        @Override protected void scale(github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle entity, com.mojang.blaze3d.vertex.PoseStack stack, float partialTick) {
+            float scale = entity instanceof github.com.gengyoubo.tcmodern.tc4.entity.SmallTaintTentacle ? 0.5F : entity instanceof github.com.gengyoubo.tcmodern.tc4.entity.GiantTaintTentacle ? 3.0F : 1.5F;
+            stack.scale(scale, scale, scale);
+        }
+    }
+    private static final class FallingTaintRenderer extends net.minecraft.client.renderer.entity.EntityRenderer<github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint> {
+        private final net.minecraft.client.renderer.block.BlockRenderDispatcher blocks;
+        FallingTaintRenderer(EntityRendererProvider.Context context) { super(context); blocks = context.getBlockRenderDispatcher(); shadowRadius = 0.5F; }
+        @Override public void render(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint entity, float yaw, float partialTick, com.mojang.blaze3d.vertex.PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light) {
+            if (!entity.blockState().isAir()) {
+                pose.pushPose(); pose.translate(-0.5, 0, -0.5);
+                blocks.renderSingleBlock(entity.blockState(), pose, buffers, light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+                pose.popPose();
+            }
+            super.render(entity, yaw, partialTick, pose, buffers, light);
+        }
+        @Override public ResourceLocation getTextureLocation(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint entity) { return net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS; }
     }
     private static final class TaintCowRenderer extends net.minecraft.client.renderer.entity.MobRenderer<github.com.gengyoubo.tcmodern.tc4.entity.TaintCow, net.minecraft.client.model.CowModel<github.com.gengyoubo.tcmodern.tc4.entity.TaintCow>> {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("thaumcraft", "textures/models/cow.png");

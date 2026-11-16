@@ -35,6 +35,9 @@ public class TaintCow extends Monster {
         runtime.entityHosts().register(TaintVillager.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_VILLAGER.get().create((ServerLevel) level));
         runtime.entityHosts().register(TaintCreeper.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_CREEPER.get().create((ServerLevel) level));
         runtime.entityHosts().register(TaintSporeNest.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_SPORE_NEST.get().create((ServerLevel) level));
+        runtime.entityHosts().register(TaintTentacle.LEGACY_CLASS, (level, original) -> Tc4Entities.TAINT_TENTACLE.get().create((ServerLevel) level));
+        runtime.entityHosts().register(SmallTaintTentacle.LEGACY_CLASS, (level, original) -> Tc4Entities.SMALL_TAINT_TENTACLE.get().create((ServerLevel) level));
+        runtime.entityHosts().register(GiantTaintTentacle.LEGACY_CLASS, (level, original) -> Tc4Entities.GIANT_TAINT_TENTACLE.get().create((ServerLevel) level));
     }
     protected String legacyClass() { return LEGACY_CLASS; }
     @Override protected void registerGoals() {

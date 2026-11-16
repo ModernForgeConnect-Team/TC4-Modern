@@ -1,4 +1,12 @@
 {
+  "entity.tc4modern.giant_taint_tentacle": "Giant Taintacle",
+  "item.tc4modern.giant_taint_tentacle_spawn_egg": "Giant Taintacle Spawn Egg",
+  "entity.tc4modern.taint_tentacle": "Taintacle",
+  "item.tc4modern.taint_tentacle_spawn_egg": "Taintacle Spawn Egg",
+  "entity.tc4modern.small_taint_tentacle": "Small Taintacle",
+  "item.tc4modern.small_taint_tentacle_spawn_egg": "Small Taintacle Spawn Egg",
+  "entity.tc4modern.taint_swarm": "Taint Swarm",
+  "item.tc4modern.taint_swarm_spawn_egg": "Taint Swarm Spawn Egg",
   "entity.tc4modern.taint_spore_nest": "Taint Spore Nest",
   "item.tc4modern.taint_spore_nest_spawn_egg": "Taint Spore Nest Spawn Egg",
   "entity.tc4modern.taint_spore": "Taint Spore",

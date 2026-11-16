@@ -1,4 +1,12 @@
 {
+  "entity.tc4modern.giant_taint_tentacle": "巨型腐化触手",
+  "item.tc4modern.giant_taint_tentacle_spawn_egg": "巨型腐化触手刷怪蛋",
+  "entity.tc4modern.taint_tentacle": "腐化触手",
+  "item.tc4modern.taint_tentacle_spawn_egg": "腐化触手刷怪蛋",
+  "entity.tc4modern.small_taint_tentacle": "小型腐化触手",
+  "item.tc4modern.small_taint_tentacle_spawn_egg": "小型腐化触手刷怪蛋",
+  "entity.tc4modern.taint_swarm": "腐化孢子群",
+  "item.tc4modern.taint_swarm_spawn_egg": "腐化孢子群刷怪蛋",
   "entity.tc4modern.taint_spore_nest": "腐化孢子巢穴",
   "item.tc4modern.taint_spore_nest_spawn_egg": "腐化孢子巢穴刷怪蛋",
   "entity.tc4modern.taint_spore": "腐化孢子",

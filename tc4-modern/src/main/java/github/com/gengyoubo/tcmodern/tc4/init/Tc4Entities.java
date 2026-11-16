@@ -59,6 +59,25 @@ public final class Tc4Entities {
             () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintSporeNest::new, MobCategory.MONSTER)
                     .sized(1.0F, 1.0F).clientTrackingRange(8).build("tc4modern:taint_spore_nest"));
 
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintSwarm>> TAINT_SWARM = TYPES.register("taint_swarm",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintSwarm::new, MobCategory.MONSTER)
+                    .sized(2.0F, 2.0F).clientTrackingRange(8).build("tc4modern:taint_swarm"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle>> TAINT_TENTACLE = TYPES.register("taint_tentacle",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle::new, MobCategory.MONSTER)
+                    .sized(0.66F, 3.0F).clientTrackingRange(8).build("tc4modern:taint_tentacle"));
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.SmallTaintTentacle>> SMALL_TAINT_TENTACLE = TYPES.register("small_taint_tentacle",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.SmallTaintTentacle::new, MobCategory.MONSTER)
+                    .sized(0.22F, 1.0F).clientTrackingRange(8).build("tc4modern:small_taint_tentacle"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.GiantTaintTentacle>> GIANT_TAINT_TENTACLE = TYPES.register("giant_taint_tentacle",
+            () -> EntityType.Builder.of(github.com.gengyoubo.tcmodern.tc4.entity.GiantTaintTentacle::new, MobCategory.MONSTER)
+                    .sized(1.1F, 6.0F).clientTrackingRange(12).build("tc4modern:giant_taint_tentacle"));
+
+    public static final RegistryObject<EntityType<github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint>> FALLING_TAINT = TYPES.register("falling_taint",
+            () -> EntityType.Builder.<github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint>of(github.com.gengyoubo.tcmodern.tc4.entity.FallingTaint::new, MobCategory.MISC)
+                    .sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1).build("tc4modern:falling_taint"));
+
     private Tc4Entities() { }
     public static void register(IEventBus bus) {
         TYPES.register(bus);
@@ -77,5 +96,9 @@ public final class Tc4Entities {
         event.put(TAINT_CREEPER.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintCreeper.creeperAttributes().build());
         event.put(TAINT_SPORE.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSpore.sporeAttributes().build());
         event.put(TAINT_SPORE_NEST.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSporeNest.nestAttributes().build());
+        event.put(TAINT_SWARM.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintSwarm.swarmAttributes().build());
+        event.put(TAINT_TENTACLE.get(), github.com.gengyoubo.tcmodern.tc4.entity.TaintTentacle.tentacleAttributes().build());
+        event.put(SMALL_TAINT_TENTACLE.get(), github.com.gengyoubo.tcmodern.tc4.entity.SmallTaintTentacle.smallAttributes().build());
+        event.put(GIANT_TAINT_TENTACLE.get(), github.com.gengyoubo.tcmodern.tc4.entity.GiantTaintTentacle.giantAttributes().build());
     }
 }
