@@ -22,10 +22,13 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+
+
 /** Gameplay module. Shared runtime access belongs in tc-modern-lib. */
 @Mod(Tc4Modern.MOD_ID)
 public final class Tc4Modern {
     public static final String MOD_ID = "tc4modern";
+    public static final String TC = "thaumcraft";
     public static final Logger LOGGER = LogManager.getLogger();
     public Tc4Modern(FMLJavaModLoadingContext context) {
         github.com.gengyoubo.mfcl.api.LegacyBlockProviders.register(new github.com.gengyoubo.tcmodern.tc4.compat.Tc4NativeBlocks());
@@ -48,6 +51,8 @@ public final class Tc4Modern {
                 github.com.gengyoubo.tcmodern.tc4.crucible.IntermediateCruciblePages::recipes);
         // Aspects first: everything after may read or assign them.
         TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.BrainyZombie::registerLegacyHost);
+        TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.TaintSpider::registerLegacyHost);
+        TcModernApi.whenReady(github.com.gengyoubo.tcmodern.tc4.entity.TaintCow::registerLegacyHost);
         TcModernApi.whenReady(Tc4Aspects::install);
         TcModernApi.whenReady(Tc4ScanDefaults::install);
         TcModernApi.whenReady(Tc4ModernWorldgen::install);

@@ -1,4 +1,12 @@
 {
+  "entity.tc4modern.taint_cow": "Tainted Cow",
+  "item.tc4modern.taint_cow_spawn_egg": "Tainted Cow Spawn Egg",
+  "entity.tc4modern.inhabited_zombie": "Inhabited Zombie",
+  "item.tc4modern.inhabited_zombie_spawn_egg": "Inhabited Zombie Spawn Egg",
+  "entity.tc4modern.taint_spider": "Taint Spider",
+  "item.tc4modern.taint_spider_spawn_egg": "Taint Spider Spawn Egg",
+  "entity.tc4modern.giant_brainy_zombie": "Giant Brainy Zombie",
+  "item.tc4modern.giant_brainy_zombie_spawn_egg": "Giant Brainy Zombie Spawn Egg",
   "entity.tc4modern.brainy_zombie": "Brainy Zombie",
   "item.tc4modern.brainy_zombie_spawn_egg": "Brainy Zombie Spawn Egg",
   "advancement.tc4modern.disposable_tool.title": "Disposable Tool",

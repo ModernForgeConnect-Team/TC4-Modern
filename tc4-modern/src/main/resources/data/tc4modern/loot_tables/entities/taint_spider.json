@@ -1,0 +1,1 @@
+{"type":"minecraft:entity","pools":[{"rolls":1,"conditions":[{"condition":"minecraft:random_chance","chance":0.16666667}],"entries":[{"type":"minecraft:item","name":"thaumcraft:item_resource/meta_11"},{"type":"minecraft:item","name":"thaumcraft:item_resource/meta_12"}]}]}

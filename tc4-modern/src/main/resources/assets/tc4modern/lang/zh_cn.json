@@ -1,4 +1,12 @@
 {
+  "entity.tc4modern.taint_cow": "腐化牛",
+  "item.tc4modern.taint_cow_spawn_egg": "腐化牛刷怪蛋",
+  "entity.tc4modern.inhabited_zombie": "行尸走肉",
+  "item.tc4modern.inhabited_zombie_spawn_egg": "行尸走肉刷怪蛋",
+  "entity.tc4modern.taint_spider": "腐化魔蛛",
+  "item.tc4modern.taint_spider_spawn_egg": "腐化魔蛛刷怪蛋",
+  "entity.tc4modern.giant_brainy_zombie": "红眼僵尸巨人",
+  "item.tc4modern.giant_brainy_zombie_spawn_egg": "红眼僵尸巨人刷怪蛋",
   "entity.tc4modern.brainy_zombie": "红眼僵尸",
   "item.tc4modern.brainy_zombie_spawn_egg": "红眼僵尸刷怪蛋",
   "advancement.tc4modern.disposable_tool.title": "一次性工具",

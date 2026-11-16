@@ -14,7 +14,11 @@ public final class OriginalScanBridge {
     private static Set<ScanKey> overrides = Set.of();
     private OriginalScanBridge() { }
     public static synchronized void install(Map<ScanKey, AspectValues> rules, Set<ScanKey> explicit) {
-        var api = TcModernApi.runtime().orElseThrow();
+        var api = TcModernApi.runtime().orElse(null);
+        if (api == null) {
+            com.mojang.logging.LogUtils.getLogger().warn("TC4 scan registration skipped: original Thaumcraft runtime is unavailable");
+            return;
+        }
         if (api == runtime && installed.equals(rules) && overrides.equals(explicit)) return;
         var representations = api.hostRepresentations();
         var registration = api.accessor(ScanAccessors.Registration.class);

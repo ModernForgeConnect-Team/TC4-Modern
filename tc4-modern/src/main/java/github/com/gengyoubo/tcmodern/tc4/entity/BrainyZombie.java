@@ -13,7 +13,7 @@ import net.minecraft.world.level.Level;
 
 /** TC4's brainy zombie, using the host game's zombie movement and combat. */
 public class BrainyZombie extends Zombie {
-    private static final String LEGACY_CLASS = "thaumcraft.common.entities.monster.EntityBrainyZombie";
+    protected static final String LEGACY_CLASS = "thaumcraft.common.entities.monster.EntityBrainyZombie";
     private static final String LEGACY_DATA = "Tc4LegacyBrainyZombie";
     private byte[] pendingLegacyData;
 
@@ -25,7 +25,16 @@ public class BrainyZombie extends Zombie {
     public static void registerLegacyHost(LegacyRuntime runtime) {
         runtime.entityHosts().register(LEGACY_CLASS, (level, original) ->
                 Tc4Entities.BRAINY_ZOMBIE.get().create((ServerLevel) level));
+        runtime.entityHosts().register(GiantBrainyZombie.LEGACY_CLASS, (level, original) ->
+                Tc4Entities.GIANT_BRAINY_ZOMBIE.get().create((ServerLevel) level));
+        runtime.entityHosts().register(InhabitedZombie.LEGACY_CLASS, (level, original) -> {
+            var zombie = Tc4Entities.INHABITED_ZOMBIE.get().create((ServerLevel) level);
+            if (zombie != null) zombie.equipCultistArmor();
+            return zombie;
+        });
     }
+
+    protected String legacyClass() { return LEGACY_CLASS; }
 
     public static AttributeSupplier.Builder attributes() {
         return Zombie.createAttributes()
@@ -40,7 +49,7 @@ public class BrainyZombie extends Zombie {
         TcModernApi.runtime().ifPresent(runtime -> {
             var hosts = runtime.entityHosts();
             if (pendingLegacyData != null) {
-                hosts.restore(this, LEGACY_CLASS, pendingLegacyData);
+                hosts.restore(this, legacyClass(), pendingLegacyData);
                 pendingLegacyData = null;
             }
             if (hosts.original(this).isPresent()) hosts.sync(this);

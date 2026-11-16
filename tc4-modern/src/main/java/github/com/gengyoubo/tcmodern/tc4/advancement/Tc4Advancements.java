@@ -12,11 +12,13 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.Map;
 import java.util.Objects;
 
+import static github.com.gengyoubo.tcmodern.tc4.Tc4Modern.TC;
+
 @Mod.EventBusSubscriber(modid = Tc4Modern.MOD_ID)
 public final class Tc4Advancements {
-    private static final ResourceLocation WOOD_IRON_WAND = ResourceLocation.fromNamespaceAndPath("thaumcraft", "wand_casting/wood_iron");
+    private static final ResourceLocation WOOD_IRON_WAND = ResourceLocation.fromNamespaceAndPath(TC, "wand_casting/wood_iron");
     private static final ResourceLocation NOVICE_WAND = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "novice_wand");
-    private static final ResourceLocation INKWELL = ResourceLocation.fromNamespaceAndPath("thaumcraft", "item_inkwell");
+    private static final ResourceLocation INKWELL = ResourceLocation.fromNamespaceAndPath(TC, "item_inkwell");
     private static final ResourceLocation WRITING_TOOLS = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "writing_tools");
 
     private Tc4Advancements() { }
