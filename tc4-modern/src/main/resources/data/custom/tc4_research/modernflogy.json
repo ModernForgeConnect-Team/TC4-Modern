@@ -1,0 +1,32 @@
+{
+  "type": "tc4modern:research",
+  "key": "ModernFlogy",
+  "name": {
+    "zh_CN": "现代咒波学"
+  },
+  "category": "Modern",
+  "position": [
+    5,
+    5
+  ],
+  "complexity": 1,
+  "icon": {
+    "item": "tc4modern:flux_ingot"
+  },
+  "aspects": {
+    "praecantatio": 5,
+    "fabrico": 3
+  },
+  "note_aspects": {},
+  "flags": [
+    "concealed"
+  ],
+  "pages": [
+    {
+      "text": ""
+    }
+  ],
+  "parents": [
+    "flux_recycling"
+  ]
+}

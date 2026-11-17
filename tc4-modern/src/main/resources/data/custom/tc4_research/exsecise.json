@@ -42,5 +42,8 @@
   "subtitle": {
     "zh_CN": "熟悉要素之间的联系",
     "en_US": "Practice connecting aspects"
-  }
+  },
+  "flags": [
+    "concealed"
+  ]
 }

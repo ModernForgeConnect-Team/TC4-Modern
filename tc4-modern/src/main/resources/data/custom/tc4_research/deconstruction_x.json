@@ -39,5 +39,8 @@
         "item": "tc4modern:deconstruction_x"
       }
     }
+  ],
+  "flags": [
+    "concealed"
   ]
 }

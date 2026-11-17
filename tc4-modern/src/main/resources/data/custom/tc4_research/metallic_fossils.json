@@ -23,7 +23,7 @@
     "terra": 1
   },
   "flags": [
-    "auto_unlock"
+    "concealed"
   ],
   "subtitle": {
     "zh_CN": "沉睡于岩层的金属",

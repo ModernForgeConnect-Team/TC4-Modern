@@ -20,8 +20,8 @@
     "potentia": 1,
     "permutatio": 1
   },
-  "parents": [
-    "deconstruction_y"
+  "flags": [
+    "concealed"
   ],
   "subtitle": {
     "zh_CN": "人造节点",

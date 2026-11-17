@@ -42,5 +42,8 @@
   "subtitle": {
     "zh_CN": "经久耐用的笔尖",
     "en_US": "A longer-lasting nib"
-  }
+  },
+  "flags": [
+    "concealed"
+  ]
 }

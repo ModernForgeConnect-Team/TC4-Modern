@@ -36,5 +36,8 @@
   ],
   "parents": [
     "intermediate_crucible"
+  ],
+  "flags": [
+    "concealed"
   ]
 }

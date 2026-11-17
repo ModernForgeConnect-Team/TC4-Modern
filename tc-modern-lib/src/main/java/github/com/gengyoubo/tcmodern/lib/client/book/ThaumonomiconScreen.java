@@ -170,9 +170,7 @@ public final class ThaumonomiconScreen extends Screen {
     }
 
     boolean buyable(TcResearchEntry entry) {
-        if (entry.aspects().isEmpty() || runtime == null) return false;
-        int difficulty = TcThaumonomicon.difficulty(runtime);
-        return difficulty == -1 || difficulty == 0 && entry.has(TcResearchEntry.Flag.SECONDARY);
+        return BookLogic.buyable(entry);
     }
 
     int pool(String tag) {
@@ -572,11 +570,14 @@ public final class ThaumonomiconScreen extends Screen {
         boolean isDone = done(entry), open = unlockable(entry);
         if (isDone) lines.add(Component.translatable("book.tcmodernlib.state.done").withStyle(ChatFormatting.GREEN));
         else if (!open) lines.add(Component.translatable("book.tcmodernlib.state.locked").withStyle(ChatFormatting.DARK_GRAY));
-        else if (buyable(entry)) {
-            lines.add(Component.translatable("book.tcmodernlib.state.buy").withStyle(ChatFormatting.GOLD));
-            entry.aspects().forEach((tag, amount) -> lines.add(Component.literal("  " + aspectName(tag) + " " + pool(tag) + "/" + amount)
-                    .withStyle(pool(tag) >= amount ? ChatFormatting.GRAY : ChatFormatting.RED)));
-        } else lines.add(Component.translatable("book.tcmodernlib.state.note").withStyle(ChatFormatting.GOLD));
+        else {
+            lines.add(Component.translatable("book.tcmodernlib.state.note").withStyle(ChatFormatting.GOLD));
+            if (buyable(entry)) {
+                lines.add(Component.translatable("book.tcmodernlib.state.buy").withStyle(ChatFormatting.GOLD));
+                entry.aspects().forEach((tag, amount) -> lines.add(Component.literal("  " + aspectName(tag) + " " + pool(tag) + "/" + amount)
+                        .withStyle(pool(tag) >= amount ? ChatFormatting.GRAY : ChatFormatting.RED)));
+            }
+        }
         if (entry.warp() > 0) lines.add(Component.translatable("book.tcmodernlib.state.warp", entry.warp()).withStyle(ChatFormatting.DARK_PURPLE));
         if (cheat) {
             if (!normallyVisible(entry)) lines.add(Component.translatable("book.tcmodernlib.state.ghost").withStyle(ChatFormatting.RED));
@@ -597,15 +598,17 @@ public final class ThaumonomiconScreen extends Screen {
     private void activate(TcResearchEntry entry) {
         if (cheat || done(entry)) { open(entry); return; }
         if (!unlockable(entry)) { show(Component.translatable("book.tcmodernlib.toast.locked")); return; }
-        if (buyable(entry)) {
-            if (!affordable(entry)) { show(Component.translatable("book.tcmodernlib.toast.points")); return; }
-            BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.BUY, entry.key(), false));
-            sound("cameraclack", 0.4F, 0);
-        } else {
-            BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.NOTE, entry.key(), false));
-            show(Component.translatable("book.tcmodernlib.toast.note", name(entry.key())));
-            sound("write", 0.3F, 0);
-        }
+        BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.NOTE, entry.key(), false));
+        show(Component.translatable("book.tcmodernlib.toast.note", name(entry.key())));
+        sound("write", 0.3F, 0);
+    }
+
+    private void buy(TcResearchEntry entry) {
+        if (done(entry) || !buyable(entry)) return;
+        if (!unlockable(entry)) { show(Component.translatable("book.tcmodernlib.toast.locked")); return; }
+        if (!affordable(entry)) { show(Component.translatable("book.tcmodernlib.toast.points")); return; }
+        BookNetwork.send(new BookNetwork.Action(BookNetwork.Kind.BUY, entry.key(), false));
+        sound("cameraclack", 0.4F, 0);
     }
 
     private void researchMenu(TcResearchEntry entry, int x, int y) {
@@ -715,6 +718,7 @@ public final class ThaumonomiconScreen extends Screen {
             if (button == 1) {
                 if (cheat && entry != null) researchMenu(entry, (int) x, (int) y);
                 else if (cheat) { int[] cell = cellAt(x, y); slotMenu(cell[0], cell[1], (int) x, (int) y); }
+                else if (entry != null) buy(entry);
                 return true;
             }
             dragging = button == 0;

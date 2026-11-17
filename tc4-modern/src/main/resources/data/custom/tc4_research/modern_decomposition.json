@@ -11,7 +11,9 @@
   "icon": {"item": "minecraft:gold_ingot"},
   "aspects": {},
   "note_aspects": {"perditio": 1, "cognitio": 1, "permutatio": 1},
-  "flags": ["round"],
+  "flags": [
+    "concealed"
+  ],
   "subtitle": {
     "zh_CN": "重新思考物质与要素",
     "en_US": "Rethinking matter and aspects"

@@ -17,5 +17,8 @@
       }
     },
     { "infusion": { "item": "tc4modern:thaumic_sponge" } }
+  ],
+  "flags": [
+    "concealed"
   ]
 }

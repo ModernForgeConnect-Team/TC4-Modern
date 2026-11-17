@@ -17,5 +17,8 @@
       }
     },
     { "crucible": { "item": "tc4modern:flux_ingot" } }
+  ],
+  "flags": [
+    "concealed"
   ]
 }

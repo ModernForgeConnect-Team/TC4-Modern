@@ -97,5 +97,8 @@
         "item": "tc4modern:ancient_thaumium_hoe"
       }
     }
+  ],
+  "flags": [
+    "concealed"
   ]
 }

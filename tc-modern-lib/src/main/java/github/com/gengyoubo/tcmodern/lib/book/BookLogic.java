@@ -46,10 +46,10 @@ public final class BookLogic {
         }
     }
 
-    /** Buys a research with aspect points where the difficulty allows it, then completes it and its siblings. */
+    /** Buys a research with aspect points, then completes it and its siblings. */
     private static void buy(LegacyRuntime runtime, ServerPlayer player, String key) {
         var entry = TcThaumonomicon.find(runtime, key).orElse(null);
-        if (entry == null || entry.aspects().isEmpty() || !buyable(runtime, entry)) return;
+        if (entry == null || entry.aspects().isEmpty() || !buyable(entry)) return;
         var unlocked = runtime.withPlayer(player, actor -> {
             String name = runtime.accessor(TcAspectAccessors.Player.class, actor).name();
             var progress = runtime.accessor(TcBookAccessors.Progress.class);
@@ -85,10 +85,9 @@ public final class BookLogic {
         if (written) learn(player);
     }
 
-    /** True when the original book sells this research for points at the current difficulty. */
-    public static boolean buyable(LegacyRuntime runtime, TcResearchEntry entry) {
-        int difficulty = TcThaumonomicon.difficulty(runtime);
-        return difficulty == -1 || difficulty == 0 && entry.has(TcResearchEntry.Flag.SECONDARY);
+    /** A nonempty point cost enables direct purchase alongside a research note. */
+    public static boolean buyable(TcResearchEntry entry) {
+        return !entry.aspects().isEmpty();
     }
 
     private static void cheat(LegacyRuntime runtime, ServerPlayer player, BookNetwork.Action action) {

@@ -39,5 +39,8 @@
         "item": "tc4modern:primal_furnace"
       }
     }
+  ],
+  "flags": [
+    "concealed"
   ]
 }

@@ -198,6 +198,7 @@ public final class ResearchEditorScreen extends EditorScreen {
         if (inside(mouseX, mouseY, LEFT_X + COLUMN_W - 18, rowY(4) + 8, 18, 18)) hint = "book.tcmodernlib.picker.item";
         else if (inside(mouseX, mouseY, MID_X + MID_W - 18, rowY(4) + 9, 18, 14)) hint = "book.tcmodernlib.picker.aspect";
         else if (inside(mouseX, mouseY, MID_X, rowY(3), MID_W, 23)) hint = "book.tcmodernlib.editor.note_aspects_hint";
+        else if (inside(mouseX, mouseY, MID_X, rowY(4), MID_W, 23)) hint = "book.tcmodernlib.editor.point_cost_hint";
         if (hint != null) g.renderTooltip(font, Component.translatable(hint), mouseX, mouseY);
     }
 

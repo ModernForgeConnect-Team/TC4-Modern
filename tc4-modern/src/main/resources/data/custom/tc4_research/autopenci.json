@@ -42,5 +42,8 @@
   "subtitle": {
     "zh_CN": "可以更换铅芯的书写工具",
     "en_US": "A pencil with replaceable leads"
-  }
+  },
+  "flags": [
+    "concealed"
+  ]
 }
