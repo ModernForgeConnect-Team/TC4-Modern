@@ -1,4 +1,10 @@
 {
+  "advancement.tc4modern.lack_of_knowledge.title": "Lack of Knowledge",
+  "advancement.tc4modern.lack_of_knowledge.description": "Craft a deconstruction table",
+  "advancement.tc4modern.whole_aspects.title": "Obtain Whole Aspects",
+  "advancement.tc4modern.whole_aspects.description": "Craft a Deconstruction Table X",
+  "advancement.tc4modern.many_aspects.title": "Obtain Many Aspects",
+  "advancement.tc4modern.many_aspects.description": "Craft a Deconstruction Table Y",
   "advancement.tc4modern.magic_shard.title": "A Stone Filled with Magic",
   "advancement.tc4modern.magic_shard.description": "Obtain any elemental shard except a balanced shard",
   "advancement.tc4modern.arcane_workbench.title": "Is That an Arcane Workbench?",

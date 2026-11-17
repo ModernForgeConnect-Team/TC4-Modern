@@ -14,7 +14,8 @@
       "tag": "minecraft:planks"
     },
     "T": {
-      "item": "minecraft:crafting_table"
+      "legacy_item": "Thaumcraft:blockTable",
+      "metadata": 14
     }
   },
   "aspects": {

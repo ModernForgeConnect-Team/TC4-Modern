@@ -1,4 +1,10 @@
 {
+  "advancement.tc4modern.lack_of_knowledge.title": "缺少知识",
+  "advancement.tc4modern.lack_of_knowledge.description": "合成解构工作台",
+  "advancement.tc4modern.whole_aspects.title": "获得完整的要素",
+  "advancement.tc4modern.whole_aspects.description": "合成解构工作台 X",
+  "advancement.tc4modern.many_aspects.title": "获得大量的要素",
+  "advancement.tc4modern.many_aspects.description": "合成解构工作台 Y",
   "advancement.tc4modern.magic_shard.title": "蕴含着魔力的石头",
   "advancement.tc4modern.magic_shard.description": "获得任意元素碎片（平衡碎片除外）",
   "advancement.tc4modern.arcane_workbench.title": "这是？奥术工作台！",

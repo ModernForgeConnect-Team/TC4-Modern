@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:lack_of_knowledge",
+  "display": {
+    "icon": {
+      "item": "tc4modern:deconstruction_x"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.whole_aspects.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.whole_aspects.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "craft_table": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

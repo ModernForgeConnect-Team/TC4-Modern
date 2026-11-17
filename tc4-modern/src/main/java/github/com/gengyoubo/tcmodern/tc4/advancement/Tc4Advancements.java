@@ -2,6 +2,7 @@ package github.com.gengyoubo.tcmodern.tc4.advancement;
 
 import github.com.gengyoubo.tcmodern.tc4.Tc4Modern;
 import github.com.gengyoubo.tcmodern.tc4.init.Tc4Items;
+import github.com.gengyoubo.tcmodern.tc4.init.Tc4Blocks;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.mfcl.api.LegacyMappings;
 import github.com.gengyoubo.tcmodern.tc4.research.DeskAccessors;
@@ -35,6 +36,7 @@ public final class Tc4Advancements {
     private static final ResourceLocation NOVICE_WAND = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "novice_wand");
     private static final ResourceLocation INKWELL = ResourceLocation.fromNamespaceAndPath(TC, "item_inkwell");
     private static final ResourceLocation WRITING_TOOLS = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "writing_tools");
+    private static final String CRAFT_TABLE ="craft_table";
 
     private Tc4Advancements() { }
     private record CraftAdvancement(ResourceLocation id, String criterion) {}
@@ -43,29 +45,27 @@ public final class Tc4Advancements {
     private static final Map<ResourceLocation, CraftAdvancement> CRAFT_ADVANCEMENTS = Map.of(
             WOOD_IRON_WAND, new CraftAdvancement(NOVICE_WAND, "craft_wand"),
             INKWELL, new CraftAdvancement(WRITING_TOOLS, "craft_inkwell"),
-
             Objects.requireNonNull(Tc4Items.PENCIL.getId()),
-            new CraftAdvancement(
-                    ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "disposable_tool"),
-                    "craft_pencil"
-            ),
-
+            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "disposable_tool"), "craft_pencil"),
             Objects.requireNonNull(Tc4Items.MECHANICAL_PENCIL.getId()),
-            new CraftAdvancement(
-                    ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fragile"),
-                    "craft_mechanical_pencil"
-            ),
-
+            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fragile"), "craft_mechanical_pencil"),
             Objects.requireNonNull(Tc4Items.FOUNTAIN_PEN.getId()),
-            new CraftAdvancement(
-                    ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fountain_pen"),
-                    "craft_fountain_pen"
-            )
+            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fountain_pen"), "craft_fountain_pen"),
+            ResourceLocation.fromNamespaceAndPath(TC, "block_table/meta_14"),
+            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "lack_of_knowledge"), CRAFT_TABLE),
+            Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_X.getId()),
+            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "whole_aspects"), CRAFT_TABLE),
+            Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_Y.getId()),
+            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "many_aspects"), CRAFT_TABLE)
     );
     @SubscribeEvent
     public static void onCraft(PlayerEvent.ItemCraftedEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        ResourceLocation item = BuiltInRegistries.ITEM.getKey(event.getCrafting().getItem());
+        awardCraft(player, event.getCrafting());
+    }
+
+    public static void awardCraft(ServerPlayer player, net.minecraft.world.item.ItemStack stack) {
+        ResourceLocation item = BuiltInRegistries.ITEM.getKey(stack.getItem());
         CraftAdvancement target = CRAFT_ADVANCEMENTS.get(item);
         if (target == null) return;
         var advancement = player.server.getAdvancements().getAdvancement(target.id());

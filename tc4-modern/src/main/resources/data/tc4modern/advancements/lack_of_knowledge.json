@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:learning_knowledge",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:block_table/meta_14"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.lack_of_knowledge.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.lack_of_knowledge.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "craft_table": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

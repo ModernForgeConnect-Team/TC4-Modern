@@ -89,8 +89,50 @@ public final class DeconstructionSmokeProbe {
                     require(table.pendingCount()==0 && TcPlayerAspects.pool(runtime,player,"terra")>terraBefore,"Claim did not credit research");
                     require(!TcResearch.isComplete(runtime,player,"deconstruction_y"),"Using the table unlocked its research");
                 }); stage=4;
-            } else if (stage == 4 && pending.isDone()) { pending.join(); finish(mc,"PASS"); }
+            } else if (stage == 4 && pending.isDone()) {
+                pending.join();
+                pending=mc.getSingleplayerServer().submit(() -> {
+                    var server=mc.getSingleplayerServer(); var player=server.getPlayerList().getPlayers().get(0);
+                    var runtime=TcModernApi.runtime().orElseThrow();
+                    player.closeContainer();
+                    TcResearch.completeAll(runtime,player);
+                    var at=player.blockPosition().above(1);
+                    server.overworld().setBlockAndUpdate(at,runtime.hostBlock("Thaumcraft:blockTable",15,net.minecraft.world.level.block.state.BlockState.class).orElseThrow());
+                    player.gameMode.useItemOn(player,server.overworld(),ItemStack.EMPTY,InteractionHand.MAIN_HAND,
+                            new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at),net.minecraft.core.Direction.UP,at,false));
+                    var menu=player.containerMenu;
+                    require(menu != player.inventoryMenu,"Arcane workbench did not open");
+                    var oldWand=runtime.stack(new github.com.gengyoubo.mfcl.api.LegacyStack("Thaumcraft:WandCasting",0,1,
+                            "{rod:\"silverwood\",cap:\"thaumium\",aer:10000,ignis:10000,aqua:10000,terra:10000,ordo:10000,perditio:10000}"));
+                    var wand=runtime.mappings().toHost(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK,oldWand,ItemStack.class).orElseThrow();
+                    var oldTable=runtime.stack(new github.com.gengyoubo.mfcl.api.LegacyStack("Thaumcraft:blockTable",14,1,""));
+                    var base=runtime.mappings().toHost(github.com.gengyoubo.mfcl.api.LegacyMappings.ITEM_STACK,oldTable,ItemStack.class).orElseThrow();
+                    placeInMenu(menu,player,1,wand);
+                    for (int variant=0; variant<2; variant++) {
+                        for (int cell=0; cell<9; cell++) {
+                            var item=cell<3?new ItemStack(variant==0?Items.GOLD_INGOT:Items.BLAZE_POWDER)
+                                    :cell==4?base.copy():new ItemStack(Items.OAK_PLANKS);
+                            placeInMenu(menu,player,cell+2,item);
+                        }
+                        menu.broadcastChanges();
+                        var expected=variant==0?Tc4Blocks.DECONSTRUCTION_X.get().asItem():Tc4Blocks.DECONSTRUCTION_Y.get().asItem();
+                        require(menu.getSlot(0).getItem().is(expected),"Arcane recipe did not produce the expected deconstruction table");
+                        menu.clicked(0,0,net.minecraft.world.inventory.ClickType.PICKUP,player);
+                        require(menu.getCarried().is(expected),"Could not take arcane crafting result");
+                        menu.setCarried(ItemStack.EMPTY);
+                        var id=net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("tc4modern",variant==0?"whole_aspects":"many_aspects");
+                        var advancement=server.getAdvancements().getAdvancement(id);
+                        require(advancement!=null && player.getAdvancements().getOrStartProgress(advancement).isDone(),"Arcane crafting advancement did not unlock: "+id);
+                    }
+                    player.closeContainer();
+                }); stage=5;
+            } else if (stage == 5 && pending.isDone()) { pending.join(); finish(mc,"PASS"); }
         } catch(Throwable failure) { failure.printStackTrace(); finish(mc,"FAIL: "+failure); }
+    }
+    private static void placeInMenu(net.minecraft.world.inventory.AbstractContainerMenu menu,net.minecraft.server.level.ServerPlayer player,int slot,ItemStack item) {
+        menu.setCarried(item);
+        menu.clicked(slot,0,net.minecraft.world.inventory.ClickType.PICKUP,player);
+        require(menu.getCarried().isEmpty(),"Could not insert arcane ingredient into slot "+slot);
     }
     private static void require(boolean value,String message) { if (!value) throw new IllegalStateException(message); }
     private void finish(Minecraft mc,String result) {
