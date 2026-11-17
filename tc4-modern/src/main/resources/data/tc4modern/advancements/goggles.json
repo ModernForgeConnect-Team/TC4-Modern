@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:thaumometer",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:item_goggles"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.goggles.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.goggles.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "crafted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

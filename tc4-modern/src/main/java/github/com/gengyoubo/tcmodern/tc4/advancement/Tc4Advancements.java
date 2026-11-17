@@ -40,23 +40,23 @@ public final class Tc4Advancements {
 
     private Tc4Advancements() { }
     private record CraftAdvancement(ResourceLocation id, String criterion) {}
-    private record Pending(ServerLevel level, BlockPos pos, boolean table) {}
+    private enum Formation { TABLE, CRUCIBLE, INFUSION }
+    private record Pending(ServerLevel level, BlockPos pos, Formation formation) {}
     private static final Map<UUID, List<Pending>> PENDING = new HashMap<>();
-    private static final Map<ResourceLocation, CraftAdvancement> CRAFT_ADVANCEMENTS = Map.of(
-            WOOD_IRON_WAND, new CraftAdvancement(NOVICE_WAND, "craft_wand"),
-            INKWELL, new CraftAdvancement(WRITING_TOOLS, "craft_inkwell"),
-            Objects.requireNonNull(Tc4Items.PENCIL.getId()),
-            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "disposable_tool"), "craft_pencil"),
-            Objects.requireNonNull(Tc4Items.MECHANICAL_PENCIL.getId()),
-            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fragile"), "craft_mechanical_pencil"),
-            Objects.requireNonNull(Tc4Items.FOUNTAIN_PEN.getId()),
-            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fountain_pen"), "craft_fountain_pen"),
-            ResourceLocation.fromNamespaceAndPath(TC, "block_table/meta_14"),
-            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "lack_of_knowledge"), CRAFT_TABLE),
-            Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_X.getId()),
-            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "whole_aspects"), CRAFT_TABLE),
-            Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_Y.getId()),
-            new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "many_aspects"), CRAFT_TABLE)
+    private static final Map<UUID, Integer> INVENTORY_VERSIONS = new HashMap<>();
+    private static final Map<net.minecraft.world.item.Item, Boolean> FOCUS_ITEMS = new java.util.IdentityHashMap<>();
+    private static final Map<ResourceLocation, CraftAdvancement> CRAFT_ADVANCEMENTS = Map.ofEntries(
+            Map.entry(WOOD_IRON_WAND, new CraftAdvancement(NOVICE_WAND, "craft_wand")),
+            Map.entry(INKWELL, new CraftAdvancement(WRITING_TOOLS, "craft_inkwell")),
+            Map.entry(Objects.requireNonNull(Tc4Items.PENCIL.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "disposable_tool"), "craft_pencil")),
+            Map.entry(Objects.requireNonNull(Tc4Items.MECHANICAL_PENCIL.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fragile"), "craft_mechanical_pencil")),
+            Map.entry(Objects.requireNonNull(Tc4Items.FOUNTAIN_PEN.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fountain_pen"), "craft_fountain_pen")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "block_table/meta_14"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "lack_of_knowledge"), CRAFT_TABLE)),
+            Map.entry(Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_X.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "whole_aspects"), CRAFT_TABLE)),
+            Map.entry(Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_Y.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "many_aspects"), CRAFT_TABLE)),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "focus_pouch"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "focus_pouch"), "crafted")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "item_thaumometer"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "thaumometer"), "crafted")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "item_goggles"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "goggles"), "crafted"))
     );
     @SubscribeEvent
     public static void onCraft(PlayerEvent.ItemCraftedEvent event) {
@@ -83,12 +83,13 @@ public final class Tc4Advancements {
         var state = level.getBlockState(event.getPos());
         var item = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
         if (INKWELL.equals(item) && runtime.hostBlock("Thaumcraft:blockTable", 0, BlockState.class).map(state::equals).orElse(false)) {
-            PENDING.computeIfAbsent(player.getUUID(), ignored -> new ArrayList<>()).add(new Pending(level, event.getPos().immutable(), true));
-        } else if (state.is(Blocks.CAULDRON) || state.is(Blocks.WATER_CAULDRON)) {
-            var legacy = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, event.getItemStack()).orElse(null);
-            var wand = legacy == null ? null : runtime.accessor(DeskAccessors.StackView.class, legacy).item();
-            if (wand != null && runtime.values().isInstance(wand, "thaumcraft.common.items.wands.ItemWandCasting"))
-                PENDING.computeIfAbsent(player.getUUID(), ignored -> new ArrayList<>()).add(new Pending(level, event.getPos().immutable(), false));
+            PENDING.computeIfAbsent(player.getUUID(), ignored -> new ArrayList<>()).add(new Pending(level, event.getPos().immutable(), Formation.TABLE));
+        } else if (state.is(Blocks.CAULDRON) || state.is(Blocks.WATER_CAULDRON)
+                || runtime.hostBlock("Thaumcraft:blockStoneDevice", 2, BlockState.class).map(state::equals).orElse(false)) {
+            boolean cauldron = state.is(Blocks.CAULDRON) || state.is(Blocks.WATER_CAULDRON);
+            if (isWand(runtime, event.getItemStack())
+                    && (cauldron || !infusionFormed(runtime, level, event.getPos())))
+                PENDING.computeIfAbsent(player.getUUID(), ignored -> new ArrayList<>()).add(new Pending(level, event.getPos().immutable(), cauldron ? Formation.CRUCIBLE : Formation.INFUSION));
         }
     }
 
@@ -96,10 +97,10 @@ public final class Tc4Advancements {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) return;
         var pending = PENDING.remove(player.getUUID());
-        if (pending == null) return;
         var runtime = TcModernApi.runtime().orElse(null);
         if (runtime == null) return;
-        for (var check : pending) checkFormation(player, runtime, check);
+        if (pending != null) for (var check : pending) checkFormation(player, runtime, check);
+        checkFocus(player, runtime);
     }
 
     private static void checkFormation(ServerPlayer player, github.com.gengyoubo.mfcl.api.LegacyRuntime runtime, Pending pending) {
@@ -107,7 +108,7 @@ public final class Tc4Advancements {
         if (!level.isLoaded(pending.pos())) return;
         var state = level.getBlockState(pending.pos());
         boolean formed = false;
-        if (pending.table()) {
+        if (pending.formation() == Formation.TABLE) {
             for (int meta = 2; meta <= 9; meta++) {
                 if (!runtime.hostBlock("Thaumcraft:blockTable", meta, BlockState.class).map(state::equals).orElse(false)) continue;
                 var direction = Direction.from3DDataValue(meta < 6 ? meta : meta - 4);
@@ -117,13 +118,62 @@ public final class Tc4Advancements {
                         .map(level.getBlockState(other)::equals).orElse(false);
                 break;
             }
-        } else {
+        } else if (pending.formation() == Formation.CRUCIBLE) {
             formed = runtime.hostBlock("Thaumcraft:blockMetalDevice", 0, BlockState.class).map(state::equals).orElse(false);
-        }
+        } else formed = infusionFormed(runtime, level, pending.pos());
         if (formed) {
-            var id = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, pending.table() ? "research_table" : "crucible");
-            var advancement = player.server.getAdvancements().getAdvancement(id);
-            if (advancement != null) player.getAdvancements().award(advancement, "formed");
+            award(player, switch (pending.formation()) { case TABLE -> "research_table"; case CRUCIBLE -> "crucible"; case INFUSION -> "infusion_altar"; }, "formed");
         }
+    }
+
+    private static boolean infusionFormed(github.com.gengyoubo.mfcl.api.LegacyRuntime runtime, ServerLevel level, BlockPos matrix) {
+        for (int x : new int[]{-1, 1}) for (int z : new int[]{-1, 1}) for (int dy = -2; dy <= -1; dy++) {
+            var pos = matrix.offset(x, dy, z);
+            if (!level.isLoaded(pos) || !runtime.hostBlock("Thaumcraft:blockStoneDevice", dy == -2 ? 3 : 4, BlockState.class)
+                    .map(level.getBlockState(pos)::equals).orElse(false)) return false;
+        }
+        return true;
+    }
+
+    private static void checkFocus(ServerPlayer player, github.com.gengyoubo.mfcl.api.LegacyRuntime runtime) {
+        var advancement = player.server.getAdvancements().getAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "wand_focus"));
+        if (advancement == null || player.getAdvancements().getOrStartProgress(advancement).isDone()) return;
+        int version = player.getInventory().getTimesChanged();
+        if (Objects.equals(INVENTORY_VERSIONS.put(player.getUUID(), version), version) && player.tickCount % 20 != 0) return;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            var stack = player.getInventory().getItem(slot);
+            if (stack.isEmpty()) continue;
+            if (FOCUS_ITEMS.computeIfAbsent(stack.getItem(), ignored -> isFocus(runtime, stack))) {
+                award(player, "wand_focus", "obtained");
+                break;
+            }
+        }
+    }
+
+    private static boolean isFocus(github.com.gengyoubo.mfcl.api.LegacyRuntime runtime, net.minecraft.world.item.ItemStack stack) {
+        try {
+            var legacy = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, stack).orElse(null);
+            var item = legacy == null ? null : runtime.accessor(DeskAccessors.StackView.class, legacy).item();
+            return item != null && runtime.values().isInstance(item, "thaumcraft.api.wands.ItemFocusBasic");
+        } catch (RuntimeException unsupported) { return false; }
+    }
+
+    private static boolean isWand(github.com.gengyoubo.mfcl.api.LegacyRuntime runtime, net.minecraft.world.item.ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        try {
+            var legacy = runtime.mappings().toLegacy(LegacyMappings.ITEM_STACK, stack).orElse(null);
+            var item = legacy == null ? null : runtime.accessor(DeskAccessors.StackView.class, legacy).item();
+            return item != null && runtime.values().isInstance(item, "thaumcraft.common.items.wands.ItemWandCasting");
+        } catch (RuntimeException unsupported) { return false; }
+    }
+
+    @SubscribeEvent public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        PENDING.remove(event.getEntity().getUUID());
+        INVENTORY_VERSIONS.remove(event.getEntity().getUUID());
+    }
+
+    public static void award(ServerPlayer player, String id, String criterion) {
+        var advancement = player.server.getAdvancements().getAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, id));
+        if (advancement != null) player.getAdvancements().award(advancement, criterion);
     }
 }

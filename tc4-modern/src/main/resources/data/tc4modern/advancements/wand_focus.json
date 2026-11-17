@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:novice_wand",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:focus_fire"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.wand_focus.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.wand_focus.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

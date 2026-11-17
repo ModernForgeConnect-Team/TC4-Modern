@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:wand_focus",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:focus_pouch"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.focus_pouch.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.focus_pouch.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "crafted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

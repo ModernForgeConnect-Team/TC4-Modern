@@ -79,6 +79,8 @@ public final class MultiblockSmokeProbe {
                     TcResearch.completeAll(runtime, player);
                     var origin = player.blockPosition().above(4);
                     for (int i = 0; i < IDS.size(); i++) check(runtime, server.overworld(), player, origin.east(i * 8), IDS.get(i));
+                    player.getInventory().add(stack(runtime, "FocusFire", 0, ""));
+                    checkNodeDrain(runtime, server.overworld(), player, origin.east(IDS.size() * 8));
                 });
                 stage = 2;
             } else if (stage == 2 && pending.isDone()) {
@@ -88,6 +90,31 @@ public final class MultiblockSmokeProbe {
                 finish(mc, null);
             }
         } catch (Exception | AssertionError failure) { finish(mc, failure); }
+    }
+
+    private void checkNodeDrain(LegacyRuntime api, ServerLevel level, ServerPlayer player, BlockPos at) {
+        var result = new LinkedHashMap<String, Object>();
+        proof.put("node_drain", result);
+        try {
+            level.setBlockAndUpdate(at, api.hostBlock(TC + "blockAiry", 0, net.minecraft.world.level.block.state.BlockState.class).orElseThrow());
+            world(api, level, old -> api.accessor(FormedAccessors.Node.class, tile(api, old, at)).aspects(aspects(api, Map.of("aer", 20))));
+            player.teleportTo(at.getX() + 0.5, at.getY() - 1, at.getZ() - 2.5);
+            player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(at));
+            var wand = stack(api, "WandCasting", 0, "{rod:\"wood\",cap:\"iron\"}");
+            player.setItemInHand(InteractionHand.MAIN_HAND, wand);
+            result.put("useResult", player.gameMode.useItem(player, level, wand, InteractionHand.MAIN_HAND).toString());
+            result.put("using", player.isUsingItem());
+            for (int tick = 0; tick < 30; tick++) wand.getItem().onUseTick(level, player, player.getMainHandItem(), tick);
+            var oldWand = api.mappings().toLegacy(LegacyMappings.ITEM_STACK, player.getMainHandItem()).orElseThrow();
+            result.put("wand", api.snapshot(oldWand).toString());
+            world(api, level, old -> result.put("node", github.com.gengyoubo.tcmodern.api.node.TcNodes.snapshot(api, tile(api, old, at)).toString()));
+            var advancement = player.server.getAdvancements().getAdvancement(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("tc4modern", "node_drain"));
+            require(advancement != null && player.getAdvancements().getOrStartProgress(advancement).isDone(), "Node drain advancement did not unlock");
+            result.put("status", "PASS");
+        } catch (Exception | AssertionError failure) {
+            result.put("status", "FAIL"); result.put("failure", failure.toString());
+            com.mojang.logging.LogUtils.getLogger().error("TC4 node drain advancement check failed", failure);
+        }
     }
 
     private void check(LegacyRuntime api, ServerLevel level, ServerPlayer player, BlockPos at, String id) {

@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:arcane_workbench",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:block_stone_device/meta_2"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.infusion_altar.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.infusion_altar.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "formed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

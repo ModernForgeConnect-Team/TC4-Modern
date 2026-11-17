@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:magic_shard",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:item_thaumometer"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.thaumometer.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.thaumometer.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "crafted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
