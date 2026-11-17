@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:block",
+  "pools": [{
+    "rolls": 1,
+    "entries": [{
+      "type": "minecraft:item",
+      "name": "tc4modern:thaumic_sponge",
+      "functions": [{ "function": "minecraft:copy_state", "block": "tc4modern:thaumic_sponge", "properties": ["absorbed"] }]
+    }],
+    "conditions": [{ "condition": "minecraft:survives_explosion" }]
+  }]
+}

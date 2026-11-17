@@ -1,0 +1,21 @@
+{
+  "type": "tc4modern:research",
+  "key": "clear_flux",
+  "name": { "zh_CN": "清除咒波", "en_US": "Clearing Flux" },
+  "category": "Modern",
+  "position": [3, 2],
+  "complexity": 1,
+  "icon": { "item": "tc4modern:thaumic_sponge" },
+  "aspects": {},
+  "note_aspects": { "praecantatio": 1, "perditio": 1, "aqua": 1 },
+  "parents": ["1"],
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "偶尔实验失败的时候会产出咒波，想打扫干净，并且再利用吧？用神秘海绵可以清除1000mB的咒波瓦斯或咒波粘浆。优先度为咒波粘浆>咒波瓦斯。<BR>放置后，神秘海绵会自动吸收周围四格内的咒波。吸满后变成饱和神秘海绵，可用熔炉烘干后再次使用。",
+        "en_US": "Failed experiments sometimes produce flux. A placed thaumic sponge absorbs up to 1000 mB of flux within four blocks, taking goo before gas. Once saturated, dry it in a furnace to use it again."
+      }
+    },
+    { "infusion": { "item": "tc4modern:thaumic_sponge" } }
+  ]
+}

@@ -23,6 +23,7 @@ public final class Tc4Items {
     static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Tc4Modern.MOD_ID);
     public static final RegistryObject<Item> ELEMENT_WORKBOOK = ITEMS.register("element_workbook", ElementWorkbookItem::new);
     public static final RegistryObject<Item> MAGIC_BONE_MEAL = ITEMS.register("magic_bone_meal", MagicBoneMealItem::new);
+    public static final RegistryObject<Item> FLUX_INGOT = ITEMS.register("flux_ingot", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ANCIENT_THAUMIUM_INGOT = ITEMS.register("ancient_thaumium_ingot", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ANCIENT_THAUMIUM_TEMPLATE = ITEMS.register("ancient_thaumium_template", () -> new Item(new Item.Properties()));
     // Vis discount (percent) and warp per piece.

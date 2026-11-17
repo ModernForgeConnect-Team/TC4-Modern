@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": { "item": "tc4modern:saturated_thaumic_sponge" },
+  "result": "tc4modern:thaumic_sponge",
+  "experience": 0.15,
+  "cookingtime": 200
+}

@@ -1,0 +1,21 @@
+{
+  "type": "tc4modern:research",
+  "key": "flux_recycling",
+  "name": { "zh_CN": "咒波能做什么？", "en_US": "What Can Flux Do?" },
+  "category": "Modern",
+  "position": [5, 2],
+  "complexity": 1,
+  "icon": { "item": "tc4modern:flux_ingot" },
+  "aspects": {},
+  "note_aspects": { "praecantatio": 1, "permutatio": 1, "metallum": 1 },
+  "parents": ["clear_flux"],
+  "pages": [
+    {
+      "text": {
+        "zh_CN": "饱和神秘海绵中吸收的咒波也许还能派上用场。把它和铁锭投入中级坩埚，再加入10份魔力要素，就能炼制咒波锭。",
+        "en_US": "The flux absorbed by a saturated thaumic sponge may still be useful. Combine it with an iron ingot and 10 Praecantatio in an intermediate crucible to make a flux ingot."
+      }
+    },
+    { "crucible": { "item": "tc4modern:flux_ingot" } }
+  ]
+}

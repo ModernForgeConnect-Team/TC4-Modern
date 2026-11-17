@@ -32,10 +32,7 @@ import static github.com.gengyoubo.tcmodern.tc4.Tc4Modern.TC;
 
 @Mod.EventBusSubscriber(modid = Tc4Modern.MOD_ID)
 public final class Tc4Advancements {
-    private static final ResourceLocation WOOD_IRON_WAND = ResourceLocation.fromNamespaceAndPath(TC, "wand_casting/wood_iron");
-    private static final ResourceLocation NOVICE_WAND = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "novice_wand");
     private static final ResourceLocation INKWELL = ResourceLocation.fromNamespaceAndPath(TC, "item_inkwell");
-    private static final ResourceLocation WRITING_TOOLS = ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "writing_tools");
     private static final String CRAFT_TABLE ="craft_table";
 
     private Tc4Advancements() { }
@@ -46,14 +43,14 @@ public final class Tc4Advancements {
     private static final Map<UUID, Integer> INVENTORY_VERSIONS = new HashMap<>();
     private static final Map<net.minecraft.world.item.Item, Boolean> FOCUS_ITEMS = new java.util.IdentityHashMap<>();
     private static final Map<ResourceLocation, CraftAdvancement> CRAFT_ADVANCEMENTS = Map.ofEntries(
-            Map.entry(WOOD_IRON_WAND, new CraftAdvancement(NOVICE_WAND, "craft_wand")),
-            Map.entry(INKWELL, new CraftAdvancement(WRITING_TOOLS, "craft_inkwell")),
             Map.entry(Objects.requireNonNull(Tc4Items.PENCIL.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "disposable_tool"), "craft_pencil")),
             Map.entry(Objects.requireNonNull(Tc4Items.MECHANICAL_PENCIL.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fragile"), "craft_mechanical_pencil")),
             Map.entry(Objects.requireNonNull(Tc4Items.FOUNTAIN_PEN.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "fountain_pen"), "craft_fountain_pen")),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "block_table/meta_14"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "lack_of_knowledge"), CRAFT_TABLE)),
             Map.entry(Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_X.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "whole_aspects"), CRAFT_TABLE)),
             Map.entry(Objects.requireNonNull(Tc4Blocks.DECONSTRUCTION_Y.getId()), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "many_aspects"), CRAFT_TABLE)),
+            Map.entry(INKWELL, new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "writing_tools"), "craft_inkwell")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "wand_casting/wood_iron"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "novice_wand"), "craft_wand")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "block_table/meta_14"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "lack_of_knowledge"), CRAFT_TABLE)),
             Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "focus_pouch"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "focus_pouch"), "crafted")),
             Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "item_thaumometer"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "thaumometer"), "crafted")),
             Map.entry(ResourceLocation.fromNamespaceAndPath(TC, "item_goggles"), new CraftAdvancement(ResourceLocation.fromNamespaceAndPath(Tc4Modern.MOD_ID, "goggles"), "crafted"))

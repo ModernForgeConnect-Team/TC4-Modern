@@ -16,5 +16,6 @@ public final class MagicBoneMealClient {
 
     @SubscribeEvent public static void colors(RegisterColorHandlersEvent.Item event) {
         event.register((stack, layer) -> layer == 0 ? TINT : -1, Tc4Items.MAGIC_BONE_MEAL.get());
+        event.register((stack, layer) -> layer == 0 ? 0xC080DD : -1, Tc4Items.FLUX_INGOT.get());
     }
 }

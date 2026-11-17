@@ -1,4 +1,7 @@
 {
+  "item.tc4modern.flux_ingot": "Flux Ingot",
+  "block.tc4modern.thaumic_sponge": "Thaumic Sponge",
+  "block.tc4modern.saturated_thaumic_sponge": "Saturated Thaumic Sponge",
   "advancement.tc4modern.node_drain.title": "All Mine",
   "advancement.tc4modern.node_drain.description": "Drain Vis from a node with a wand",
   "advancement.tc4modern.wand_focus.title": "A Wand Must Cast Spells",

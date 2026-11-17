@@ -1,4 +1,7 @@
 {
+  "item.tc4modern.flux_ingot": "咒波锭",
+  "block.tc4modern.thaumic_sponge": "神秘海绵",
+  "block.tc4modern.saturated_thaumic_sponge": "饱和神秘海绵",
   "advancement.tc4modern.node_drain.title": "全部都是我的",
   "advancement.tc4modern.node_drain.description": "用法杖从节点中吸收魔力",
   "advancement.tc4modern.wand_focus.title": "法杖一定能释放法术",

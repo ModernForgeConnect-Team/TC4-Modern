@@ -1,0 +1,25 @@
+{
+  "type": "tc4modern:infusion",
+  "research": "apple",
+  "input": { "item": "minecraft:apple" },
+  "components": [
+    { "item": "minecraft:gold_block" },
+    { "item": "minecraft:gold_block" },
+    { "item": "minecraft:gold_block" },
+    { "item": "minecraft:gold_block" },
+    { "item": "minecraft:gold_block" },
+    { "item": "minecraft:gold_block" },
+    { "item": "minecraft:gold_block" },
+    { "item": "minecraft:gold_block" }
+  ],
+  "aspects": {
+    "sano": 40,
+    "victus": 20,
+    "potentia": 40,
+    "tutamen": 10,
+    "lucrum": 20,
+    "praecantatio": 20
+  },
+  "instability": 3,
+  "result": { "legacy_item": "minecraft:golden_apple", "metadata": 1 }
+}

@@ -1,0 +1,10 @@
+{
+  "type": "tc4modern:intermediate_crucible",
+  "research": "flux_recycling",
+  "ingredients": [
+    { "item": "tc4modern:saturated_thaumic_sponge" },
+    { "item": "minecraft:iron_ingot" }
+  ],
+  "aspects": { "praecantatio": 10 },
+  "result": { "item": "tc4modern:flux_ingot" }
+}

@@ -95,6 +95,8 @@ public final class DeconstructionSmokeProbe {
                     var server=mc.getSingleplayerServer(); var player=server.getPlayerList().getPlayers().get(0);
                     var runtime=TcModernApi.runtime().orElseThrow();
                     player.closeContainer();
+                    checkThaumicSponge(runtime, server.overworld(), player.blockPosition().offset(20, 4, 0));
+                    checkFluxIngot(runtime, server.overworld(), player, player.blockPosition().offset(40, 4, 0));
                     TcResearch.completeAll(runtime,player);
                     var at=player.blockPosition().above(1);
                     server.overworld().setBlockAndUpdate(at,runtime.hostBlock("Thaumcraft:blockTable",15,net.minecraft.world.level.block.state.BlockState.class).orElseThrow());
@@ -133,6 +135,58 @@ public final class DeconstructionSmokeProbe {
         menu.setCarried(item);
         menu.clicked(slot,0,net.minecraft.world.inventory.ClickType.PICKUP,player);
         require(menu.getCarried().isEmpty(),"Could not insert arcane ingredient into slot "+slot);
+    }
+    private static void checkThaumicSponge(github.com.gengyoubo.mfcl.api.LegacyRuntime runtime, net.minecraft.server.level.ServerLevel level, BlockPos pos) {
+        var sponge = Tc4Blocks.THAUMIC_SPONGE.get();
+        var goo = runtime.hostBlock("Thaumcraft:blockFluxGoo", 3, net.minecraft.world.level.block.state.BlockState.class).orElseThrow();
+        var gas = runtime.hostBlock("Thaumcraft:blockFluxGas", 7, net.minecraft.world.level.block.state.BlockState.class).orElseThrow();
+        level.setBlockAndUpdate(pos, sponge.defaultBlockState());
+        require(level.getBlockTicks().hasScheduledTick(pos, sponge), "Placed thaumic sponge did not schedule automatic absorption");
+        level.setBlockAndUpdate(pos.east(2), goo);
+        level.setBlockAndUpdate(pos.west(), gas);
+        sponge.tick(level.getBlockState(pos), level, pos, level.random);
+        require(level.getBlockState(pos).is(Tc4Blocks.SATURATED_THAUMIC_SPONGE.get()), "Thaumic sponge did not saturate");
+        require(level.isEmptyBlock(pos.east(2)), "Thaumic sponge did not prioritize flux goo");
+        require(level.getBlockState(pos.west()).equals(runtime.hostBlock("Thaumcraft:blockFluxGas", 3, net.minecraft.world.level.block.state.BlockState.class).orElseThrow()), "Thaumic sponge removed the wrong amount of flux gas");
+        var partial = pos.east(10);
+        level.setBlockAndUpdate(partial, sponge.defaultBlockState());
+        level.setBlockAndUpdate(partial.east(), runtime.hostBlock("Thaumcraft:blockFluxGoo", 1, net.minecraft.world.level.block.state.BlockState.class).orElseThrow());
+        sponge.tick(level.getBlockState(partial), level, partial, level.random);
+        var state = level.getBlockState(partial);
+        require(state.getValue(github.com.gengyoubo.tcmodern.tc4.content.ThaumicSpongeBlock.ABSORBED) == 2, "Partial flux absorption was not retained");
+        var drops = net.minecraft.world.level.block.Block.getDrops(state, level, partial, null);
+        require(drops.size() == 1 && drops.get(0).getOrCreateTag().getCompound("BlockStateTag").getString("absorbed").equals("2"), "Partial absorption was lost when broken");
+        var furnace = new net.minecraft.world.SimpleContainer(new ItemStack(Tc4Blocks.SATURATED_THAUMIC_SPONGE.get()));
+        var drying = level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.SMELTING, furnace, level).orElseThrow();
+        require(drying.getResultItem(level.registryAccess()).is(Tc4Blocks.THAUMIC_SPONGE.get().asItem()), "Drying did not restore the thaumic sponge");
+    }
+    private static void checkFluxIngot(github.com.gengyoubo.mfcl.api.LegacyRuntime runtime, net.minecraft.server.level.ServerLevel level, net.minecraft.server.level.ServerPlayer player, BlockPos pos) {
+        require(!TcResearch.isComplete(runtime, player, "flux_recycling"), "Flux research unexpectedly unlocked");
+        var locked = fluxCrucible(level, pos, false);
+        locked.synthesize(player);
+        var area = new net.minecraft.world.phys.AABB(pos).inflate(2);
+        require(level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, area, item -> item.getItem().is(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.FLUX_INGOT.get())).isEmpty(), "Flux ingot bypassed its research");
+        TcResearch.complete(runtime, player, "flux_recycling");
+        var ready = fluxCrucible(level, pos.east(8), true);
+        ready.synthesize(player);
+        var result = level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(pos.east(8)).inflate(2), item -> item.getItem().is(github.com.gengyoubo.tcmodern.tc4.init.Tc4Items.FLUX_INGOT.get()));
+        require(result.size() == 1 && result.get(0).getItem().getCount() == 1, "Flux ingot synthesis failed");
+        require(ready.materials().isEmpty() && ready.essentia().getOrDefault("praecantatio", 0) == 0 && ready.water() == 950, "Flux ingot synthesis did not consume the required materials and essentia");
+    }
+    private static github.com.gengyoubo.tcmodern.tc4.content.IntermediateCrucibleBlockEntity fluxCrucible(net.minecraft.server.level.ServerLevel level, BlockPos pos, boolean reverse) {
+        level.setBlockAndUpdate(pos, Tc4Blocks.INTERMEDIATE_CRUCIBLE.get().defaultBlockState());
+        var crucible = (github.com.gengyoubo.tcmodern.tc4.content.IntermediateCrucibleBlockEntity) level.getBlockEntity(pos);
+        require(crucible != null && crucible.fill(new ItemStack(Items.WATER_BUCKET)), "Could not prepare crucible water");
+        var tag = crucible.saveWithoutMetadata();
+        tag.putString("Mode", "SYNTHESIS");
+        tag.putShort("Heat", (short) 200);
+        var aspects = new net.minecraft.nbt.CompoundTag(); aspects.putInt("praecantatio", 10); tag.put("Aspects", aspects);
+        var materials = new net.minecraft.nbt.ListTag();
+        var iron = new ItemStack(Items.IRON_INGOT); var sponge = new ItemStack(Tc4Blocks.SATURATED_THAUMIC_SPONGE.get());
+        materials.add((reverse ? iron : sponge).save(new net.minecraft.nbt.CompoundTag()));
+        materials.add((reverse ? sponge : iron).save(new net.minecraft.nbt.CompoundTag()));
+        tag.put("Materials", materials); crucible.load(tag);
+        return crucible;
     }
     private static void require(boolean value,String message) { if (!value) throw new IllegalStateException(message); }
     private void finish(Minecraft mc,String result) {

@@ -44,6 +44,20 @@ class IntermediateCrucibleDataTest {
         assertEquals("tc4modern:ancient_thaumium_ingot", ingot.result().item());
     }
 
+    @Test void fluxIngotUsesSaturatedSpongeAndIronAfterFluxResearch() throws Exception {
+        var research = json("/data/custom/tc4_research/flux_recycling.json");
+        assertEquals("clear_flux", research.getAsJsonArray("parents").get(0).getAsString());
+        var recipe = IntermediateRecipe.parse("tc4modern:flux_ingot", json("/data/tc4modern/tc4_intermediate_crucible/flux_ingot.json"));
+        assertEquals(research.get("key").getAsString(), recipe.research());
+        assertEquals(Map.of("praecantatio", 10), recipe.aspects());
+        assertEquals("tc4modern:flux_ingot", recipe.result().item());
+        var sponge = new IntermediateRecipe.Ingredient.Item("tc4modern:saturated_thaumic_sponge");
+        var iron = new IntermediateRecipe.Ingredient.Item("minecraft:iron_ingot");
+        assertTrue(recipe.matches(java.util.List.of(sponge, iron), Object::equals));
+        assertTrue(recipe.matches(java.util.List.of(iron, sponge), Object::equals));
+        assertFalse(recipe.matches(java.util.List.of(iron, iron), Object::equals));
+    }
+
     private JsonObject json(String resource) throws Exception {
         try (var in = getClass().getResourceAsStream(resource)) {
             assertNotNull(in, resource);
