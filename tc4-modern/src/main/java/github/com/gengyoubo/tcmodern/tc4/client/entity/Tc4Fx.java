@@ -80,4 +80,31 @@ final class Tc4Fx {
         buffer.vertex(m, x2, y2, z2).color(r, g, b, 0).endVertex();
         buffer.vertex(m, x2, y2, z2).color(r, g, b, 0).endVertex();
     }
+
+    /** A short, jagged luminous arc, drawn as crossed ribbons so it remains visible from every angle. */
+    static void bolt(PoseStack pose, MultiBufferSource buffers, net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 to, long seed) {
+        var random = RandomSource.create(seed);
+        var direction = to.subtract(from);
+        if (direction.lengthSqr() < 0.0001) return;
+        var axis = direction.normalize();
+        var side = axis.cross(new net.minecraft.world.phys.Vec3(0, 1, 0));
+        if (side.lengthSqr() < 0.001) side = axis.cross(new net.minecraft.world.phys.Vec3(1, 0, 0));
+        side = side.normalize();
+        var other = axis.cross(side).normalize();
+        var buffer = buffers.getBuffer(RenderType.lightning());
+        var matrix = pose.last().pose();
+        var previous = from;
+        for (int i = 1; i <= 10; i++) {
+            float fraction = i / 10.0F;
+            double jitter = i == 10 ? 0 : 0.24;
+            var next = from.add(direction.scale(fraction)).add(side.scale((random.nextDouble() - 0.5) * jitter)).add(other.scale((random.nextDouble() - 0.5) * jitter));
+            ribbon(buffer, matrix, previous, next, side.scale(0.035));
+            ribbon(buffer, matrix, previous, next, other.scale(0.035));
+            previous = next;
+        }
+    }
+    private static void ribbon(VertexConsumer buffer, Matrix4f matrix, net.minecraft.world.phys.Vec3 a, net.minecraft.world.phys.Vec3 b, net.minecraft.world.phys.Vec3 width) {
+        for (var point : new net.minecraft.world.phys.Vec3[]{a.subtract(width), a.add(width), b.add(width), b.subtract(width)})
+            buffer.vertex(matrix, (float) point.x, (float) point.y, (float) point.z).color(185, 170, 255, 210).endVertex();
+    }
 }

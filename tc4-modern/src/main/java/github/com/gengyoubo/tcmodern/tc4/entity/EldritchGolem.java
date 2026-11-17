@@ -205,12 +205,6 @@ public final class EldritchGolem extends Tc4Boss implements RangedAttackMob, Eld
                     getY() + getEyeHeight() - 0.25, getZ() + nz + (random.nextFloat() - random.nextFloat()) / 2.0, 0, 0, 0);
             level().addParticle(ParticleTypes.SMOKE, getX() + nx * 0.66, getY() + getEyeHeight() - 0.75, getZ() + nz * 0.66, 0, 0.05, 0);
             if (arcing > 0) {
-                var from = position().add(0, getBbHeight() / 2.0, 0);
-                var to = net.minecraft.world.phys.Vec3.atBottomCenterOf(arcTarget.above());
-                for (int i = 0; i <= 6; i++) {
-                    var at = from.lerp(to, i / 6.0);
-                    level().addParticle(ParticleTypes.ELECTRIC_SPARK, at.x + (random.nextFloat() - 0.5) * 0.2, at.y + (random.nextFloat() - 0.5) * 0.2, at.z + (random.nextFloat() - 0.5) * 0.2, 0, 0, 0);
-                }
                 arcing--;
             }
         } else {

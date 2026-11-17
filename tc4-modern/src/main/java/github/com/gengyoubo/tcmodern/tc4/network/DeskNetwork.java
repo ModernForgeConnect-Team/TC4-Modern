@@ -33,8 +33,9 @@ public final class DeskNetwork {
         }
     }
     private record Snapshot(int menu, DeskSnapshot value) {}
+    private record GuardianFog() {}
 
-    private static final String VERSION = "1";
+    private static final String VERSION = "2";
     private static SimpleChannel channel;
 
     private DeskNetwork() {}
@@ -46,6 +47,10 @@ public final class DeskNetwork {
         channel.registerMessage(0, Action.class, Action::write, Action::read, DeskNetwork::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         channel.registerMessage(1, Snapshot.class, (value, out) -> { out.writeVarInt(value.menu()); value.value().write(out); },
                 in -> new Snapshot(in.readVarInt(), DeskSnapshot.read(in)), DeskNetwork::receive, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        channel.registerMessage(2, GuardianFog.class, (value, out) -> {}, in -> new GuardianFog(), (message, context) -> {
+            context.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> github.com.gengyoubo.tcmodern.tc4.client.entity.EldritchFog.trigger()));
+            context.get().setPacketHandled(true);
+        }, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static void send(Action action) { channel.sendToServer(action); }
@@ -53,6 +58,7 @@ public final class DeskNetwork {
     public static void snapshot(ServerPlayer player, int menu, DeskSnapshot value) {
         channel.send(PacketDistributor.PLAYER.with(() -> player), new Snapshot(menu, value));
     }
+    public static void guardianFog(ServerPlayer player) { channel.send(PacketDistributor.PLAYER.with(() -> player), new GuardianFog()); }
 
     private static void handle(Action action, Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {

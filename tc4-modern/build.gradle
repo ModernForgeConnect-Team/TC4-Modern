@@ -213,6 +213,9 @@ minecraft {
             if (providers.gradleProperty('entityRenderSmokeTest').isPresent()) {
                 property 'tc4modern.entityRenderSmokeTest', 'true'
             }
+            if (providers.gradleProperty('pechSmokeTest').isPresent()) {
+                property 'tc4modern.pechSmokeTest', 'true'
+            }
             if (providers.gradleProperty('bookSmokeTest').isPresent()) {
                 property 'tcmodernlib.bookSmokeTest', 'true'
             }

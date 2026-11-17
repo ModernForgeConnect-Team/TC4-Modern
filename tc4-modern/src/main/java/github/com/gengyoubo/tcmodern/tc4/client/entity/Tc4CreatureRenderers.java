@@ -146,7 +146,27 @@ public final class Tc4CreatureRenderers {
             model.alpha = alpha;
             super.render(entity, yaw, partialTick, pose, buffers, light);
             model.alpha = 1.0F;
-            if (entity instanceof EldritchWarden) pose.popPose();
+            if (entity instanceof EldritchWarden warden) {
+                pose.popPose();
+                if (warden.spawnTimer() > 0) spiral(warden, partialTick, pose, buffers);
+            }
+        }
+        private void spiral(EldritchWarden warden, float partialTick, PoseStack pose, MultiBufferSource buffers) {
+            float radius = Math.max(1.0F, warden.getBbHeight() * (150 - warden.spawnTimer()) / 150.0F);
+            for (int i = 0; i < 33; i++) {
+                float age = (warden.tickCount + partialTick + i * 7) % 25.0F;
+                float progress = age / 25.0F;
+                float angle = i * 2.399963F + progress * Mth.TWO_PI * 2.0F;
+                float ring = radius * (0.3F + 0.7F * Mth.sin(progress * Mth.PI));
+                int frame = Math.min(11, (int) (progress * 12));
+                var smoke = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/particle/big_smoke_" + frame + ".png");
+                int alpha = Math.max(0, Math.min(150, (int) (150 * Mth.sin(progress * Mth.PI))));
+                pose.pushPose();
+                pose.translate(Math.cos(angle) * ring, 0.1 + progress * radius, Math.sin(angle) * ring);
+                Tc4Fx.sprite(pose, buffers, entityRenderDispatcher, smoke, 0, 0, 1, 1, 0.35F + progress * 0.6F,
+                        alpha << 24 | 0x22112f, Tc4Fx.FULL_BRIGHT);
+                pose.popPose();
+            }
         }
     }
 
@@ -401,6 +421,14 @@ public final class Tc4CreatureRenderers {
         EldritchGolemRenderer(EntityRendererProvider.Context context) { super(context, new EldritchGolemModel(), 1.0F); }
         @Override public ResourceLocation getTextureLocation(EldritchGolem golem) { return TEXTURE; }
         @Override protected void scale(EldritchGolem golem, PoseStack pose, float partialTick) { pose.scale(2.15F, 2.15F, 2.15F); }
+        @Override public void render(EldritchGolem golem, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
+            super.render(golem, yaw, partialTick, pose, buffers, light);
+            if (golem.arcing > 0) {
+                var from = new net.minecraft.world.phys.Vec3(0, golem.getBbHeight() / 2.0, 0);
+                var to = net.minecraft.world.phys.Vec3.atBottomCenterOf(golem.arcTarget.above()).subtract(golem.position());
+                Tc4Fx.bolt(pose, buffers, from, to, golem.getId() * 31L + golem.tickCount / 2);
+            }
+        }
         @Override @Nullable protected RenderType getRenderType(EldritchGolem golem, boolean visible, boolean translucent, boolean glowing) {
             return visible ? RenderType.entityTranslucent(TEXTURE) : super.getRenderType(golem, false, translucent, glowing);
         }

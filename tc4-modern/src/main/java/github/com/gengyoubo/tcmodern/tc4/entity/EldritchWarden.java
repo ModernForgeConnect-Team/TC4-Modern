@@ -118,13 +118,8 @@ public final class EldritchWarden extends Tc4Boss implements RangedAttackMob, El
         if (level().isClientSide) {
             if (armLiftL > 0) armLiftL -= 0.05F;
             if (armLiftR > 0) armLiftR -= 0.05F;
-            level().addParticle(ParticleTypes.SQUID_INK, getX() + (random.nextFloat() - random.nextFloat()) * 0.2, getY() + 0.25 * getBbHeight(),
-                    getZ() + (random.nextFloat() - random.nextFloat()) * 0.2, 0, 0.01, 0);
-            if (spawnTimer > 0) for (int a = 0; a < 6; a++) {
-                double angle = random.nextDouble() * Mth.TWO_PI, radius = 0.5 + random.nextDouble();
-                level().addParticle(ParticleTypes.LARGE_SMOKE, getX() + Math.cos(angle) * radius, getY() + random.nextDouble() * getBbHeight() * (150 - spawnTimer) / 150.0,
-                        getZ() + Math.sin(angle) * radius, 0, 0.05, 0);
-            }
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+                    () -> () -> github.com.gengyoubo.tcmodern.tc4.client.entity.EldritchAuraParticle.spawn(this));
         }
     }
 

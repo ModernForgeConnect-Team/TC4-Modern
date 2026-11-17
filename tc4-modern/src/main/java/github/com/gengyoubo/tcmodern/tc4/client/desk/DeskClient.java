@@ -22,6 +22,7 @@ public final class DeskClient {
             MenuScreens.register(Tc4Menus.ARCHIVE_CABINET.get(), ArchiveCabinetScreen::new);
             MenuScreens.register(Tc4Menus.DECONSTRUCTION.get(), github.com.gengyoubo.tcmodern.tc4.client.deconstruction.ModernDeconstructionScreen::new);
             MenuScreens.register(Tc4Menus.PRIMAL_FURNACE.get(), github.com.gengyoubo.tcmodern.tc4.client.furnace.PrimalFurnaceScreen::new);
+            MenuScreens.register(Tc4Menus.PECH.get(), github.com.gengyoubo.tcmodern.tc4.client.entity.PechScreen::new);
         });
     }
 

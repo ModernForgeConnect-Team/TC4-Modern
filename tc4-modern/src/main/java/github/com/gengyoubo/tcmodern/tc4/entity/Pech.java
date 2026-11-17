@@ -390,14 +390,14 @@ public final class Pech extends Monster implements RangedAttackMob {
     // --- Trading ----------------------------------------------------------------------------------------------------
 
     @Nullable private Player trader;
-    private int tradeTicks;
 
     /** AIPechTradePlayer: a trading pech stops and faces its customer. */
     private final class TradeGoal extends Goal {
         TradeGoal() { setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK, Flag.JUMP)); }
-        @Override public boolean canUse() { return trader != null && tradeTicks > 0 && isTamed() && trader.isAlive() && distanceToSqr(trader) < 16.0; }
+        @Override public boolean canUse() { return trader != null && isTamed() && trader.isAlive() && distanceToSqr(trader) < 16.0; }
+        @Override public boolean canContinueToUse() { return canUse(); }
         @Override public void start() { getNavigation().stop(); }
-        @Override public void tick() { tradeTicks--; if (trader != null) getLookControl().setLookAt(trader, 30.0F, 30.0F); }
+        @Override public void tick() { if (trader != null) getLookControl().setLookAt(trader, 30.0F, 30.0F); }
     }
 
     /**
@@ -407,21 +407,17 @@ public final class Pech extends Monster implements RangedAttackMob {
     @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         var stack = player.getItemInHand(hand);
         if (player.isShiftKeyDown() || stack.getItem() instanceof NameTagItem || !isTamed()) return super.mobInteract(player, hand);
-        if (!isValued(stack)) {
-            if (!level().isClientSide) player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.tc4modern.pech_trade"), true);
-            return InteractionResult.sidedSuccess(level().isClientSide);
-        }
-        if (level() instanceof ServerLevel server) {
-            trader = player; tradeTicks = 60;
-            for (var reward : trade(server, player, value(stack))) if (!player.addItem(reward)) player.drop(reward, false);
-            if (!player.getAbilities().instabuild) stack.shrink(1);
-            playSound(Tc4Legacy.sound("pech_trade"), 0.4F, 1.0F);
-            level().broadcastEntityEvent(this, (byte) 17);
+        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && (trader == null || trader == player)) {
+            trader = player;
+            net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, new net.minecraft.world.SimpleMenuProvider(
+                    (id, inventory, who) -> new github.com.gengyoubo.tcmodern.tc4.menu.PechMenu(id, inventory, this), getDisplayName()), buf -> buf.writeVarInt(getId()));
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
     }
 
-    private List<ItemStack> trade(ServerLevel server, Player player, int value) {
+    public boolean isTradingWith(Player player) { return trader == player; }
+    public void stopTrading(Player player) { if (trader == player) trader = null; }
+    public List<ItemStack> trade(ServerLevel server, Player player, int value) {
         var result = new ArrayList<ItemStack>();
         if (random.nextInt(100) <= value / 2) { setTamed(false); playSound(Tc4Legacy.sound("pech_trade"), 0.4F, 1.0F); }
         if (random.nextInt(5) == 0) value += random.nextInt(3);
@@ -458,6 +454,12 @@ public final class Pech extends Monster implements RangedAttackMob {
     private static Trade book(int tier, net.minecraft.world.item.enchantment.Enchantment enchantment) {
         return new Trade(tier, () -> EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, 1)));
     }
+    private static Trade originalBook(int tier, String description) {
+        return new Trade(tier, () -> net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS.getValues().stream()
+                .filter(enchantment -> enchantment.getDescriptionId().equals(description)).findFirst()
+                .map(enchantment -> EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, 1)))
+                .orElse(ItemStack.EMPTY));
+    }
 
     /** EntityPech.tradeInventory: what foragers, thaumaturges and stalkers offer, by worth. */
     private static final List<List<Trade>> TRADES = buildTrades();
@@ -467,6 +469,8 @@ public final class Pech extends Monster implements RangedAttackMob {
                 potion(2, Potions.SWIFTNESS), item(3, Items.EXPERIENCE_BOTTLE), tc(3, "Thaumcraft:ItemResource", 9), item(3, Items.GOLDEN_APPLE),
                 potion(3, Potions.LONG_STRENGTH), potion(3, Potions.LONG_NIGHT_VISION), item(5, Items.ENCHANTED_GOLDEN_APPLE), tc(4, "Thaumcraft:ItemPickThaumium", 0),
                 tc(5, "Thaumcraft:blockCustomPlant", 1), tc(5, "Thaumcraft:blockCustomPlant", 1)));
+        forager.add(originalBook(3, "enchantment.haste"));
+        forager.add(originalBook(5, "enchantment.repair"));
         var thaumaturge = new ArrayList<Trade>(List.of(tc(1, "Thaumcraft:ItemManaBean", 0)));
         for (int a = 0; a < 6; a++) thaumaturge.add(tc(1, "Thaumcraft:ItemShard", a));
         thaumaturge.addAll(List.of(tc(1, "Thaumcraft:ItemResource", 9), tc(2, "Thaumcraft:ItemResource", 9), potion(2, Potions.REGENERATION),

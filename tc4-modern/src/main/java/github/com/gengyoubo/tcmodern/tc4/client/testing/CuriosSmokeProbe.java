@@ -141,6 +141,24 @@ public final class CuriosSmokeProbe {
 
     private static final class Checks {
         static void validate(LegacyRuntime runtime, ServerPlayer player, Map<String, Object> proof) {
+            var pech = github.com.gengyoubo.tcmodern.tc4.init.Tc4Entities.PECH.get().create(player.serverLevel());
+            require(pech != null, "Could not create pech");
+            pech.moveTo(player.getX() + 1, player.getY(), player.getZ(), 0, 0);
+            pech.setTamed(true);
+            require(player.serverLevel().addFreshEntity(pech), "Could not spawn pech");
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            pech.interact(player, net.minecraft.world.InteractionHand.MAIN_HAND);
+            require(player.containerMenu instanceof github.com.gengyoubo.tcmodern.tc4.menu.PechMenu, "Tamed pech did not open its trade menu");
+            var pechMenu = (github.com.gengyoubo.tcmodern.tc4.menu.PechMenu) player.containerMenu;
+            pechMenu.getSlot(0).set(new ItemStack(net.minecraft.world.item.Items.GOLD_INGOT, 2));
+            require(pechMenu.canTrade() && pechMenu.clickMenuButton(player, 0), "Pech trade button failed");
+            require(pechMenu.getSlot(0).getItem().getCount() == 1, "Pech trade did not consume exactly one item");
+            require(!pechMenu.getSlot(1).mayPlace(new ItemStack(net.minecraft.world.item.Items.DIAMOND)), "Pech output accepts inserted items");
+            player.closeContainer(); pech.discard();
+            require(net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS.getValues().stream().anyMatch(e -> e.getDescriptionId().equals("enchantment.haste")), "TC4 haste enchantment unavailable");
+            require(net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS.getValues().stream().anyMatch(e -> e.getDescriptionId().equals("enchantment.repair")), "TC4 repair enchantment unavailable");
+            proof.put("pechMenuAndTrade", true);
+            proof.put("originalPechEnchantmentBooksAvailable", true);
             var bell = runtime.mappings().toHost(LegacyMappings.ITEM_STACK,
                     runtime.stack(new LegacyStack("Thaumcraft:GolemBell", 0, 1, "")), ItemStack.class).orElseThrow();
             var selectedId = java.util.UUID.randomUUID();

@@ -100,14 +100,20 @@ public final class EldritchGuardian extends Monster implements RangedAttackMob, 
         if (level().isClientSide) {
             if (armLiftL > 0) armLiftL -= 0.05F;
             if (armLiftR > 0) armLiftR -= 0.05F;
-            level().addParticle(ParticleTypes.SQUID_INK, getX() + (random.nextFloat() - random.nextFloat()) * 0.2, getY() + 0.22 * getBbHeight(),
-                    getZ() + (random.nextFloat() - random.nextFloat()) * 0.2, 0, 0.01, 0);
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+                    () -> () -> github.com.gengyoubo.tcmodern.tc4.client.entity.EldritchAuraParticle.spawn(this));
         }
         legacy.tick(this);
     }
 
     @Override protected void customServerAiStep() {
         super.customServerAiStep();
+        if (level() instanceof ServerLevel server && !Tc4Legacy.isOuterLands(level()) && tickCount % 100 == 0
+                && level().getDifficulty() != net.minecraft.world.Difficulty.EASY) {
+            double range = level().getDifficulty() == net.minecraft.world.Difficulty.HARD ? 24.0 : 16.0;
+            for (var player : server.players()) if (player.isAlive() && player.distanceToSqr(this) < range * range)
+                github.com.gengyoubo.tcmodern.tc4.network.DeskNetwork.guardianFog(player);
+        }
         if (Tc4Legacy.isOuterLands(level()) && invulnerableTime <= 0 && tickCount % 25 == 0) {
             int shield = (int) getAttributeBaseValue(Attributes.MAX_HEALTH) / 2;
             if (getAbsorptionAmount() < shield) setAbsorptionAmount(getAbsorptionAmount() + 1.0F);
