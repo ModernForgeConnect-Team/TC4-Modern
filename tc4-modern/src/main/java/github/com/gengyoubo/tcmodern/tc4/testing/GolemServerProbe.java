@@ -40,6 +40,7 @@ public final class GolemServerProbe {
     private BlockPos jarSource, jarSink, tube, tank, usedBlock, pipeSource, placement, useSource;
     private ModernGolem fisher, harvester, pipeCarrier, user;
     private final java.util.Set<String> fishingDrops = new java.util.LinkedHashSet<>();
+    private boolean useCoreWaterObserved;
 
     @SubscribeEvent public static void setup(FMLCommonSetupEvent event) {
         if (!Boolean.getBoolean("tc4modern.golemSmokeTest")) return;
@@ -56,6 +57,7 @@ public final class GolemServerProbe {
             var level = server.overworld();
             if (tick == 30) setupWorld(level);
             if (tick > 30 && water != null) level.getEntitiesOfClass(ItemEntity.class, new AABB(water).inflate(10)).forEach(e -> fishingDrops.add(e.getItem().toString()));
+            if (tick > 30 && usedBlock != null && level.getFluidState(usedBlock).is(net.minecraft.tags.FluidTags.WATER)) useCoreWaterObserved = true;
             if (tick == 230) {
                 result.put("originalGolemItemSpawnedModernAfterTicks", !level.getEntitiesOfClass(ModernGolem.class, new AABB(placement).inflate(10)).isEmpty());
                 var chest = (ChestBlockEntity) level.getBlockEntity(source);
@@ -77,9 +79,13 @@ public final class GolemServerProbe {
                 result.put("fishingPosition", fisher.fishingPosition().map(BlockPos::toShortString).orElse("none"));
                 result.put("bobbers", level.getEntitiesOfClass(GolemBobber.class, new AABB(water).inflate(10)).size());
                 result.put("fishingDropsObserved", fishingDrops);
-                result.put("useCoreWaterPlaced", level.getFluidState(usedBlock).is(net.minecraft.tags.FluidTags.WATER));
+                result.put("useCoreWaterObservedDuringTest", useCoreWaterObserved);
+                result.put("useCoreWaterAtEnd", level.getFluidState(usedBlock).is(net.minecraft.tags.FluidTags.WATER));
                 result.put("useCoreSourceItem", ((ChestBlockEntity) level.getBlockEntity(useSource)).getItem(0).toString());
                 result.put("useCoreCarried", user.carriedForDisplay().toString());
+                result.put("useCorePosition", user.blockPosition().toShortString());
+                result.put("useCoreTarget", usedBlock.below().toShortString());
+                result.put("useCoreGoalState", user.getNavigation().isDone() ? "idle" : "navigating");
                 result.put("liquidTankAmount", tank(level, tank).getFluidAmount());
                 result.put("essentiaSourceAmount", jarAmount(level, jarSource));
                 result.put("essentiaSinkAmount", jarAmount(level, jarSink));
@@ -87,6 +93,8 @@ public final class GolemServerProbe {
                 var world = runtime.mappings().toLegacy(LegacyMappings.WORLD, level).orElseThrow();
                 var tubeTile = runtime.accessor(OldWorld.class, world).tile(tube.getX(), tube.getY(), tube.getZ());
                 result.put("tubeImplementsAspectContainer", tubeTile != null && runtime.values().isInstance(tubeTile, "thaumcraft.api.aspects.IAspectContainer"));
+                var side = runtime.accessor(github.com.gengyoubo.tcmodern.tc4.content.ReactorAccessors.Directions.class).of(Direction.UP.get3DDataValue());
+                result.put("tubeAmount", runtime.accessor(github.com.gengyoubo.tcmodern.tc4.content.ReactorAccessors.Transport.class, tubeTile).amount(side));
                 result.put("pipeSourceAmount", jarAmount(level, pipeSource));
                 result.put("pipeCarrierHasEssentia", pipeCarrier.hasCarriedEssentia());
                 finish(null);

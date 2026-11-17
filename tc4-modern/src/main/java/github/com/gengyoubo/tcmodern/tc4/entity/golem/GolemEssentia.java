@@ -9,6 +9,7 @@ import github.com.gengyoubo.mfcl.api.mla.LegacyType;
 import github.com.gengyoubo.tcmodern.api.TcModernApi;
 import github.com.gengyoubo.tcmodern.tc4.content.ReactorAccessors;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,26 +36,45 @@ final class GolemEssentia {
         if (oldWorld == null) return null;
         var world = runtime.accessor(ReactorAccessors.World.class, oldWorld);
         var tile = world.tile(pos.getX(), pos.getY(), pos.getZ());
-        return tile != null && runtime.values().isInstance(tile, "thaumcraft.api.aspects.IAspectContainer") ? new Container(runtime, world, tile, pos, level) : null;
+        return tile != null && (runtime.values().isInstance(tile, "thaumcraft.api.aspects.IAspectContainer")
+                || runtime.values().isInstance(tile, "thaumcraft.api.aspects.IEssentiaTransport")) ? new Container(runtime, world, tile, pos, level) : null;
+    }
+    private static boolean isAspectContainer(Container container) { return container.runtime().values().isInstance(container.tile(), "thaumcraft.api.aspects.IAspectContainer"); }
+    private static LegacyObject side(Container container, Direction face) {
+        return container.runtime().accessor(ReactorAccessors.Directions.class).of(face == null ? 6 : face.get3DDataValue());
     }
     static boolean isContainer(Level level, BlockPos pos) {
         try { return container(level, pos) != null; }
         catch (RuntimeException failure) { return false; }
     }
-    static @Nullable String available(Level level, BlockPos pos) {
+    static @Nullable String available(Level level, BlockPos pos, Direction face) {
         var container = container(level, pos);
         if (container == null) return null;
+        if (!isAspectContainer(container)) {
+            var transport = container.runtime().accessor(ReactorAccessors.Transport.class, container.tile());
+            var side = side(container, face);
+            var aspect = transport.canOutput(side) && transport.amount(side) > 0 ? transport.type(side) : null;
+            return aspect == null ? null : container.runtime().accessor(Aspect.class, aspect).tag();
+        }
         var list = container.access().aspects();
         if (list == null) return null;
         var aspects = container.runtime().accessor(Aspects.class, list);
         for (var aspect : aspects.all()) if (aspect != null && aspects.amount(aspect) > 0) return container.runtime().accessor(Aspect.class, aspect).tag();
         return null;
     }
-    static boolean accepts(Level level, BlockPos pos, String tag) {
+    static boolean accepts(Level level, BlockPos pos, Direction face, String tag) {
         var container = container(level, pos);
         if (container == null || tag.isEmpty()) return false;
         var aspect = container.runtime().accessor(AspectLookup.class).get(tag);
-        if (aspect == null || !container.access().accepts(aspect)) return false;
+        if (aspect == null) return false;
+        if (!isAspectContainer(container)) {
+            var transport = container.runtime().accessor(ReactorAccessors.Transport.class, container.tile());
+            var side = side(container, face);
+            var filter = transport.suctionType(side);
+            return transport.canInput(side) && transport.amount(side) == 0
+                    && (filter == null || tag.equals(container.runtime().accessor(Aspect.class, filter).tag()));
+        }
+        if (!container.access().accepts(aspect)) return false;
         if (container.runtime().values().isInstance(container.tile(), "thaumcraft.common.tiles.TileJarFillable")) {
             var jar = container.runtime().accessor(Jar.class, container.tile());
             if (jar.amount() >= jar.capacity()) return false;
@@ -63,20 +83,29 @@ final class GolemEssentia {
         }
         return true;
     }
-    static boolean takeOne(Level level, BlockPos pos, String tag) {
+    static boolean takeOne(Level level, BlockPos pos, Direction face, String tag) {
         var container = container(level, pos);
         if (container == null) return false;
         var aspect = container.runtime().accessor(AspectLookup.class).get(tag);
-        if (aspect == null || !container.access().take(aspect, 1)) return false;
+        if (aspect == null) return false;
+        if (!isAspectContainer(container)) {
+            var transport = container.runtime().accessor(ReactorAccessors.Transport.class, container.tile());
+            var side = side(container, face);
+            if (!transport.canOutput(side) || transport.take(aspect, 1, side) != 1) return false;
+        } else if (!container.access().take(aspect, 1)) return false;
         container.changed(); return true;
     }
     /** TC4 addToContainer returns the amount left over. */
-    static int insert(Level level, BlockPos pos, String tag, int amount) {
+    static int insert(Level level, BlockPos pos, Direction face, String tag, int amount) {
         var container = container(level, pos);
         if (container == null || amount <= 0) return amount;
         var aspect = container.runtime().accessor(AspectLookup.class).get(tag);
-        if (aspect == null || !container.access().accepts(aspect)) return amount;
-        int remaining = container.access().add(aspect, amount);
+        if (aspect == null || !accepts(level, pos, face, tag)) return amount;
+        int remaining;
+        if (!isAspectContainer(container)) {
+            int accepted = container.runtime().accessor(ReactorAccessors.Transport.class, container.tile()).add(aspect, amount, side(container, face));
+            remaining = amount - Math.max(0, Math.min(amount, accepted));
+        } else remaining = container.access().add(aspect, amount);
         if (remaining < amount) container.changed();
         return remaining;
     }

@@ -165,9 +165,9 @@ public final class ModernGolem extends PathfinderMob {
         private boolean usable() {
             if (!hasEssentiaCore() || destination == null || markedContainer == null || destination.equals(markedContainer)
                     || !level().dimension().location().toString().equals(markedDimension) || level().getGameTime() < blockedUntil) return false;
-            if (hasCarriedEssentia()) return GolemEssentia.accepts(level(), destination, carriedAspect);
-            String aspect = GolemEssentia.available(level(), markedContainer);
-            return aspect != null && GolemEssentia.accepts(level(), destination, aspect);
+            if (hasCarriedEssentia()) return GolemEssentia.accepts(level(), destination, destinationFace, carriedAspect);
+            String aspect = GolemEssentia.available(level(), markedContainer, markedFace);
+            return aspect != null && GolemEssentia.accepts(level(), destination, destinationFace, aspect);
         }
         @Override public boolean canUse() { if (--scanDelay > 0) return false; scanDelay = 40; return usable(); }
         @Override public boolean canContinueToUse() { return timeout < 300 && usable(); }
@@ -183,12 +183,12 @@ public final class ModernGolem extends PathfinderMob {
             timeout = 0; getNavigation().stop();
             if (hasCarriedEssentia()) {
                 int old = carriedAspectAmount;
-                carriedAspectAmount = GolemEssentia.insert(level(), destination, carriedAspect, carriedAspectAmount);
+                carriedAspectAmount = GolemEssentia.insert(level(), destination, destinationFace, carriedAspect, carriedAspectAmount);
                 if (carriedAspectAmount <= 0) { carriedAspectAmount = 0; carriedAspect = ""; }
                 else if (old == carriedAspectAmount) blockedUntil = level().getGameTime() + 100;
             } else {
-                String aspect = GolemEssentia.available(level(), markedContainer);
-                if (aspect != null && GolemEssentia.accepts(level(), destination, aspect) && GolemEssentia.takeOne(level(), markedContainer, aspect)) {
+                String aspect = GolemEssentia.available(level(), markedContainer, markedFace);
+                if (aspect != null && GolemEssentia.accepts(level(), destination, destinationFace, aspect) && GolemEssentia.takeOne(level(), markedContainer, markedFace, aspect)) {
                     carriedAspect = aspect; carriedAspectAmount = 1;
                 }
             }
@@ -294,9 +294,13 @@ public final class ModernGolem extends PathfinderMob {
                 setCarried(net.minecraft.world.item.ItemStack.EMPTY);
                 useReturning = true;
                 var hitPos = net.minecraft.world.phys.Vec3.atCenterOf(markedContainer).add(markedFace.getStepX() * 0.5, markedFace.getStepY() * 0.5, markedFace.getStepZ() * 0.5);
+                fake.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, hitPos);
                 var hit = new net.minecraft.world.phys.BlockHitResult(hitPos, markedFace, markedContainer, false);
                 try {
                     var result = fake.gameMode.useItemOn(fake, server, fake.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+                    if (result == net.minecraft.world.InteractionResult.PASS && !fake.getMainHandItem().isEmpty())
+                        result = fake.gameMode.useItem(fake, server, fake.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND);
+                    if (Boolean.getBoolean("tc4modern.golemSmokeTest")) com.mojang.logging.LogUtils.getLogger().info("Golem probe use: target={}, result={}, item={}", markedContainer, result, fake.getMainHandItem());
                     if (result.consumesAction()) server.broadcastEntityEvent(ModernGolem.this, (byte)4);
                 } catch (RuntimeException failure) {
                     com.mojang.logging.LogUtils.getLogger().warn("Golem could not use an item at {}", markedContainer, failure);
@@ -497,6 +501,7 @@ public final class ModernGolem extends PathfinderMob {
     }
     private final class LumberGoal extends net.minecraft.world.entity.ai.goal.Goal {
         private BlockPos trunk;
+        private final java.util.List<BlockPos> logs = new java.util.ArrayList<>();
         private int scanDelay, pathDelay, workDelay, timeout;
         LumberGoal() { setFlags(java.util.EnumSet.of(Flag.MOVE, Flag.LOOK)); }
         private boolean isLog(BlockPos pos) { return level().hasChunkAt(pos) && level().getBlockState(pos).is(net.minecraft.tags.BlockTags.LOGS); }
@@ -517,16 +522,40 @@ public final class ModernGolem extends PathfinderMob {
             scanDelay = 60;
             BlockPos origin = blockPosition();
             for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-8, -3, -8), origin.offset(8, 3, 8))) {
-                if (isWithinRestriction(pos) && treeAt(pos)) { trunk = pos.immutable(); return true; }
+                if (isWithinRestriction(pos) && treeAt(pos) && collectTree(pos)) { trunk = pos.immutable(); return true; }
             }
             return false;
         }
         @Override public boolean canContinueToUse() {
-            return core() == LUMBER_CORE && trunk != null && isLog(trunk) && timeout < 200
+            return core() == LUMBER_CORE && trunk != null && !logs.isEmpty() && timeout < 200
                     && net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(level(), ModernGolem.this);
         }
         @Override public void start() { timeout = 0; pathDelay = 0; workDelay = 0; }
-        @Override public void stop() { trunk = null; getNavigation().stop(); }
+        @Override public void stop() { trunk = null; logs.clear(); getNavigation().stop(); }
+        private boolean collectTree(BlockPos root) {
+            logs.clear();
+            var visited = new java.util.HashSet<BlockPos>();
+            var pending = new java.util.ArrayDeque<BlockPos>();
+            var type = level().getBlockState(root).getBlock();
+            pending.add(root.immutable()); visited.add(root.immutable());
+            while (!pending.isEmpty()) {
+                var current = pending.removeFirst();
+                logs.add(current);
+                if (logs.size() > 128) { logs.clear(); return false; }
+                for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) continue;
+                    var next = current.offset(dx, dy, dz);
+                    if (!level().hasChunkAt(next) || !level().getBlockState(next).is(type)) continue;
+                    if (Math.abs(next.getX() - root.getX()) > 4 || Math.abs(next.getZ() - root.getZ()) > 4
+                            || next.getY() < root.getY() || next.getY() > root.getY() + 16 || !isWithinRestriction(next)) {
+                        logs.clear(); return false;
+                    }
+                    if (visited.add(next)) pending.addLast(next);
+                }
+            }
+            logs.sort(java.util.Comparator.comparingInt((BlockPos pos) -> pos.getY()).reversed());
+            return true;
+        }
         @Override public void tick() {
             timeout++;
             if (distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(trunk)) > 5.0) {
@@ -536,8 +565,8 @@ public final class ModernGolem extends PathfinderMob {
             getNavigation().stop();
             if (--workDelay > 0) return;
             workDelay = 20;
-            BlockPos log = trunk;
-            for (int y = 1; y <= 8 && isLog(trunk.above(y)); y++) log = trunk.above(y);
+            BlockPos log = logs.remove(0);
+            if (!isLog(log)) return;
             var state = level().getBlockState(log);
             if (net.minecraftforge.event.ForgeEventFactory.onEntityDestroyBlock(ModernGolem.this, log, state)) {
                 level().broadcastEntityEvent(ModernGolem.this, (byte) 4);
@@ -546,29 +575,53 @@ public final class ModernGolem extends PathfinderMob {
             }
         }
     }
-    private final class HarvestGoal extends net.minecraft.world.entity.ai.goal.MoveToBlockGoal {
-        HarvestGoal() { super(ModernGolem.this, 1.0, 8, 3); }
+    private final class HarvestGoal extends net.minecraft.world.entity.ai.goal.Goal {
+        private BlockPos target;
+        private int scanDelay, pathDelay, timeout;
+        HarvestGoal() { setFlags(java.util.EnumSet.of(Flag.MOVE, Flag.LOOK)); }
+        private boolean valid(BlockPos pos) {
+            var state = level().getBlockState(pos);
+            return isWithinRestriction(pos) && state.getBlock() instanceof net.minecraft.world.level.block.CropBlock crop && crop.isMaxAge(state);
+        }
         @Override public boolean canUse() {
-            return core() == HARVEST_CORE && net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(level(), ModernGolem.this) && super.canUse();
+            if (core() != HARVEST_CORE || home == null || !net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(level(), ModernGolem.this) || --scanDelay > 0) return false;
+            scanDelay = 40;
+            BlockPos origin = blockPosition();
+            for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-8, -3, -8), origin.offset(8, 3, 8))) {
+                if (level().hasChunkAt(pos) && valid(pos)) { target = pos.immutable(); return true; }
+            }
+            return false;
         }
         @Override public boolean canContinueToUse() {
-            return core() == HARVEST_CORE && net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(level(), ModernGolem.this) && super.canContinueToUse();
+            return core() == HARVEST_CORE && target != null && valid(target) && timeout < 200
+                    && net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(level(), ModernGolem.this);
         }
-        @Override protected boolean isValidTarget(net.minecraft.world.level.LevelReader level, BlockPos pos) {
-            if (!isWithinRestriction(pos)) return false;
-            var state = level.getBlockState(pos);
-            return state.getBlock() instanceof net.minecraft.world.level.block.CropBlock crop && crop.isMaxAge(state);
-        }
+        @Override public void start() { pathDelay = 0; timeout = 0; }
+        @Override public void stop() { target = null; getNavigation().stop(); }
         @Override public void tick() {
-            super.tick();
-            if (isReachedTarget() && isValidTarget(level(), blockPos)) {
-                var state = level().getBlockState(blockPos);
-                if (net.minecraftforge.event.ForgeEventFactory.onEntityDestroyBlock(ModernGolem.this, blockPos, state)) {
-                    level().broadcastEntityEvent(ModernGolem.this, (byte) 4);
-                    level().destroyBlock(blockPos, true, ModernGolem.this);
-                }
-                nextStartTick = 40;
+            if (distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(target)) > 5.0) {
+                timeout++;
+                if (--pathDelay <= 0) { pathDelay = 20; getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, 1.0); }
+                return;
             }
+            getNavigation().stop();
+            if (!(level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+            var state = level().getBlockState(target);
+            if (!(state.getBlock() instanceof net.minecraft.world.level.block.CropBlock crop)
+                    || !net.minecraftforge.event.ForgeEventFactory.onEntityDestroyBlock(ModernGolem.this, target, state)) { target = null; return; }
+            var seed = crop.getCloneItemStack(level(), target, state);
+            var drops = net.minecraft.world.level.block.Block.getDrops(state, server, target, level().getBlockEntity(target), ModernGolem.this, net.minecraft.world.item.ItemStack.EMPTY);
+            var replanted = false;
+            for (var drop : drops) if (!replanted && net.minecraft.world.item.ItemStack.isSameItemSameTags(drop, seed) && !drop.isEmpty()) {
+                drop.shrink(1); replanted = true;
+            }
+            level().broadcastEntityEvent(ModernGolem.this, (byte) 4);
+            if (level().destroyBlock(target, false, ModernGolem.this)) {
+                if (replanted && crop.defaultBlockState().canSurvive(level(), target)) level().setBlockAndUpdate(target, crop.defaultBlockState());
+                else if (replanted) drops.add(seed.copyWithCount(1));
+                for (var drop : drops) if (!drop.isEmpty()) net.minecraft.world.level.block.Block.popResource(level(), target, drop);
+            }
+            target = null;
         }
     }
     private final class GatherGoal extends net.minecraft.world.entity.ai.goal.Goal {
