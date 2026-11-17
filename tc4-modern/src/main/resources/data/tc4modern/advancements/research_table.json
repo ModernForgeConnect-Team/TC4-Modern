@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:learning_knowledge",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:item_inkwell"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.research_table.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.research_table.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "formed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

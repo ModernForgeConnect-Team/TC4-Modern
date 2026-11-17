@@ -1,0 +1,32 @@
+{
+  "parent": "tc4modern:novice_wand",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:block_table/meta_15"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.arcane_workbench.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.arcane_workbench.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtain_workbench": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "thaumcraft:block_table/meta_15"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -44,7 +44,7 @@ public final class MultiblockSmokeProbe {
     static volatile boolean completed;
     private static final String TC = "Thaumcraft:";
     private static final String WAND = "{rod:\"silverwood\",cap:\"thaumium\",aer:10000,ignis:10000,aqua:10000,terra:10000,ordo:10000,perditio:10000}";
-    private static final List<String> IDS = List.of("research_table", "infusion_altar", "infernal_furnace",
+    private static final List<String> IDS = List.of("research_table", "crucible", "infusion_altar", "infernal_furnace",
             "advanced_alchemy_furnace", "thaumatorium", "node_jar");
     private final Map<String, Object> proof = new LinkedHashMap<>();
     private final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(5);
@@ -107,6 +107,10 @@ public final class MultiblockSmokeProbe {
                     new BlockHitResult(Vec3.atCenterOf(trigger), Direction.NORTH, trigger, false));
             result.put("useResult", use.toString());
             switch (id) {
+                case "crucible" -> {
+                    state(api, level, at, "blockMetalDevice", 0);
+                    result.put("formed", true);
+                }
                 case "research_table" -> {
                     state(api, level, at, "blockTable", 5);
                     state(api, level, at.east(), "blockTable", 8);
@@ -282,6 +286,7 @@ public final class MultiblockSmokeProbe {
     private static BlockPos build(LegacyRuntime api, ServerLevel level, BlockPos at, String id) {
         switch (id) {
             case "research_table" -> { place(api, level, at, Map.of('T', "blockTable@0"), new String[]{"TT"}); return at; }
+            case "crucible" -> { level.setBlockAndUpdate(at, net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState()); return at; }
             case "infusion_altar" -> {
                 place(api, level, at, Map.of('b', "blockCosmeticSolid@7", 's', "blockCosmeticSolid@6", 'p', "blockStoneDevice@1", 'm', "blockStoneDevice@2"),
                         new String[]{"b b", " p ", "b b"}, new String[]{"s s", "   ", "s s"}, new String[]{"   ", " m ", "   "});

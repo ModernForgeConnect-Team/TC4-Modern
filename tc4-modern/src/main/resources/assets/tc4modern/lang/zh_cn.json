@@ -1,4 +1,12 @@
 {
+  "advancement.tc4modern.magic_shard.title": "蕴含着魔力的石头",
+  "advancement.tc4modern.magic_shard.description": "获得任意元素碎片（平衡碎片除外）",
+  "advancement.tc4modern.arcane_workbench.title": "这是？奥术工作台！",
+  "advancement.tc4modern.arcane_workbench.description": "获得奥术工作台",
+  "advancement.tc4modern.research_table.title": "！？书桌？！",
+  "advancement.tc4modern.research_table.description": "搭建研究台多方块结构",
+  "advancement.tc4modern.crucible.title": "坩埚",
+  "advancement.tc4modern.crucible.description": "用法杖将炼药锅转换为坩埚",
   "entity.tc4modern.iron_golem": "铁制傀儡",
   "entity.tc4modern.straw_golem": "稻草傀儡",
   "entity.tc4modern.stone_golem": "石制傀儡",

@@ -1,0 +1,23 @@
+{
+  "parent": "tc4modern:novice_wand",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:block_metal_device/meta_0"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.crucible.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.crucible.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "formed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

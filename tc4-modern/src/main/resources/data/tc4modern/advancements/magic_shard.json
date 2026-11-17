@@ -1,0 +1,37 @@
+{
+  "parent": "tc4modern:thaumcraft",
+  "display": {
+    "icon": {
+      "item": "thaumcraft:item_shard/meta_0"
+    },
+    "title": {
+      "translate": "advancement.tc4modern.magic_shard.title"
+    },
+    "description": {
+      "translate": "advancement.tc4modern.magic_shard.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtain_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "thaumcraft:item_shard/meta_0",
+              "thaumcraft:item_shard/meta_1",
+              "thaumcraft:item_shard/meta_2",
+              "thaumcraft:item_shard/meta_3",
+              "thaumcraft:item_shard/meta_4",
+              "thaumcraft:item_shard/meta_5"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

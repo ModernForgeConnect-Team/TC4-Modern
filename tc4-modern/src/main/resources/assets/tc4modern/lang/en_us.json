@@ -1,4 +1,12 @@
 {
+  "advancement.tc4modern.magic_shard.title": "A Stone Filled with Magic",
+  "advancement.tc4modern.magic_shard.description": "Obtain any elemental shard except a balanced shard",
+  "advancement.tc4modern.arcane_workbench.title": "Is That an Arcane Workbench?",
+  "advancement.tc4modern.arcane_workbench.description": "Obtain an arcane workbench",
+  "advancement.tc4modern.research_table.title": "A Research Table?!",
+  "advancement.tc4modern.research_table.description": "Construct a research table",
+  "advancement.tc4modern.crucible.title": "Crucible",
+  "advancement.tc4modern.crucible.description": "Transform a cauldron into a crucible with a wand",
   "entity.tc4modern.iron_golem": "Iron Golem",
   "entity.tc4modern.straw_golem": "Straw Golem",
   "entity.tc4modern.stone_golem": "Stone Golem",
