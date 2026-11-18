@@ -74,6 +74,15 @@ subprojects {
         finalizedBy 'reobfJarJar'
     }
     reobf.create('jarJar')
+    // mfcl.direct adds 1.7.10 class stubs to compileOnly, and the reobf tasks put them ahead of Minecraft.
+    // The stub net/minecraft/client/Minecraft hides the real class, so e.g. Minecraft.getInstance() is left
+    // unmapped and the shipped jar throws NoSuchMethodError.
+    afterEvaluate {
+        tasks.matching { it.name in ['reobfJar', 'reobfJarJar'] }.each { task ->
+            def original = task.libraries.from.toList()
+            task.libraries.setFrom(files(original).filter { !it.name.startsWith('legacy-names-') })
+        }
+    }
     dependencies {
         minecraft "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
         // Code compiles against the API only; the full mod is a runtime dependency (see tc4-modern).
